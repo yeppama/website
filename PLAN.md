@@ -1,6 +1,8 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
-Versione documento: 0.3 · Data: 2026-10-15 · Stato: in attesa di approvazione
+Versione documento: 0.4 · Data: 2026-10-15 · Stato: in attesa di approvazione
+> Changelog 0.4 — L1 (hosting) **risolta**: integrazione Vercel attiva e verificata. Aggiunti
+> L12 e la decisione D7 (doppio hosting).
 > Changelog 0.3 — aggiunta §10: capacità e limiti dell'ambiente, **verificati**, con piano di
 > prevenzione per ciascuno. Versioni pacchetti allineate al registry reale.
 > Changelog 0.2 — D5 risolta parzialmente (direzione visiva da reference; nome brand ancora aperto):
@@ -764,7 +766,16 @@ generico e non quel brand. Due strade:
   costo nullo.
   Resa stimata ~85% di (a); su un'estetica già sporca e ad alto contrasto la differenza non è leggibile.
 
-→ Raccomandazione: **(b) su tutti i tier**, con (a) come opzione attivabile solo su tier high e da
+**D7 — NUOVA: GitHub Pages e Vercel sullo stesso repository.** Entrambi sono attivi e pubblicano
+`main` (§10.4). Non si rompono a vicenda oggi, ma dalla Fase 1 il problema diventa concreto: Vercel
+costruirà il progetto Vite e servirà `dist/`, mentre GitHub Pages — se configurato sulla radice del
+branch — servirà il **sorgente non compilato**, cioè una pagina rotta. Avresti due URL pubblici, uno
+funzionante e uno guasto, e nessun modo di ricordarti quale è quale quando li mandi a qualcuno.
+→ Raccomandazione: **disattiva GitHub Pages** e tieni solo Vercel. Un URL, una verità. Se invece lo
+vuoi tenere come copia di sicurezza, serve una GitHub Action che pubblichi `dist/` — lo faccio in
+Fase 7, ma è lavoro in più per un secondo URL che non ti serve.
+
+→ Raccomandazione D6: **(b) su tutti i tier**, con (a) come opzione attivabile solo su tier high e da
 valutare con misure reali in Fase 6. Lo schema (`performance.postFx.grain.mode`) supporta entrambe:
 la scelta resta un campo di configurazione, non una riscrittura.
 
@@ -793,7 +804,7 @@ la scelta resta un campo di configurazione, non una riscrittura.
 **Fase 0 completata. Nessuna fase successiva è autorizzata.**
 
 Decisioni: **D5 chiusa su colori e direzione visiva**, aperta su nome/logo.
-**D1, D2, D3, D4, D6 ancora aperte.**
+**L1 (hosting) risolta e verificata.** **D1, D2, D3, D4, D6, D7 ancora aperte.**
 
 Per procedere servono: (1) la tua approvazione del piano, (2) le risposte alle decisioni aperte
 (o la delega esplicita a decidere secondo le mie raccomandazioni), (3) il comando esplicito
@@ -821,7 +832,7 @@ Tutte le righe seguenti sono state **misurate** in questa sessione il 2026-10-15
 
 | # | Limite | Gravità | Prevenzione |
 |---|---|---|---|
-| **L1** | **Vercel e Netlify irraggiungibili** (`vercel.com`, `api.vercel.com`, `api.netlify.com` → connessione rifiutata). CLI non installate | **Bloccante per F7, e per i test mobile reali da F3** | **(a) Raccomandata:** colleghi Vercel al repo GitHub con la loro integrazione Git. Ogni push produce un deploy automatico e una preview URL. Io non tocco Vercel, non servono token nel container, e funziona da subito. **(b)** aggiungere i domini fra quelli consentiti nelle impostazioni di rete dell'ambiente. **(c)** una GitHub Action che esegue il deploy: gira sull'infrastruttura GitHub, che Vercel la raggiunge |
+| **L1** | ~~Vercel e Netlify irraggiungibili dal container~~ → **RISOLTA il 2026-10-15** con l'integrazione Git | ~~Bloccante~~ → **chiusa per la produzione** | Integrazione Vercel ↔ GitHub attiva e **verificata** (§10.4). Il container resta fuori dal percorso di deploy: il 403 del proxy è irrilevante. Resta da confermare che i branch di lavoro producano una **Preview** (vedi §10.4, punto 3) |
 | **L2** | **Nessuna GPU.** Rendering software (SwiftShader) | **Bloccante per le misure di prestazioni** | Non eliminabile. Io consegno l'HUD prestazioni, il percorso di benchmark scriptato (`?bench=1`) e il modulo `docs/PERF.md`; **le misure le esegui tu** sui dispositivi di §5.1. Nessun fps di questo ambiente verrà mai riportato come reale |
 | **L3** | **Nessun dispositivo touch reale.** Safari iOS non è emulabile (motore e gesti di sistema diversi) | **Alta su F3 e F6** | Io testo con eventi touch emulati in Chromium (copre la logica: tap vs drag, soglie, pathfinding). Il comportamento reale di Pointer Events, gesti di sistema e bounce di Safari li verifichi tu su device — **e per farlo ti serve L1 risolta** |
 | **L4** | **Giudizio estetico.** Lo screenshot software è corretto nei contenuti, ma non è il tuo monitor | **Media su F2 e F4** | Gli screenshot li uso come controllo di correttezza ("c'è tutto, è nel posto giusto, nessun errore"), mai come verdetto estetico. Quello resta tuo, ed è il motivo per cui la Fase 2 ha bisogno di un tuo giro di revisione |
@@ -832,6 +843,34 @@ Tutte le righe seguenti sono state **misurate** in questa sessione il 2026-10-15
 | **L9** | **Instagram irraggiungibile** | Bassa | §4.4 è derivata dal tuo screenshot. Se serve più materiale, mandami altri screenshot |
 | **L10** | **Container effimero**: a fine sessione tutto ciò che non è committato è perso, e `node_modules` va reinstallato a ogni sessione | Media, attrito ricorrente su 8 fasi | Committo e pusho alla fine di **ogni** fase (già nella procedura). Aggiungo in F1 un hook `SessionStart` che esegue `npm ci` all'avvio di ogni nuova sessione, così non perdo tempo a ogni ripresa |
 | **L11** | **Rendering software lento**: un frame complesso può richiedere secondi | Bassa | Gli screenshot di verifica si fanno con attese esplicite sul frame, non con timeout a caso. Allunga le mie verifiche, non il tuo prodotto |
+| **L12** | **Gli URL pubblicati sono irraggiungibili dal container**: `*.vercel.app` e `*.github.io` danno lo stesso 403 del proxy | Media, permanente | Posso confermare **che** un deploy è riuscito leggendo i Deployment di GitHub (stato, URL, commit), ma **non posso vedere cosa renderizza la pagina pubblicata**. La verifica visiva dell'URL live è tua. La mia verifica visiva resta sul dev server locale, che controllo per intero |
+
+### 10.4 Stato dell'hosting — verificato il 2026-10-15
+
+Letto dai Deployment di GitHub (unica fonte accessibile dal container, vedi L12).
+
+1. **Vercel è collegato e funziona.**
+   `vercel[bot]` · deployment `7098935169` · environment `Production` · stato **`success`**
+   URL: `https://website-86fz9ag8q-yeppama.vercel.app`
+   Commit servito: `08dedcb` (*Initial commit*, branch `main`).
+
+2. **Quel deploy non contiene nulla di utile, ed è normale.** `main` contiene il solo `README.md`:
+   nessun `package.json`, nessun `index.html`. Alla Fase 0 non esiste ancora un'applicazione.
+   Non c'è niente da riparare. Dalla Fase 1, Vercel rileva da sé il preset Vite dal `package.json`
+   (`npm run build` → `dist/`): nessuna configurazione manuale prevista.
+
+3. **Nessun deployment di Preview sul branch di lavoro — da chiarire.**
+   I push del branch `claude/determined-thompson-yfnsdc` (16:27, 16:34, 16:41 UTC) **precedono** il
+   collegamento di Vercel (16:56 UTC), e Vercel non recupera a posteriori i push già avvenuti.
+   Quindi l'assenza di Preview non prova che siano disattivate. Il push successivo a questa
+   revisione del piano è il test: se compare un deployment `Preview` sul branch, le preview sono
+   attive; se non compare, vanno abilitate nelle impostazioni del progetto Vercel.
+   **È importante dalla Fase 3**, quando ti servirà provare la navigazione mobile da un telefono
+   prima che il lavoro finisca su `main`.
+
+4. **GitHub Pages è attivo sullo stesso repository** — e non l'avevo previsto.
+   Deployment `7098059202` · stato `success` · URL `https://yeppama.github.io/website/`, su `main`.
+   Due sistemi di hosting sullo stesso repo: vedi **D7**.
 
 ### 10.3 Cosa mi serve da te, e quando
 
