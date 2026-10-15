@@ -1,6 +1,8 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
-Versione documento: 0.2 · Data: 2026-10-15 · Stato: in attesa di approvazione
+Versione documento: 0.3 · Data: 2026-10-15 · Stato: in attesa di approvazione
+> Changelog 0.3 — aggiunta §10: capacità e limiti dell'ambiente, **verificati**, con piano di
+> prevenzione per ciascuno. Versioni pacchetti allineate al registry reale.
 > Changelog 0.2 — D5 risolta parzialmente (direzione visiva da reference; nome brand ancora aperto):
 > palette riscritta, direzione artistica in §4.4, nuova decisione D6 (grana).
 
@@ -29,15 +31,15 @@ di §3 in modo da non pregiudicare nessuna delle due opzioni.
 
 | Livello | Scelta | Perché questa e non l'alternativa |
 |---|---|---|
-| Build tool | **Vite 7** | Dev server con HMR istantaneo, `build` Rollup con code-splitting. L'alternativa (Next.js) aggiunge SSR che per una scena WebGL è peso morto: la scena non è renderizzabile server-side e il routing è interno alla scena 3D. |
+| Build tool | **Vite 8** (8.3.4 verificata sul registry) | Dev server con HMR istantaneo, `build` Rollup con code-splitting. L'alternativa (Next.js) aggiunge SSR che per una scena WebGL è peso morto: la scena non è renderizzabile server-side e il routing è interno alla scena 3D. |
 | UI framework | **React 19** | Richiesto dal brief ed è il prerequisito di React Three Fiber. Il modello dichiarativo paga nella UI overlay (modali, HUD, onboarding), dove lo stato è complesso. |
-| Renderer 3D | **Three.js (r18x) via React Three Fiber 9** | R3F non è un wrapper lento: è un reconciler che costruisce lo stesso scene graph di Three.js. Il vantaggio reale è che la scena diventa un albero di componenti alimentabile da `storeConfig.js` con un `.map()`, che è esattamente il requisito data-driven. Three.js puro imporrebbe un layer imperativo scritto a mano per fare la stessa cosa. |
+| Renderer 3D | **Three.js 0.186 via React Three Fiber 9.8** (verificate) | R3F non è un wrapper lento: è un reconciler che costruisce lo stesso scene graph di Three.js. Il vantaggio reale è che la scena diventa un albero di componenti alimentabile da `storeConfig.js` con un `.map()`, che è esattamente il requisito data-driven. Three.js puro imporrebbe un layer imperativo scritto a mano per fare la stessa cosa. |
 | Helper 3D | **@react-three/drei** (selettivo) | Si importano solo i moduli usati (`<Html>`, `<useGLTF>`, `<AdaptiveDpr>`, `<Detailed>`, `<SoftShadows>`). È tree-shakeable: nessun import globale. |
-| Styling | **Tailwind CSS 4** *(da confermare — vedi D1)* | L'estetica brutalist vive di spaziature rigide, bordi secchi, tipografia a scala fissa: un sistema di token a classi è più coerente e produce meno CSS runtime di styled-components, che inietta stili a ogni render. Con il canvas WebGL che compete per il main thread, zero CSS-in-JS runtime è un vantaggio misurabile. |
-| Stato globale | **Zustand 5** *(nuova dipendenza — vedi D2)* | Lo stato condiviso (fase app, focus mode, modale aperta, device profile, posizione player) è letto sia dentro che fuori il canvas. Con Context di React ogni cambio di stato ri-renderizza i consumer: dentro un `useFrame` a 60 Hz è inaccettabile. Zustand permette sottoscrizioni selettive e letture non reattive (`getState()`) dal render loop. |
+| Styling | **Tailwind CSS 4.3** *(da confermare — vedi D1)* | L'estetica brutalist vive di spaziature rigide, bordi secchi, tipografia a scala fissa: un sistema di token a classi è più coerente e produce meno CSS runtime di styled-components, che inietta stili a ogni render. Con il canvas WebGL che compete per il main thread, zero CSS-in-JS runtime è un vantaggio misurabile. |
+| Stato globale | **Zustand 5.0** *(nuova dipendenza — vedi D2)* | Lo stato condiviso (fase app, focus mode, modale aperta, device profile, posizione player) è letto sia dentro che fuori il canvas. Con Context di React ogni cambio di stato ri-renderizza i consumer: dentro un `useFrame` a 60 Hz è inaccettabile. Zustand permette sottoscrizioni selettive e letture non reattive (`getState()`) dal render loop. |
 | Animazioni UI | **Framer Motion 12** | Transizioni di modali/onboarding. Usato **solo** nella UI 2D; le transizioni di camera sono fatte con interpolazione manuale in `useFrame` (nessun sistema di animazione esterno dentro il render loop). |
 | Linting | ESLint 9 + plugin React Hooks | Le regole sugli hook intercettano gli errori più comuni in R3F (hook condizionali dentro componenti di scena). |
-| Deploy | **Vercel** (Fase 7) | Build statica, preview per branch, header di cache configurabili per i `.glb`. Netlify è equivalente: la scelta non è vincolante. |
+| Deploy | **Vercel via integrazione Git** (Fase 7, ma da attivare prima — vedi §10) | Build statica, preview per branch, header di cache configurabili per i `.glb`. Netlify è equivalente: la scelta non è vincolante. |
 
 **Esplicitamente escluso in questa fase:** physics engine (Rapier/Cannon). Il brief impone collisioni
 via bounding box semplificate: un risolutore AABB scritto a mano (~80 righe) copre il caso d'uso
@@ -668,7 +670,7 @@ Tap-to-Move e non WASD + look, non una semplificazione di comodo.
    build commit, tier attivo, p50/p95/p1%, drawcall, triangoli e **se la misura è su hardware reale
    o in emulazione**.
 
-### 5.4 Limite dichiarato dell'ambiente di lavoro (importante)
+### 5.4 Limite dichiarato dell'ambiente di lavoro (sintesi — dettaglio verificato in §10)
 
 Questa sessione gira in un container cloud Linux senza GPU e senza display: posso eseguire la build
 di produzione, avviare il dev server, aprire le pagine con Chromium headless (Playwright è
@@ -704,7 +706,7 @@ F1 (UI 2D) e F2 (3D) dipendono solo da F0 e sono indipendenti tra loro. F3 richi
 | **F4** | Modelli segnaposto + Focus Camera | **Media** | Focus Mode è una macchina a stati (free → entering → focused → exiting → free): gli input vanno congelati, le uscite devono essere sempre possibili, anche su perdita di focus. Ombre proiettate = ritorno di T1. | Focus in/out fluido su ogni display, nessuno stato bloccato, ombre entro il budget del tier |
 | **F5** | Modali prodotto + Lookbook | **Media** | Movimento sospeso e ripristinato in modo coerente (il bug classico: chiusura modale con un tasto ancora premuto → il player parte da solo). Focus trap e accessibilità da tastiera. | Modali da `storeConfig`, movimento sospeso/ripristinato correttamente, lookbook navigabile |
 | **F6** | Performance, responsive, fallback | **Media-Alta** | Disposal GPU: i leak si vedono solo dopo molti cicli di montaggio/smontaggio. Rischio dichiarativo: non poter testare su dispositivi reali da qui (§5.4). | HUD perf, cap 60 fps, disposal verificato, fallback WebGL, `docs/PERF.md` compilato con misure reali |
-| **F7** | Build e deploy | **Bassa** | Il deploy richiede un account e un token forniti da te; da questo container potrei non avere accesso a Vercel. Va verificato prima di arrivarci. | URL pubblico raggiungibile e verificato |
+| **F7** | Build e deploy | **Bassa (se sbloccata per tempo)** | **VERIFICATO: Vercel e Netlify non sono raggiungibili da questo container** (§10, L1). Non è un rischio, è un blocco certo. Va risolto con l'integrazione Git prima della Fase 3, perché senza URL pubblico non puoi provare la navigazione mobile su un telefono vero. | URL pubblico raggiungibile e verificato |
 | **F8** | E-commerce reale | **Alta** | Non eseguita. Solo su tuo comando esplicito futuro. | — |
 
 **Percorso critico:** F2 (estetica) e F3 (navigazione). Sono le due fasi dove un errore è costoso da
@@ -796,3 +798,50 @@ Decisioni: **D5 chiusa su colori e direzione visiva**, aperta su nome/logo.
 Per procedere servono: (1) la tua approvazione del piano, (2) le risposte alle decisioni aperte
 (o la delega esplicita a decidere secondo le mie raccomandazioni), (3) il comando esplicito
 `"Approvato, procedi alla fase 1"` (o `"fase 1b"` / `"fase 2"` a seconda di come chiudi D4).
+
+---
+
+## 10. Capacità e limiti dell'ambiente di lavoro (verificati)
+
+Tutte le righe seguenti sono state **misurate** in questa sessione il 2026-10-15, non stimate.
+
+### 10.1 Cosa funziona
+
+| Capacità | Esito verificato | Conseguenza per il piano |
+|---|---|---|
+| CPU / RAM / disco | 4 core, 16 GB RAM, 31 GB liberi | Ampiamente sufficienti. Non è un collo di bottiglia |
+| Node / npm | v22.22.0 / 10.9.4 | OK |
+| Registry npm | `HTTP 200`; `three@0.186.1`, `@react-three/fiber@9.8.2`, `@react-three/drei@10.7.9`, `vite@8.3.4`, `react@19.3.1`, `tailwindcss@4.3.3`, `zustand@5.0.15` tutti risolvibili | Installazione dipendenze: nessun ostacolo |
+| Chromium headless | Presente in `/opt/pw-browsers` (1194) | Posso aprire le pagine, catturare screenshot, leggere errori di console |
+| **WebGL2** | **Attivo**: `ANGLE (Google, Vulkan 1.3.0 SwiftShader)`, `MAX_TEXTURE_SIZE 8192`, `OES_texture_float_linear` ✓, `EXT_texture_filter_anisotropic` ✓ | **Posso renderizzare e verificare visivamente la scena 3D** in tutte le fasi 2-6. In software, quindi lento, ma corretto |
+| Google Fonts | `css2` API `HTTP 200`, `fonts.gstatic.com` raggiungibile | Posso scaricare i font e **auto-ospitarli** |
+| GitHub | `api.github.com HTTP 200`, push verificato | Commit e push funzionano |
+
+### 10.2 Limiti, gravità e prevenzione
+
+| # | Limite | Gravità | Prevenzione |
+|---|---|---|---|
+| **L1** | **Vercel e Netlify irraggiungibili** (`vercel.com`, `api.vercel.com`, `api.netlify.com` → connessione rifiutata). CLI non installate | **Bloccante per F7, e per i test mobile reali da F3** | **(a) Raccomandata:** colleghi Vercel al repo GitHub con la loro integrazione Git. Ogni push produce un deploy automatico e una preview URL. Io non tocco Vercel, non servono token nel container, e funziona da subito. **(b)** aggiungere i domini fra quelli consentiti nelle impostazioni di rete dell'ambiente. **(c)** una GitHub Action che esegue il deploy: gira sull'infrastruttura GitHub, che Vercel la raggiunge |
+| **L2** | **Nessuna GPU.** Rendering software (SwiftShader) | **Bloccante per le misure di prestazioni** | Non eliminabile. Io consegno l'HUD prestazioni, il percorso di benchmark scriptato (`?bench=1`) e il modulo `docs/PERF.md`; **le misure le esegui tu** sui dispositivi di §5.1. Nessun fps di questo ambiente verrà mai riportato come reale |
+| **L3** | **Nessun dispositivo touch reale.** Safari iOS non è emulabile (motore e gesti di sistema diversi) | **Alta su F3 e F6** | Io testo con eventi touch emulati in Chromium (copre la logica: tap vs drag, soglie, pathfinding). Il comportamento reale di Pointer Events, gesti di sistema e bounce di Safari li verifichi tu su device — **e per farlo ti serve L1 risolta** |
+| **L4** | **Giudizio estetico.** Lo screenshot software è corretto nei contenuti, ma non è il tuo monitor | **Media su F2 e F4** | Gli screenshot li uso come controllo di correttezza ("c'è tutto, è nel posto giusto, nessun errore"), mai come verdetto estetico. Quello resta tuo, ed è il motivo per cui la Fase 2 ha bisogno di un tuo giro di revisione |
+| **L5** | **CDN bloccati** (`cdn.jsdelivr.net`, `unpkg.com`) | Nulla | Nessun `<script src>` esterno nel progetto: tutto passa da npm e finisce nel bundle. È anche la scelta corretta a prescindere |
+| **L6** | **Google Fonts a runtime** = l'utente finale scarica da Google (latenza + implicazioni privacy/GDPR) | Bassa, ma reale | **Auto-ospitare**: scarico i `.woff2` in `public/fonts/` e li servo dal nostro dominio. Più veloce e senza terze parti. Lo faccio in Fase 1 |
+| **L7** | **Font blackletter della reference**: quasi certamente proprietario o custom | Media su F1 | Uso un open font vicino (`UnifrakturCook`, `Pirata One`) e **dichiaro che non è identico**. Se hai la licenza del font reale, mandamelo e lo sostituisco: è un campo in `type.family` |
+| **L8** | **Librerie di modelli 3D bloccate** (`sketchfab.com`, `poly.pizza`). **Blender non installato** | Bassa fino a F4 | Il piano usa già primitive e `assets.registry.fallback`, quindi F2-F3 non ne risentono. Per F4: genero i `.glb` proceduralmente da codice (esportatore glTF in Node), oppure me li fornisci tu |
+| **L9** | **Instagram irraggiungibile** | Bassa | §4.4 è derivata dal tuo screenshot. Se serve più materiale, mandami altri screenshot |
+| **L10** | **Container effimero**: a fine sessione tutto ciò che non è committato è perso, e `node_modules` va reinstallato a ogni sessione | Media, attrito ricorrente su 8 fasi | Committo e pusho alla fine di **ogni** fase (già nella procedura). Aggiungo in F1 un hook `SessionStart` che esegue `npm ci` all'avvio di ogni nuova sessione, così non perdo tempo a ogni ripresa |
+| **L11** | **Rendering software lento**: un frame complesso può richiedere secondi | Bassa | Gli screenshot di verifica si fanno con attese esplicite sul frame, non con timeout a caso. Allunga le mie verifiche, non il tuo prodotto |
+
+### 10.3 Cosa mi serve da te, e quando
+
+| Quando | Cosa | Perché |
+|---|---|---|
+| **Ora** | Decisioni D1, D2, D3, D4, D6 | Determinano come scrivo il codice dalla prima riga |
+| **Ora o in F1** | Nome del brand | Un campo, costo zero in qualsiasi momento |
+| **Entro F2** | Logo, se deve comparire in 3D (insegna, decal) | Cambia dove metto muri e faretti |
+| **Entro F2** | Collegamento Vercel ↔ GitHub (L1) | Serve da F3 per i test su telefono, non da F7 |
+| **Da F2 in poi** | Il tuo giudizio estetico su screenshot | Io non posso darmelo da solo (L4) |
+| **Da F3 in poi** | Prove sul tuo telefono | L3 non è aggirabile |
+| **In F6** | Misure fps sui dispositivi di §5.1 | L2 non è aggirabile |
+| **Opzionale, F1/F4** | Font proprietario, `.glb` tuoi | Sostituzioni dirette, nessun refactor |
