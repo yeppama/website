@@ -2,7 +2,8 @@
  * Design token — fonte unica di verità per colori, tipografia e ritmo.
  *
  * Palette derivata dall'identità INTO industries: nero profondo e osso come
- * i due fondi del brand, ember come unico accento acceso, crimson in dosi minime.
+ * i due fondi del brand, Flame Orange come unico accento acceso. Nessun rosso
+ * di brand: il crimson è ammesso solo come colore di stato per gli errori.
  * Nessun componente definisce un colore per conto proprio.
  */
 export const tokens = {
@@ -11,7 +12,11 @@ export const tokens = {
     surface: { 1: '#101011', 2: '#17171a', 3: '#202024' },
     line:    { subtle: '#232326', strong: '#3a3a40', hard: '#f2f0ea' },
     text:    { primary: '#f2f0ea', secondary: '#9b9b96', muted: '#5c5c58', inverse: '#060606' },
-    accent:  { ember: '#ff5a1f', crimson: '#c21025', bone: '#f2f0ea' },
+    // Flame Orange — PANTONE 15-1157 TPG (#F98E30 è una simulazione a schermo,
+    // il riferimento vincolante resta la mazzetta fisica).
+    accent:  { flame: '#f98e30', bone: '#f2f0ea' },
+    // Il rosso sopravvive solo qui: un errore dello stesso colore del brand
+    // non si distinguerebbe da un accento.
     state:   { danger: '#c21025', ok: '#9b9b96' },
   },
 

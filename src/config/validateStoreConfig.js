@@ -114,6 +114,17 @@ export function validateStoreConfig(config) {
     if (!spot.targetPosition && !spot.targetDisplayId) fail('I14', `faretto ${spot.id}: nessun bersaglio`)
   }
 
+  // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
+  // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
+  const featureIds = new Set(Object.keys(config.features ?? {}))
+  for (const variant of ['desktop', 'mobile']) {
+    for (const line of config.copy.onboarding[variant].lines) {
+      if (line.requires && !featureIds.has(line.requires)) {
+        fail('I15', `onboarding ${variant}: "${line.text}" richiede la funzione inesistente "${line.requires}"`)
+      }
+    }
+  }
+
   return errors
 }
 
@@ -125,5 +136,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 14 invarianti verificate, nessun errore')
+  console.info('storeConfig: 15 invarianti verificate, nessun errore')
 }

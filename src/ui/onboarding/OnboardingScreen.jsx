@@ -3,16 +3,21 @@ import { storeConfig } from '../../config/storeConfig.js'
 import Button from '../primitives/Button.jsx'
 
 /**
- * Schermata iniziale: identità del brand, progresso reale del caricamento e
- * istruzioni DIVERSE per desktop e mobile, scelte dal profilo del dispositivo.
+ * Schermata iniziale: identità del brand, progresso del caricamento per stadi
+ * reali e istruzioni DIVERSE per desktop e mobile.
+ *
+ * Ogni istruzione dichiara la funzione che richiede. Se quella funzione non è
+ * ancora attiva (storeConfig.features), la riga viene mostrata come "in arrivo"
+ * e non come un comando: l'interfaccia non promette ciò che non esiste.
  *
  * Il bottone d'ingresso resta disabilitato finché la scena non è pronta: è anche
  * il gesto esplicito che in Fase 3 servirà ad attivare il Pointer Lock.
  */
-export default function OnboardingScreen({ device, ready, progress, onEnter }) {
+export default function OnboardingScreen({ device, ready, progress, stageLabel, onEnter }) {
   const { brand } = storeConfig.meta
   const copy = storeConfig.copy.onboarding
   const variant = device.isTouch ? copy.mobile : copy.desktop
+  const features = storeConfig.features
 
   // Il progresso non torna mai indietro e non si blocca a metà all'occhio.
   const [shown, setShown] = useState(0)
@@ -44,7 +49,7 @@ export default function OnboardingScreen({ device, ready, progress, onEnter }) {
             {brand.wordmark}
           </span>
           <span
-            className="font-mono lowercase text-accent-ember"
+            className="font-mono lowercase text-accent-flame"
             style={{ fontSize: 'var(--text-lg)', letterSpacing: 'var(--tracking-wide)' }}
           >
             ({brand.descriptor}*)
@@ -61,15 +66,26 @@ export default function OnboardingScreen({ device, ready, progress, onEnter }) {
           {variant.heading}
         </h2>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {variant.lines.map((line, i) => (
-            <li key={line} className="flex items-baseline gap-3 text-text-primary"
-                style={{ fontSize: 'var(--text-sm)' }}>
-              <span className="micro" style={{ color: 'var(--color-accent-ember)' }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              {line}
-            </li>
-          ))}
+          {variant.lines.map((line, i) => {
+            const feature = line.requires ? features[line.requires] : null
+            const active = !feature || feature.enabled
+            return (
+              <li key={line.text}
+                  className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 ${active ? 'text-text-primary' : 'text-text-muted'}`}
+                  style={{ fontSize: 'var(--text-sm)' }}
+                  data-active={active}>
+                <span className="micro" style={{ color: active ? 'var(--color-accent-flame)' : undefined }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className={active ? '' : 'line-through decoration-line-strong'}>{line.text}</span>
+                {!active && (
+                  <span className="micro border border-line-strong px-1.5 py-0.5">
+                    {copy.comingSoon} {feature.availableInPhase}
+                  </span>
+                )}
+              </li>
+            )
+          })}
         </ul>
 
         <div className="mt-10 flex flex-wrap items-center gap-6">
@@ -79,12 +95,12 @@ export default function OnboardingScreen({ device, ready, progress, onEnter }) {
           <div className="min-w-40 flex-1">
             <div className="h-px w-full bg-line-subtle">
               <div
-                className="h-px bg-accent-ember transition-[width] duration-300"
+                className="h-px bg-accent-flame transition-[width] duration-300"
                 style={{ width: `${Math.round(shown * 100)}%` }}
               />
             </div>
             <p className="micro mt-2">
-              {ready ? 'pronto' : `${copy.loading} · ${Math.round(shown * 100)}%`}
+              {ready ? 'pronto' : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
             </p>
           </div>
         </div>

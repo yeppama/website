@@ -21,8 +21,8 @@ export default function Minimap({ activeZoneId }) {
   const [cx, cz] = project(camera.staticPose.position[0], camera.staticPose.position[2])
 
   return (
-    <div className="w-36 sm:w-44">
-      <p className="micro mb-2">pianta</p>
+    <div className="w-20 sm:w-44">
+      <p className="micro mb-2 hidden sm:block">pianta</p>
       <div
         className="relative border border-line-subtle bg-surface-1"
         style={{ aspectRatio: `${w} / ${d}` }}
@@ -37,9 +37,9 @@ export default function Minimap({ activeZoneId }) {
               <rect
                 key={zone.id}
                 x={ax} y={az} width={bx - ax} height={bz - az}
-                fill={active ? 'var(--color-accent-ember)' : 'var(--color-surface-3)'}
+                fill={active ? 'var(--color-accent-flame)' : 'var(--color-surface-3)'}
                 fillOpacity={active ? 0.35 : 0.55}
-                stroke={active ? 'var(--color-accent-ember)' : 'var(--color-line-subtle)'}
+                stroke={active ? 'var(--color-accent-flame)' : 'var(--color-line-subtle)'}
                 strokeWidth="0.6"
                 vectorEffect="non-scaling-stroke"
               />
@@ -59,11 +59,11 @@ export default function Minimap({ activeZoneId }) {
           })}
           {/* "Sei qui": l'ellisse del marchio, ancora una volta. */}
           <ellipse cx={cx} cy={cz} rx="4" ry="2.2"
-            fill="none" stroke="var(--color-accent-ember)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-          <circle cx={cx} cy={cz} r="1.4" fill="var(--color-accent-ember)" />
+            fill="none" stroke="var(--color-accent-flame)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+          <circle cx={cx} cy={cz} r="1.4" fill="var(--color-accent-flame)" />
         </svg>
       </div>
-      <p className="micro mt-2">
+      <p className="micro mt-2 hidden sm:block">
         {w}×{d} m · {environment.zones.length} zone
       </p>
     </div>

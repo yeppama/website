@@ -6,6 +6,8 @@ import Floor from './environment/Floor.jsx'
 import Walls from './environment/Walls.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 
+const debugParams = () => new URLSearchParams(window.location.search)
+
 /**
  * Camera della Fase 1b: posa fissa da storeConfig, con un'oscillazione minima
  * che toglie la sensazione di fotografia morta. La navigazione arriva in Fase 3.
@@ -13,7 +15,7 @@ import LightingRig from './lighting/LightingRig.jsx'
  */
 function StaticCamera({ camera, reducedMotion }) {
   const { camera: cam } = useThree()
-  const debugKey = new URLSearchParams(window.location.search).get('debug')
+  const debugKey = debugParams().get('debug')
   const pose = camera.debugPoses?.[debugKey] ?? camera.staticPose
   const base = useRef(new THREE.Vector3(...pose.position))
   const target = useRef(new THREE.Vector3(...pose.target))
@@ -42,16 +44,43 @@ function StaticCamera({ camera, reducedMotion }) {
   return null
 }
 
-/** Limita il frame rate al target dichiarato in config: niente frame sprecati. */
+/**
+ * Limite reale del frame rate.
+ *
+ * Il Canvas gira in `frameloop="demand"`: non rende nulla finché qualcuno non
+ * chiama `invalidate()`. Questo ciclo lo chiama al massimo `targetFps` volte al
+ * secondo, quindi su uno schermo a 120 Hz si rende a 60, non a 120.
+ * La soglia al 90% dell'intervallo assorbe il jitter di requestAnimationFrame:
+ * con una soglia esatta, su uno schermo a 60 Hz si salterebbe un frame su due.
+ */
 function FrameLimiter({ targetFps }) {
-  const last = useRef(0)
   const { invalidate } = useThree()
-  useFrame(({ clock }) => {
-    const min = 1 / targetFps
-    const now = clock.elapsedTime
-    if (now - last.current < min) return
-    last.current = now
-    invalidate()
+  useEffect(() => {
+    const interval = (1000 / targetFps) * 0.9
+    let last = 0
+    let raf = requestAnimationFrame(function loop(now) {
+      if (now - last >= interval) {
+        last = now
+        invalidate()
+      }
+      raf = requestAnimationFrame(loop)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [targetFps, invalidate])
+  return null
+}
+
+/** Segnala "pronto" solo dopo che la scena ha davvero prodotto dei fotogrammi. */
+function FirstFrameSignal({ onStage }) {
+  const frames = useRef(0)
+  const done = useRef(false)
+  useFrame(() => {
+    if (done.current) return
+    frames.current += 1
+    if (frames.current >= 2) {
+      done.current = true
+      onStage?.('frame')
+    }
   })
   return null
 }
@@ -80,11 +109,20 @@ function SceneContents({ config, tier }) {
   )
 }
 
-export default function StoreCanvas({ config, device, onReady }) {
+export default function StoreCanvas({ config, device, onStage }) {
   const tier = config.performance.tiers[device.tier]
+  const params = debugParams()
+  // In modalità debug il target fps è sovrascrivibile, per verificare che il limite funzioni.
+  const targetFps = params.get('debug') && Number(params.get('fps')) > 0
+    ? Number(params.get('fps'))
+    : config.performance.targetFps
+
+  // Il modulo del motore 3D è arrivato e il componente è montato.
+  useEffect(() => { onStage?.('module') }, [onStage])
 
   return (
     <Canvas
+      frameloop="demand"
       dpr={tier.dprRange}
       shadows={tier.maxShadowCasters > 0}
       gl={{ antialias: tier.antialias, powerPreference: 'high-performance', alpha: false }}
@@ -95,15 +133,16 @@ export default function StoreCanvas({ config, device, onReady }) {
         scene.background = new THREE.Color(config.environment.fog.color)
         // Aggancio di ispezione, attivo solo con ?debug=: serve a verificare la
         // scena dall'esterno senza inquinare il percorso normale.
-        if (new URLSearchParams(window.location.search).get('debug')) {
+        if (params.get('debug')) {
           window.__scene = scene
           window.__gl = gl
         }
-        onReady?.()
+        onStage?.('context')
       }}
     >
       <StaticCamera camera={config.camera} reducedMotion={device.reducedMotion} />
-      <FrameLimiter targetFps={config.performance.targetFps} />
+      <FrameLimiter targetFps={targetFps} />
+      <FirstFrameSignal onStage={onStage} />
       <Suspense fallback={null}>
         <SceneContents config={config} tier={tier} />
       </Suspense>

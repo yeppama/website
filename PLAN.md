@@ -1,6 +1,9 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.1 — accento primario sostituito: **Flame Orange, PANTONE 15-1157 TPG (#F98E30)**
+> al posto dell'arancio-rosso `#ff5a1f`; token rinominato `ember` → `flame`. Nessun rosso di brand:
+> `#c21025` sopravvive solo come colore di stato per gli errori.
 > Changelog 1.0 — **tutte le decisioni chiuse** (D1-A, D2-A, D3-A, D4-B, D6-B, D7-A; brand:
 > INTO Industries, logo fornito). Piano esecutivo: nessuna ambiguità residua.
 > Changelog 0.4 — L1 (hosting) **risolta**: integrazione Vercel attiva e verificata. Aggiunti
@@ -558,10 +561,9 @@ export const tokens = {
     border:  { subtle: '#232326', strong: '#3a3a40', hard: '#f2f0ea' },
     text:    { primary: '#f2f0ea',   // bianco osso, non bianco puro
                secondary: '#9b9b96', muted: '#5c5c58', inverse: '#060606' },
-    accent:  { ember:   '#ff5a1f',   // arancione brace: cordino, fuoco — accento PRIMARIO
-               crimson: '#c21025',   // rosso tecnico dei poster su fondo chiaro — SECONDARIO
-               bone:    '#f2f0ea' }, // il "terzo colore" è l'assenza di colore
-    state:   { danger: '#c21025', ok: '#9b9b96' },        // niente verde: fuori palette
+    accent:  { flame: '#f98e30',     // PANTONE 15-1157 TPG Flame Orange — accento UNICO (v1.1)
+               bone:  '#f2f0ea' },   // il "terzo colore" è l'assenza di colore
+    state:   { danger: '#c21025', ok: '#9b9b96' },        // unico rosso ammesso: stato d'errore
   },
   type: {
     // Due famiglie, non più: una condensata bold per i titoli, una mono per i dati.

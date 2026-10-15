@@ -13,6 +13,10 @@ export default function GrainOverlay({ tier, reducedMotion }) {
   const fx = storeConfig.performance.postFx
   const noise = useMemo(() => makeGrainDataUrl(fx.grain.tileSize), [fx.grain.tileSize])
   const opacity = fx.grain.opacity[tier] ?? fx.grain.opacity.medium
+  // Un granello = un pixel fisico. Senza questa correzione, a DPR 3 ogni granello
+  // occupa 3×3 pixel e su telefono la grana appare tre volte più grossa.
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const tileCss = fx.grain.tileSize / dpr
   const stepMs = Math.round(1000 / fx.grain.animateHz) * 10 // 10 fotogrammi per ciclo
 
   return (
@@ -24,6 +28,8 @@ export default function GrainOverlay({ tier, reducedMotion }) {
           inset: '-10%',
           backgroundImage: `url(${noise})`,
           backgroundRepeat: 'repeat',
+          backgroundSize: `${tileCss}px ${tileCss}px`,
+          imageRendering: 'pixelated',
           opacity,
           mixBlendMode: 'overlay',
           animation: reducedMotion ? 'none' : `grain-shift ${stepMs}ms steps(1, end) infinite`,

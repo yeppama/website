@@ -22,11 +22,11 @@
   /* Un solo stile di focus, sempre visibile: l'accessibilità da tastiera
      non è un'aggiunta della Fase 6. */
   :focus-visible {
-    outline: var(--color-accent-ember) solid 2px;
+    outline: var(--color-accent-flame) solid 2px;
     outline-offset: 2px;
   }
 
-  ::selection { background: var(--color-accent-ember); color: var(--color-text-inverse); }
+  ::selection { background: var(--color-accent-flame); color: var(--color-text-inverse); }
 }
 
 @layer components {

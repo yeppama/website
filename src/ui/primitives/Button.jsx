@@ -11,11 +11,11 @@ export default function Button({ variant = 'ghost', children, className = '', ..
 
   const styles = {
     primary: {
-      className: `${base} px-8 py-3 text-text-inverse bg-accent-ember hover:bg-accent-bone`,
+      className: `${base} px-8 py-3 text-text-inverse bg-accent-flame hover:bg-accent-bone`,
       style: { borderRadius: `${50 / brandMotif.oval.ratio}% / 50%`, letterSpacing: 'var(--tracking-brutal)' },
     },
     ghost: {
-      className: `${base} px-4 py-2 text-text-primary border border-line-strong hover:border-line-hard hover:text-accent-ember`,
+      className: `${base} px-4 py-2 text-text-primary border border-line-strong hover:border-line-hard hover:text-accent-flame`,
       style: { letterSpacing: 'var(--tracking-wide)' },
     },
   }[variant]

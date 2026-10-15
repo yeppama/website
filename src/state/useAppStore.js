@@ -18,16 +18,25 @@ export const APP_PHASE = {
 export const useAppStore = create((set, get) => ({
   phase: APP_PHASE.BOOT,
   device: null,          // popolato da useDeviceProfile
-  loadProgress: 0,
   menuOpen: false,
   activeZoneId: null,
   reducedMotion: false,
+  loadStage: 'boot',
+  notice: null,          // messaggio breve mostrato sopra la scena
 
   setPhase: (phase) => set({ phase }),
   setDevice: (device) => set({ device }),
-  setLoadProgress: (loadProgress) => set({ loadProgress }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   setActiveZone: (activeZoneId) => set({ activeZoneId }),
+  setLoadStage: (loadStage) => set({ loadStage }),
+
+  // Un solo messaggio alla volta, che si nasconde da solo. `id` evita che un
+  // timer vecchio cancelli un messaggio più recente.
+  showNotice: (text, ms = 2600) => {
+    const id = Date.now()
+    set({ notice: { id, text } })
+    setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, ms)
+  },
 
   toggleMenu: () => set({ menuOpen: !get().menuOpen }),
   closeMenu: () => set({ menuOpen: false }),

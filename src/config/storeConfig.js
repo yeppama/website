@@ -46,6 +46,26 @@ export const storeConfig = {
     },
   },
 
+  // Cosa esiste davvero in questa build. L'interfaccia legge questi flag e non
+  // promette comandi che non funzionano ancora: un'istruzione per una funzione
+  // spenta viene mostrata come "in arrivo", non come un comando.
+  features: {
+    navigation:   { enabled: false, availableInPhase: 3 },
+    focusMode:    { enabled: false, availableInPhase: 4 },
+    productModal: { enabled: false, availableInPhase: 5 },
+  },
+
+  // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
+  // stadio: non misura byte, misura passaggi che avvengono davvero.
+  loading: {
+    stages: [
+      { id: 'boot',    progress: 0.15, label: 'Avvio' },
+      { id: 'module',  progress: 0.6,  label: 'Motore 3D' },
+      { id: 'context', progress: 0.8,  label: 'Contesto WebGL' },
+      { id: 'frame',   progress: 1.0,  label: 'Primo fotogramma' },
+    ],
+  },
+
   // Camera della Fase 1b: posa fissa. La navigazione arriva in Fase 3.
   camera: {
     staticPose: { position: [0, 1.75, 15.5], target: [0, 1.5, -2], fov: 52 },
@@ -77,9 +97,9 @@ export const storeConfig = {
       { id: 'wall-s-right', from: [  1.5, 18], to: [ 12,  18], height: 4.2, thickness: 0.2, materialId: 'mat-plaster-dark', colliderId: 'col-wall-s-right' },
     ],
     zones: [
-      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   accentColor: 'accent.ember',   ambientBoost: 0.15 },
-      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  accentColor: 'accent.ember',   ambientBoost: 0.0 },
-      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    accentColor: 'accent.crimson', ambientBoost: -0.05 },
+      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   accentColor: 'accent.flame',   ambientBoost: 0.15 },
+      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  accentColor: 'accent.flame',   ambientBoost: 0.0 },
+      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    accentColor: 'accent.flame', ambientBoost: -0.05 },
       { id: 'zone-lookbook', label: 'Lookbook',     bounds: [[-6, -16], [6, -6]],  accentColor: 'accent.bone',    ambientBoost: 0.1 },
     ],
     entrance: { waypointId: 'wp-entrance', lookAtWaypointId: 'wp-hall-01' },
@@ -95,14 +115,14 @@ export const storeConfig = {
         position: [-5.5, 3.9, 6.0], targetPosition: [-5.5, 0, 4.0],
         angle: 0.5, penumbra: 0.65, intensity: 420, distance: 26, decay: 1.4,
         color: '#fff1e2', castShadow: true },
-      { id: 'spot-hall-ember',  priority: 2, kind: 'ember', zoneId: 'zone-archive',
+      { id: 'spot-hall-flame',  priority: 2, kind: 'flame', zoneId: 'zone-archive',
         position: [5.5, 3.9, 6.0], targetPosition: [5.5, 0, 4.0],
         angle: 0.52, penumbra: 0.8, intensity: 360, distance: 26, decay: 1.4,
-        color: '#ff7a33', castShadow: true },
-      { id: 'spot-entrance',    priority: 3, kind: 'ember', zoneId: 'zone-entrance',
+        color: '#ffa04a', castShadow: true },
+      { id: 'spot-entrance',    priority: 3, kind: 'flame', zoneId: 'zone-entrance',
         position: [0, 4.0, 13.0], targetPosition: [0, 0, 9.5],
         angle: 0.62, penumbra: 0.9, intensity: 150, distance: 18, decay: 1.6,
-        color: '#ff5a1f', castShadow: false },
+        color: '#f98e30', castShadow: false },
       { id: 'spot-deep',        priority: 4, kind: 'studio', zoneId: 'zone-lookbook',
         position: [0, 3.8, -12.0], targetPosition: [0, 1.4, -17.5],
         angle: 0.58, penumbra: 0.7, intensity: 400, distance: 24, decay: 1.3,
@@ -111,10 +131,10 @@ export const storeConfig = {
         position: [-10.5, 4.0, 10.0], targetPosition: [-11.8, 1.6, 0.0],
         angle: 0.95, penumbra: 1.0, intensity: 520, distance: 34, decay: 1.1,
         color: '#c9d2dc', castShadow: false },
-      { id: 'spot-wash-e', priority: 6, kind: 'ember', zoneId: 'zone-archive',
+      { id: 'spot-wash-e', priority: 6, kind: 'flame', zoneId: 'zone-archive',
         position: [10.5, 4.0, 10.0], targetPosition: [11.8, 1.6, 0.0],
         angle: 0.95, penumbra: 1.0, intensity: 460, distance: 34, decay: 1.1,
-        color: '#ff8a4a', castShadow: false },
+        color: '#ffad5e', castShadow: false },
     ],
     materials: {
       'mat-concrete-polished': { color: '#1b1c21', roughness: 0.5, metalness: 0.08, grid: true },
@@ -123,8 +143,7 @@ export const storeConfig = {
       'mat-steel-brushed':     { color: '#8d9298', roughness: 0.32, metalness: 0.95 },
       'mat-mannequin':         { color: '#cfd2d6', roughness: 0.42, metalness: 0.08 },
       'mat-bone-seamless':     { color: '#dcdcd8', roughness: 0.95, metalness: 0.0 },
-      'mat-accent-ember':      { color: '#ff5a1f', roughness: 0.4,  metalness: 0.0, emissive: '#ff5a1f', emissiveIntensity: 0.45 },
-      'mat-accent-crimson':    { color: '#c21025', roughness: 0.45, metalness: 0.0, emissive: '#c21025', emissiveIntensity: 0.25 },
+      'mat-accent-flame':      { color: '#f98e30', roughness: 0.4,  metalness: 0.0, emissive: '#f98e30', emissiveIntensity: 0.6 },
     },
   },
 
@@ -181,7 +200,7 @@ export const storeConfig = {
       position: [6.5, 0, 7.0], rotationY: 0,
       colliderId: 'col-plinth-01', approachWaypointId: 'wp-arch-01',
       assetId: 'asset-plinth-a', materialIds: { body: 'mat-steel-brushed' },
-      productIds: ['prod-002', 'prod-003'], poiId: 'poi-arch-01', spotlightId: 'spot-hall-ember',
+      productIds: ['prod-002', 'prod-003'], poiId: 'poi-arch-01', spotlightId: 'spot-hall-flame',
       focusCamera: { position: [6.5, 1.3, 8.8], target: [6.5, 1.0, 7.0], fov: 38, enterMs: 900, exitMs: 650 } },
   ],
 
@@ -213,7 +232,7 @@ export const storeConfig = {
     { id: 'prod-002', sku: 'INT-002', name: 'Cargo Pant', category: 'Pants', collection: 'DROP 01',
       price: { amount: 229, currency: 'EUR' },
       description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Tessuto tecnico segnaposto', 'Gamba ampia', 'Cordino ember'],
+      details: ['Tessuto tecnico segnaposto', 'Gamba ampia', 'Cordino flame orange'],
       sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true },
               { id: 'l', label: 'L', available: false }],
       colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
@@ -253,7 +272,7 @@ export const storeConfig = {
     ratios: { '1:1': [1, 1], '16:9': [16, 9], '4:5': [4, 5] },
     variants: {
       product:   { bg: '#111214', fg: '#8a9099', pattern: 'grid',     showCategory: true,  grain: true },
-      editorial: { bg: '#0a0a0b', fg: '#ff5a1f', pattern: 'diagonal', showCategory: false, grain: true },
+      editorial: { bg: '#0a0a0b', fg: '#f98e30', pattern: 'diagonal', showCategory: false, grain: true },
       studio:    { bg: '#dcdcd8', fg: '#060606', pattern: 'none',     showCategory: true,  grain: false },
     },
     skeleton: { shimmerMs: 1400, minVisibleMs: 400, timeoutMs: 8000 },
@@ -264,20 +283,32 @@ export const storeConfig = {
       eyebrow: 'Negozio immersivo · prototipo',
       desktop: {
         heading: 'Navigazione desktop',
-        lines: ['WASD o frecce per muoverti', 'Muovi il mouse per guardarti attorno',
-                'Click su un espositore per esaminarlo', 'ESC per liberare il cursore'],
+        lines: [
+          { text: 'WASD o frecce per muoverti',           requires: 'navigation' },
+          { text: 'Muovi il mouse per guardarti attorno', requires: 'navigation' },
+          { text: 'Click su un espositore per esaminarlo', requires: 'focusMode' },
+          { text: 'ESC per liberare il cursore',          requires: 'navigation' },
+        ],
         cta: 'Entra',
       },
       mobile: {
         heading: 'Navigazione mobile',
-        lines: ['Tap sul pavimento per spostarti', 'Trascina per orientare la visuale',
-                'Tap su un espositore per esaminarlo', 'Usa la barra in basso per spostarti subito'],
+        lines: [
+          { text: 'Tap sul pavimento per spostarti',            requires: 'navigation' },
+          { text: 'Trascina per orientare la visuale',          requires: 'navigation' },
+          { text: 'Tap su un espositore per esaminarlo',        requires: 'focusMode' },
+          { text: 'Usa la barra in basso per spostarti subito', requires: 'navigation' },
+        ],
         cta: 'Entra',
       },
       loading: 'Caricamento ambiente',
-      phaseNotice: 'Fase 1b — ambiente di blockout. La navigazione arriva nella Fase 3.',
+      comingSoon: 'in arrivo · fase',
+      phaseNotice: 'Prototipo in costruzione. I comandi segnati "in arrivo" non sono ancora attivi.',
     },
     hud: { menu: 'Menu', close: 'Chiudi', focusExit: 'Esci', youAreHere: 'Sei qui' },
+    hints: {
+      navigationLocked: 'La navigazione arriva nella Fase 3.',
+    },
     menu: {
       title: 'Indice',
       sections: [

@@ -57,7 +57,7 @@ export default function MenuDrawer() {
         </div>
 
         <section className="mt-8">
-          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-ember)' }}>
+          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[0].label}
           </h3>
           <ul className="grid gap-px bg-line-subtle">
@@ -74,7 +74,7 @@ export default function MenuDrawer() {
         </section>
 
         <section className="mt-10">
-          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-ember)' }}>
+          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[1].label}
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -101,7 +101,7 @@ export default function MenuDrawer() {
         </section>
 
         <section className="mt-10">
-          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-ember)' }}>
+          <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[2].label}
           </h3>
           <p className="text-text-secondary" style={{ fontSize: 'var(--text-sm)' }}>{brand.tagline}</p>
