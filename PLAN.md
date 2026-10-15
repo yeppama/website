@@ -859,14 +859,19 @@ Letto dai Deployment di GitHub (unica fonte accessibile dal container, vedi L12)
    Non c'è niente da riparare. Dalla Fase 1, Vercel rileva da sé il preset Vite dal `package.json`
    (`npm run build` → `dist/`): nessuna configurazione manuale prevista.
 
-3. **Nessun deployment di Preview sul branch di lavoro — da chiarire.**
-   I push del branch `claude/determined-thompson-yfnsdc` (16:27, 16:34, 16:41 UTC) **precedono** il
-   collegamento di Vercel (16:56 UTC), e Vercel non recupera a posteriori i push già avvenuti.
-   Quindi l'assenza di Preview non prova che siano disattivate. Il push successivo a questa
-   revisione del piano è il test: se compare un deployment `Preview` sul branch, le preview sono
-   attive; se non compare, vanno abilitate nelle impostazioni del progetto Vercel.
-   **È importante dalla Fase 3**, quando ti servirà provare la navigazione mobile da un telefono
-   prima che il lavoro finisca su `main`.
+3. **Le Preview sui branch di lavoro funzionano — verificato.**
+   I primi push del branch (16:27, 16:34, 16:41 UTC) precedevano il collegamento di Vercel
+   (16:56 UTC) e Vercel non recupera i push passati: l'assenza iniziale di Preview non era un
+   problema di configurazione. Il push `ad66912` (17:02 UTC) ha prodotto in pochi secondi il
+   deployment `7099073171` · environment `Preview` · stato **`success`**
+   · URL `https://website-6ba3qxais-yeppama.vercel.app`.
+   **Conseguenza operativa: da ogni fase in poi, ogni push sul branch di lavoro ti dà un URL
+   pubblico da aprire sul telefono**, senza passare da `main`. Il requisito della Fase 3 (provare
+   la navigazione mobile su un dispositivo vero) è coperto con tre fasi di anticipo.
+
+   Nota per le verifiche future: Vercel registra il Deployment con `ref` = **SHA del commit**, non
+   il nome del branch. Filtrare i Deployment per `?ref=<branch>` restituisce sempre una lista vuota
+   e **non** significa che le preview manchino: va letta la lista completa.
 
 4. **GitHub Pages è attivo sullo stesso repository** — e non l'avevo previsto.
    Deployment `7098059202` · stato `success` · URL `https://yeppama.github.io/website/`, su `main`.
