@@ -36,6 +36,8 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 - Memoria GPU (Fase 6): le cache condivise (`materials.js`, `garments.js`, ombra blob in `canvasText.js`) si registrano in `lib/gpuCaches.js` e si liberano solo quando l'ultimo Canvas si smonta, con rilascio differito di un turno e annullato da un rimontaggio (StrictMode-safe). Texture per montaggio (hotspot, marcature, parete del brand) liberate nel cleanup del loro effetto. Il contesto lo distrugge R3F allo smontaggio.
 - Perdita del contesto WebGL: `preventDefault`, overlay `ContextLostOverlay` con "Riprova"; se il browser lo restituisce, rimontaggio automatico. Il rimontaggio cambia `key` al Canvas, il player riprende da `usePlayerStore.resumePose`, un Focus in corso si chiude. I canvas sostituiti sono in un `WeakSet`: la loro perdita forzata allo smontaggio non riapre l'overlay.
 - HUD prestazioni `?perf=1` (anche in produzione) e benchmark `?bench=1` (percorso in `storeConfig.benchmark`, ~40 s, run ripetibili, riga pronta per `docs/PERF.md`). Campionatore in `lib/perf.js` alimentato da `PerfProbe` dentro il Canvas: fps = render reali, intervalli > 250 ms scartati. Durante il benchmark `benchRunning` blocca l'input (non la simulazione) e un velo copre la scena. Commit della build in `__BUILD_COMMIT__` (vite `define`, da `VERCEL_GIT_COMMIT_SHA` o git).
+- Tier (Fase 6, dopo la prima misura reale): `high` solo con GPU dedicata riconosciuta nella stringa del renderer (`DISCRETE_GPU` in `deviceProfile.js`); le integrate vanno in `medium`. Verificato da `npm run test:device` con le stringhe dei dispositivi misurati.
+- Misure reali (docs/PERF.md): Pixel (PowerVR, medium) 60,2 / 49,8 → **superata**; Vivobook (Iris Xe, finito in high per errore) 31,6 / 14,9 → **fallita**. Diagnosi in corso con `?bench=1&tier=medium|low` e `&fx=0` (toglie grana e vignettatura, solo in modalità perf/bench/debug).
 - Nero dei capi: su telefono reale "un pelo grigio", **accettato dall'utente per ora** (2026-10-15).
 - Luce: **faretti dei prodotti bianco caldo; il colore d'atmosfera solo su pareti (wall-wash) e accenti.** Esposizione in config (`performance.toneMappingExposure: 0.85`).
 
@@ -111,6 +113,7 @@ usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
 ```bash
 npm run dev | build | preview          # predev/prebuild rigenerano i token
 npm run test:nav                       # logica di navigazione, 9 test
+npm run test:device                    # scelta del tier da stringhe GPU reali, 12 test
 npx vite preview --port 4173 &         # poi, per ogni suite:
 node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 verifiche, ~10 min (fase 5: 34)
 # `pkill -f "vite preview"` dentro un comando che contiene quella stringa uccide la shell stessa: usare `setsid` all'avvio e `pkill -f "port 4173"` a parte
@@ -118,7 +121,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=` forza il tier.
+**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=` forza il tier e `&fx=0` toglie grana e vignettatura.
 
 ## 4. Lezioni apprese & edge case
 
@@ -171,6 +174,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 
 - ~~Fase 5~~ — consegnata: scheda prodotto, Lookbook / Brand Story, trappola del focus, I21–I22, suite `e2e-phase5.mjs`.
 - ~~Fase 6~~ — consegnata: memoria GPU stabile e rilasciata al teardown, perdita di contesto gestita, HUD `?perf=1`, benchmark `?bench=1`, `docs/PERF.md`, verifica responsive su 8 formati. **Manca la parte che solo l'utente può fare: le misure su dispositivi reali.**
+- **Fase 6, aperta su un punto:** il portatile di riferimento (Iris Xe) è a 31,6 fps contro ≥ 58. Prima di toccare luci o resa servono le misure diagnostiche sul Vivobook (`docs/PERF.md`, Note alle misure).
 - **Fase 7** — verifica del deploy di produzione su `main` (l'URL pubblico lo verifica l'utente).
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** righe di `docs/PERF.md` mancanti: un computer (tier medium/high), un Android di fascia media (tier low, soglia p50 ≥ 40), un iPhone con Safari (già misurato: Pixel di punta, tier medium, superato) · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).

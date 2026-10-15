@@ -28,15 +28,21 @@ export function detectWebGL2() {
   }
 }
 
+// GPU dedicate: le sole che PLAN §5.1 mette nel tier high. Le integrate (Intel
+// Iris/UHD, Radeon integrate, Apple M base) sono il riferimento del tier medium.
+const DISCRETE_GPU = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d+ (pro|max|ultra)/i
+
 /**
  * Sceglie il tier. Deliberatamente prudente: su puntatore grossolano non si sale
  * mai sopra `medium`, perché un telefono potente resta un telefono che si scalda.
+ * Su desktop CPU e memoria non bastano: fino alla Fase 6 un portatile con Iris Xe
+ * (8 core, 8 GB) finiva in high e rendeva a 31 fps (docs/PERF.md).
  */
 export function pickTier({ pointer, cores, memory, renderer }) {
   const software = /swiftshader|llvmpipe|software/i.test(renderer ?? '')
   if (software) return 'low'
   if (pointer === 'coarse') return cores >= 6 && memory >= 4 ? 'medium' : 'low'
-  if (cores >= 8 && memory >= 8) return 'high'
+  if (DISCRETE_GPU.test(renderer ?? '') && cores >= 8 && memory >= 8) return 'high'
   if (cores >= 4) return 'medium'
   return 'low'
 }

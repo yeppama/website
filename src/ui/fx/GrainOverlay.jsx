@@ -10,12 +10,18 @@ import { useAppStore } from '../../state/useAppStore.js'
  *
  * La vignettatura è un gradiente CSS: costo nullo.
  */
+// Diagnosi delle prestazioni: con ?perf=1 o ?bench=1, `&fx=0` toglie grana e
+// vignettatura, per misurare quanto costano al compositore sul dispositivo vero.
+const params = new URLSearchParams(window.location.search)
+export const fxDisabled = Boolean(params.get('perf') || params.get('bench') || params.get('debug')) && params.get('fx') === '0'
+
 export default function GrainOverlay({ tier, reducedMotion }) {
   const fx = storeConfig.performance.postFx
   const inFocus = useAppStore((s) => s.focus.state === 'entering' || s.focus.state === 'focused')
   const vignette = inFocus ? storeConfig.focus.vignetteStrength : fx.vignette.strength
   const noise = useMemo(() => makeGrainDataUrl(fx.grain.tileSize), [fx.grain.tileSize])
   const opacity = fx.grain.opacity[tier] ?? fx.grain.opacity.medium
+  if (fxDisabled) return null
   // Un granello = un pixel fisico. Senza questa correzione, a DPR 3 ogni granello
   // occupa 3×3 pixel e su telefono la grana appare tre volte più grossa.
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1

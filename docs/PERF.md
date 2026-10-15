@@ -52,6 +52,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-15 | Container di sviluppo (verifica strumenti) | ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) | Chrome 141 headless | fase 6 | low | 1.0 | 640×400 | 1 | 10.5 | 174.4 | 4.6 | 21 / 44 | 7764 | NO · rendering software |
 
 | 2026-10-15 | Pixel | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 5d3d750 | medium | 1.5 | 411×801 | 3 | 60.2 | 17.5 | 49.8 | 31 / 42 | 12910 | sì |
+| 2026-10-15 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5d3d750 | high | 1.0 | 1920×911 | 3 | 31.6 | 36.5 | 14.9 | 34 / 52 | 13240 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -62,6 +63,26 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
   del tier **medium** su un telefono di punta. Esito contro la soglia mobile medium (p50 ≥ 55,
   1% low ≥ 40): **superata** (60,2 / 49,8). p50 a 60,2 con tetto a 60 è lo scarto del limitatore
   (soglia al 90% dell'intervallo), non un superamento del tetto.
+- **Vivobook (Iris Xe), 2026-10-15** — **soglia NON superata**: p50 31,6 contro ≥ 58, 1% low 14,9
+  contro ≥ 45. È il dispositivo di riferimento del target desktop primario (PLAN §5.1). Due cause:
+  1. *Certa:* il tier era sbagliato. `pickTier` guardava solo core e memoria (8 e 8 → high); Iris Xe
+     è il riferimento del tier medium. Corretto: high solo con GPU dedicata (`npm run test:device`).
+  2. *Da misurare:* medium differisce da high solo per ombre a 512 px e env map: a DPR 1 i pixel sono
+     gli stessi, quindi il tier corretto da solo probabilmente non basta. Ipotesi in ordine di peso:
+     nove faretti calcolati per ogni pixel di 1920×911 con antialias; le due ombre reali; la grana in
+     `mix-blend-mode` sopra il canvas. Le misure diagnostiche sotto separano le tre.
+
+### Diagnosi in corso — Vivobook (3 run ciascuna, stesso URL dell'anteprima)
+
+| # | Parametri | Cosa isola |
+|---|---|---|
+| A | `?bench=1` | Il tier ora scelto da solo (atteso: medium). Effetto della sola correzione del tier |
+| B | `?bench=1&tier=medium&fx=0` | A meno grana e vignettatura: costo del compositore |
+| C | `?bench=1&tier=low` | Niente ombre reali, niente antialias, DPR fino a 0,75: costo di ombre e pixel |
+
+Se C arriva a 58 e A no, il costo sta in ombre/antialias/risoluzione e si interviene sul tier medium
+desktop. Se nemmeno C ci arriva, il costo sta nei nove faretti per pixel e serve una scelta estetica
+(meno faretti calcolati, o luce cotta per le pareti): quella decisione è tua.
 
 ## Peso del caricamento (misurato sulla build, non dipende dal dispositivo)
 

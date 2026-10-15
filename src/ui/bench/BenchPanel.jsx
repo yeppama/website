@@ -5,6 +5,7 @@ import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { usePerfStore } from '../../state/usePerfStore.js'
 import Button from '../primitives/Button.jsx'
+import { fxDisabled } from '../fx/GrainOverlay.jsx'
 
 /* global __BUILD_COMMIT__ */
 const f1 = (n) => (Number.isFinite(n) ? n.toFixed(1) : '—')
@@ -82,7 +83,7 @@ export default function BenchPanel({ device, ready }) {
     gpu: device.renderer ?? '—',
     browser: browserLabel(),
     commit: __BUILD_COMMIT__,
-    tier: device.tier,
+    tier: fxDisabled ? `${device.tier} ${t.fxOff}` : device.tier,
     dpr: usePerfStore.getState().dpr,
     viewport: `${window.innerWidth}×${window.innerHeight}`,
     real: software ? t.realNo : `(${t.realYes})`,

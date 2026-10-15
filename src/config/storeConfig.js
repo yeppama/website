@@ -632,6 +632,7 @@ export const storeConfig = {
     bench: {
       title: 'Benchmark',
       seconds: 's',
+      fxOff: '(grana off)',
       warmup: 'Avvio fra poco · non toccare lo schermo',
       running: 'In corso · non toccare lo schermo',
       step: 'Passo',
