@@ -53,9 +53,12 @@ export default function PlayerController({ config, device }) {
   if (!rt.current) {
     const spawn = waypoints.get(config.environment.entrance.waypointId)
     const look = waypoints.get(config.environment.entrance.lookAtWaypointId)
+    // Dopo un rimontaggio (contesto WebGL perso e ripreso) si riparte da dove si era.
+    const resume = usePlayerStore.getState().resumePose
+    if (resume) usePlayerStore.setState({ resumePose: null })
     rt.current = {
-      pos: { x: spawn.position[0], z: spawn.position[2] },
-      yaw: yawToward(spawn.position[0], spawn.position[2], look.position[0], look.position[2]),
+      pos: resume ? { x: resume.x, z: resume.z } : { x: spawn.position[0], z: spawn.position[2] },
+      yaw: resume ? resume.yaw : yawToward(spawn.position[0], spawn.position[2], look.position[0], look.position[2]),
       pitch: 0,
       vel: { x: 0, z: 0 },
       keys: new Set(),
@@ -75,6 +78,9 @@ export default function PlayerController({ config, device }) {
     const app = useAppStore.getState()
     return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle' || app.dialogs.length > 0
   }
+  // Durante il benchmark la simulazione gira (i percorsi avanzano) ma l'input
+  // dell'utente no: un tocco cambierebbe la traiettoria e falserebbe la misura.
+  const inputLocked = () => blocked() || useAppStore.getState().benchRunning
 
   const notify = (text) => useAppStore.getState().showNotice(text)
 
@@ -179,6 +185,27 @@ export default function PlayerController({ config, device }) {
       goTo(cmd.point, cmd.faceAt ?? null)
       return
     }
+    // Comandi del benchmark: posa istantanea, Focus su un espositore, rotazione verso un punto.
+    if (cmd.type === 'place') {
+      const w = waypoints.get(cmd.waypointId)
+      cancelRoute()
+      r.vel.x = r.vel.z = 0
+      r.pos.x = w.position[0]
+      r.pos.z = w.position[2]
+      if (w.lookAt) r.yaw = yawToward(r.pos.x, r.pos.z, w.lookAt[0], w.lookAt[2])
+      r.pitch = 0
+      r.faceYaw = null
+      return
+    }
+    if (cmd.type === 'focus') {
+      enterFocusFor(displayById.get(cmd.displayId))
+      return
+    }
+    if (cmd.type === 'face') {
+      r.faceYaw = yawToward(r.pos.x, r.pos.z, cmd.point[0], cmd.point[2])
+      r.lastLookInput = 0
+      return
+    }
     if (cmd.type === 'teleport') {
       const w = waypoints.get(cmd.waypointId)
       // Solo destinazioni marcate sicure: il config lo garantisce (I8), qui lo si ricontrolla.
@@ -197,7 +224,7 @@ export default function PlayerController({ config, device }) {
     const down = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (SPRINT.has(e.code)) { r.sprint = true; return }
-      if (!MOVE[e.code] || blocked()) return
+      if (!MOVE[e.code] || inputLocked()) return
       r.keys.add(e.code)
       cancelRoute()
       e.preventDefault()
@@ -241,7 +268,7 @@ export default function PlayerController({ config, device }) {
     const onChange = () => usePlayerStore.setState({ pointerLocked: document.pointerLockElement === canvas })
     const onError = () => notify(config.copy.hints.pointerLockFailed)
     const onMouseMove = (e) => {
-      if (document.pointerLockElement !== canvas) return
+      if (document.pointerLockElement !== canvas || useAppStore.getState().benchRunning) return
       const r = rt.current
       r.yaw -= e.movementX * P.lookSensitivity.desktop
       r.pitch = clamp(r.pitch - e.movementY * P.lookSensitivity.desktop, P.pitchClamp[0], P.pitchClamp[1])
@@ -324,7 +351,7 @@ export default function PlayerController({ config, device }) {
     canvas.style.touchAction = 'none' // niente scroll, zoom o "rimbalzo" del browser sulla scena
 
     const onDown = (e) => {
-      if (blocked()) return
+      if (inputLocked()) return
       const r = rt.current
       const isMouse = e.pointerType === 'mouse' && !device.isTouch
       if (isMouse) {
@@ -384,7 +411,7 @@ export default function PlayerController({ config, device }) {
       const g = r.gesture
       if (!g || g.id !== e.pointerId) return
       r.gesture = null
-      if (!g.dragging && performance.now() - g.t0 <= I.tapMaxMs && !blocked()) handleTap(e.clientX, e.clientY)
+      if (!g.dragging && performance.now() - g.t0 <= I.tapMaxMs && !inputLocked()) handleTap(e.clientX, e.clientY)
     }
     const onCancel = (e) => { if (rt.current.gesture?.id === e.pointerId) rt.current.gesture = null }
 

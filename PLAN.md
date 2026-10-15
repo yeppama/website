@@ -1,6 +1,14 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.6 — **Fase 6 consegnata.** Memoria GPU: cache condivise legate al ciclo di vita del
+> Canvas (`lib/gpuCaches.js`), perdite per tap eliminate (linea del percorso e anello del ping),
+> stabilità verificata dentro la sessione e su 12 rimontaggi. Perdita del contesto WebGL gestita
+> (overlay, ripristino automatico, posa conservata). HUD prestazioni `?perf=1` e benchmark `?bench=1`
+> attivi anche in produzione; `r3f-perf` non adottato (l'HUD legge `gl.info` direttamente, zero
+> dipendenze). `docs/PERF.md` creato: protocollo, soglie, registro con la sola riga software
+> marcata come non valida. Verifica responsive automatica su 8 formati: corretta la minimappa che in
+> orizzontale spingeva fuori schermo la barra "Vai a".
 > Changelog 1.5 — **Fase 5 consegnata.** Scheda prodotto 2D (galleria segnaposto, colori e taglie
 > come gruppi radio da tastiera, prezzo formattato con `meta.brand.locale`, acquisto spento e
 > dichiarato dalla feature `checkout`) e Lookbook / Brand Story da `lookbook` e `meta.brand`. Le

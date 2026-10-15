@@ -64,6 +64,9 @@ export const storeConfig = {
       medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  envMapResolution: 128, antialias: true },
       low:    { dprRange: [0.75, 1], maxShadowCasters: 0, shadowMapSize: 256,  envMapResolution: 64,  antialias: false },
     },
+    // HUD prestazioni (Fase 6): finestra delle statistiche e frequenza di aggiornamento.
+    // Si attiva con ?perf=1 (anche in produzione) e durante il benchmark (?bench=1).
+    monitor: { windowMs: 5000, publishHz: 2 },
     budgets: {
       drawCalls: { high: 120, medium: 80, low: 60 },
       triangles: { high: 400000, medium: 220000, low: 140000 },
@@ -88,6 +91,28 @@ export const storeConfig = {
     lookbook:     { enabled: true,  availableInPhase: 5 },
     // Nessun acquisto in questo prototipo: il bottone c'è, spento, e lo dichiara.
     checkout:     { enabled: false, availableInPhase: 8 },
+  },
+
+  // Percorso di benchmark (?bench=1, PLAN §5.3): sempre la stessa traiettoria,
+  // così le misure di dispositivi diversi sono confrontabili. ~40 s.
+  // place: posa istantanea · hold: fermo · walk: percorso del navigatore ·
+  // focus: Focus Mode su un espositore · face: rotazione verso un punto.
+  benchmark: {
+    warmupMs: 2500,
+    stepTimeoutMs: 30000,
+    suggestedRuns: 3,
+    steps: [
+      { type: 'place', waypointId: 'wp-entrance', label: 'Ingresso' },
+      { type: 'hold', ms: 2000, label: 'Ingresso' },
+      { type: 'walk', waypointId: 'wp-new-01', faceAt: [-7.7, 1.25, 6.6], label: 'Nuovi Arrivi' },
+      { type: 'focus', displayId: 'disp-mannequin-01', holdMs: 3500, label: 'Focus · manichino' },
+      { type: 'walk', waypointId: 'wp-arch-01', faceAt: [6.5, 0.95, 7.0], label: 'Archivio' },
+      { type: 'focus', displayId: 'disp-plinth-01', holdMs: 3500, label: 'Focus · plinto' },
+      { type: 'walk', waypointId: 'wp-look-01', faceAt: [0, 1.6, -14], label: 'Lookbook' },
+      { type: 'face', point: [-10, 1.6, -9], ms: 2500, label: 'Lookbook' },
+      { type: 'face', point: [10, 1.6, -9], ms: 2500, label: 'Lookbook' },
+      { type: 'walk', waypointId: 'wp-entrance', label: 'Ritorno' },
+    ],
   },
 
   // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
@@ -593,7 +618,47 @@ export const storeConfig = {
         { id: 'sec-brand', label: 'Brand' },
       ],
     },
+    perf: {
+      title: 'Prestazioni',
+      fps: 'fps p50',
+      low: '1% low',
+      frame: 'p95 ms',
+      calls: 'draw call',
+      tris: 'triangoli',
+      memory: 'geo / tex / prog',
+      window: 'finestra',
+      softwareWarning: 'Rendering software: questi numeri non valgono come misura reale',
+    },
+    bench: {
+      title: 'Benchmark',
+      seconds: 's',
+      warmup: 'Avvio fra poco · non toccare lo schermo',
+      running: 'In corso · non toccare lo schermo',
+      step: 'Passo',
+      abort: 'Interrompi',
+      aborted: 'Interrotto',
+      failed: 'Passo non riuscito',
+      done: 'Completato',
+      run: 'Run',
+      repeat: 'Ripeti',
+      copy: 'Copia riga per PERF.md',
+      copied: 'Copiato',
+      copyManual: 'Seleziona il testo e copialo',
+      close: 'Chiudi',
+      median: 'Mediana p50',
+      worst: 'Peggiore 1% low',
+      runsHint: 'Protocollo: 3 run per dispositivo. Si riporta la mediana dei p50 e il peggiore 1% low.',
+      device: 'Dispositivo',
+      fill: 'da compilare',
+      realYes: 'da confermare',
+      realNo: 'NO · rendering software',
+    },
     errors: {
+      contextLost: {
+        title: 'Contesto grafico perso',
+        body: 'Il browser ha interrotto il rendering 3D: succede se la GPU si resetta o se la pagina resta a lungo in background.',
+        retry: 'Riprova',
+      },
       webgl: {
         title: 'WebGL non disponibile',
         body: 'Questo dispositivo o browser non supporta il rendering 3D richiesto.',

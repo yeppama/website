@@ -1,8 +1,9 @@
-import { useEffect, useCallback, lazy, Suspense } from 'react'
+import { useEffect, useCallback, useRef, useState, lazy, Suspense } from 'react'
 import { storeConfig } from './config/storeConfig.js'
 import { assertStoreConfig } from './config/validateStoreConfig.js'
 import { getDeviceProfile } from './lib/deviceProfile.js'
 import { useAppStore, APP_PHASE } from './state/useAppStore.js'
+import { usePlayerStore } from './state/usePlayerStore.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
 // appare subito e la barra di progresso misura passaggi reali.
@@ -17,9 +18,15 @@ import DialogHost from './ui/dialog/DialogHost.jsx'
 import GrainOverlay from './ui/fx/GrainOverlay.jsx'
 import FadeOverlay from './ui/fx/FadeOverlay.jsx'
 import WebGLFallback from './ui/fallback/WebGLFallback.jsx'
+import ContextLostOverlay from './ui/fallback/ContextLostOverlay.jsx'
+import PerfHud from './ui/perf/PerfHud.jsx'
+import BenchPanel from './ui/bench/BenchPanel.jsx'
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
 const stageOrder = storeConfig.loading.stages.map((s) => s.id)
+const params = new URLSearchParams(window.location.search)
+const showPerf = Boolean(params.get('perf') || params.get('bench'))
+const runBench = Boolean(params.get('bench'))
 
 /**
  * Orchestratore. Decide fra schermata di fallback, onboarding e esperienza,
@@ -35,6 +42,34 @@ export default function App() {
   const loadStage = useAppStore((s) => s.loadStage)
   const setLoadStage = useAppStore((s) => s.setLoadStage)
   const showNotice = useAppStore((s) => s.showNotice)
+  const gpuLost = useAppStore((s) => s.gpuLost)
+  // Cambiare la chiave rimonta il Canvas: contesto WebGL nuovo, scena ricostruita.
+  const [sceneKey, setSceneKey] = useState(0)
+  // Canvas già sostituiti: smontandoli, React Three Fiber ne forza la perdita del
+  // contesto, e quell'evento arriva dopo il rimontaggio. Non è un guasto nuovo.
+  const retired = useRef(new WeakSet())
+
+  const remountScene = useCallback((canvas) => {
+    if (canvas instanceof HTMLCanvasElement) {
+      if (retired.current.has(canvas)) return
+      retired.current.add(canvas)
+    } else {
+      document.querySelectorAll('canvas').forEach((c) => retired.current.add(c))
+    }
+    // Il player riparte dalla posa in cui era; un Focus in corso si chiude,
+    // perché la sua camera apparteneva alla scena che non c'è più.
+    usePlayerStore.setState({ resumePose: usePlayerStore.getState().pose, route: null, ping: null })
+    if (useAppStore.getState().focus.state !== 'idle') useAppStore.getState().finishFocusExit()
+    useAppStore.setState({ gpuLost: false })
+    setSceneKey((k) => k + 1)
+  }, [])
+  const onContextLost = useCallback((canvas) => {
+    if (!retired.current.has(canvas)) useAppStore.setState({ gpuLost: true })
+  }, [])
+
+  useEffect(() => {
+    if (params.get('debug')) window.__remountScene = remountScene
+  }, [remountScene])
 
   useEffect(() => {
     // Le invarianti del config sono controllate una volta all'avvio, in sviluppo.
@@ -84,11 +119,14 @@ export default function App() {
         }}
       >
         <Suspense fallback={null}>
-          <StoreCanvas config={storeConfig} device={device} onStage={onStage} />
+          <StoreCanvas key={sceneKey} config={storeConfig} device={device} onStage={onStage}
+                       onContextLost={onContextLost} onContextRestored={remountScene} />
         </Suspense>
       </div>
 
       <GrainOverlay tier={device.tier} reducedMotion={device.reducedMotion} />
+      {showPerf && exploring && <PerfHud device={device} />}
+      {gpuLost && <ContextLostOverlay onRetry={remountScene} />}
       <FadeOverlay />
 
       {exploring ? (
@@ -98,6 +136,7 @@ export default function App() {
           <FocusPanel device={device} />
           <MenuDrawer />
           <DialogHost device={device} />
+          {runBench && <BenchPanel device={device} ready={ready} />}
         </>
       ) : (
         <OnboardingScreen

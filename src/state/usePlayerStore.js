@@ -20,6 +20,8 @@ export const usePlayerStore = create((set, get) => ({
   route: null,          // { id, points: [[x, z], ...] } percorso automatico in corso
   ping: null,           // { id, x, z, ok } conferma visiva di un tap
   fading: false,
+  // Posa da riprendere quando la scena viene rimontata (perdita del contesto WebGL).
+  resumePose: null,
   commands: [],
 
   issue: (command) => set((s) => ({ commands: [...s.commands, command] })),

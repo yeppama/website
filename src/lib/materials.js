@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { registerGpuCache } from './gpuCaches.js'
 
 /**
  * Materiali PBR e texture generate proceduralmente.
@@ -83,10 +84,12 @@ export function getMaterial(materialId, spec, { repeat, grid } = {}) {
   return material
 }
 
-/** Libera tutto ciò che vive sulla GPU. Chiamato allo smontaggio della scena. */
+/** Libera tutto ciò che vive sulla GPU. Chiamato da gpuCaches allo smontaggio del Canvas. */
 export function disposeMaterialCache() {
   for (const material of materialCache.values()) material.dispose()
   for (const texture of textureCache.values()) texture.dispose()
   materialCache.clear()
   textureCache.clear()
 }
+
+registerGpuCache(disposeMaterialCache)

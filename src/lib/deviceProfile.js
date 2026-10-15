@@ -50,7 +50,9 @@ export function getDeviceProfile() {
   const memory = navigator.deviceMemory ?? 4
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const params = new URLSearchParams(window.location.search)
-  const forced = params.get('debug') && params.get('tier')
+  // Il tier si può forzare per le verifiche (debug) e per misurare un tier
+  // preciso su un dispositivo vero (perf, bench).
+  const forced = (params.get('debug') || params.get('perf') || params.get('bench')) && params.get('tier')
   const tier = ['high', 'medium', 'low'].includes(forced)
     ? forced
     : pickTier({ pointer, cores, memory, renderer: webgl.renderer })

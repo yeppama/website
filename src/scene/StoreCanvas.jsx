@@ -16,7 +16,9 @@ import Hotspots from './player/Hotspots.jsx'
 import MoveFeedback from './player/MoveFeedback.jsx'
 import FocusCameraRig from './player/FocusCameraRig.jsx'
 import Displays from './displays/Displays.jsx'
+import PerfProbe from './debug/PerfProbe.jsx'
 import { useAppStore } from '../state/useAppStore.js'
+import { retainGpuCaches, releaseGpuCaches } from '../lib/gpuCaches.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
 
@@ -118,6 +120,19 @@ function FrameLimiter({ targetFps }) {
   return null
 }
 
+/**
+ * Ciclo di vita della GPU legato al Canvas, non ai singoli componenti: le cache
+ * condivise si liberano solo quando il Canvas sparisce davvero (vedi gpuCaches).
+ * Il contesto WebGL lo distrugge React Three Fiber allo smontaggio.
+ */
+function GpuLifecycle() {
+  useEffect(() => {
+    retainGpuCaches()
+    return releaseGpuCaches
+  }, [])
+  return null
+}
+
 /** Segnala "pronto" solo dopo che la scena ha davvero prodotto dei fotogrammi. */
 function FirstFrameSignal({ onStage }) {
   const frames = useRef(0)
@@ -137,12 +152,9 @@ function SceneContents({ config, tier }) {
   const { environment, lighting } = config
   const showColliders = debugParams().get('debug') && debugParams().get('colliders') === '1'
 
-  // NOTA: qui c'era un `useEffect(() => disposeMaterialCache, [])`. In StrictMode
-  // React monta, smonta e rimonta: al primo smontaggio le texture venivano
-  // distrutte sulla GPU mentre i `useMemo` dei componenti continuavano a puntare
-  // ai materiali vecchi, che restavano senza mappa. Il pavimento perdeva la griglia.
-  // Il disposal va legato alla distruzione del contesto WebGL, non a un unmount
-  // di React: viene affrontato in Fase 6 con un percorso di teardown verificato.
+  // Niente disposal qui: in StrictMode questo componente si smonta e rimonta, e
+  // liberare le cache a quel punto lasciava materiali vivi senza texture (Fase 2).
+  // Il rilascio è legato al Canvas: vedi GpuLifecycle e lib/gpuCaches.js.
 
   return (
     <>
@@ -187,7 +199,7 @@ function SceneContents({ config, tier }) {
   )
 }
 
-export default function StoreCanvas({ config, device, onStage }) {
+export default function StoreCanvas({ config, device, onStage, onContextLost, onContextRestored }) {
   const tier = config.performance.tiers[device.tier]
   const params = debugParams()
   // In modalità debug il target fps è sovrascrivibile, per verificare che il limite funzioni.
@@ -222,6 +234,11 @@ export default function StoreCanvas({ config, device, onStage }) {
           window.__scene = scene
           window.__gl = gl
         }
+        // Perdita del contesto (GPU resettata, app in background su mobile, troppi
+        // contesti aperti): preventDefault permette al browser di restituirlo.
+        const canvas = gl.domElement
+        canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onContextLost?.(canvas) })
+        canvas.addEventListener('webglcontextrestored', () => onContextRestored?.(canvas))
         onStage?.('context')
       }}
     >
@@ -239,6 +256,8 @@ export default function StoreCanvas({ config, device, onStage }) {
       <MoveFeedback feedback={config.navigation.feedback} />
       <FrameLimiter targetFps={targetFps} />
       <FirstFrameSignal onStage={onStage} />
+      <GpuLifecycle />
+      <PerfProbe monitor={config.performance.monitor} />
       <Suspense fallback={null}>
         <SceneContents config={config} tier={tier} />
       </Suspense>

@@ -36,6 +36,11 @@ export const useAppStore = create((set, get) => ({
   // svuota la pila. Finché la pila non è vuota il player è sospeso.
   dialogs: [],
 
+  // Fase 6: contesto WebGL perso (overlay di ripristino) e benchmark in corso
+  // (l'input dell'utente è ignorato, il percorso lo guida lo script).
+  gpuLost: false,
+  benchRunning: false,
+
   setPhase: (phase) => set({ phase }),
   setDevice: (device) => set({ device }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),

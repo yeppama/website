@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { brandMotif } from '../config/designTokens.js'
+import { registerGpuCache } from './gpuCaches.js'
 
 /**
  * Texture tipografiche generate su <canvas>: insegna, pannelli, marcature a terra.
@@ -145,6 +146,7 @@ export function getBlobTexture() {
   blobTexture = makeTexture(canvas)
   return blobTexture
 }
+registerGpuCache(() => { blobTexture?.dispose(); blobTexture = null })
 
 /**
  * Hotspot: l'ellisse del marchio con un punto al centro e l'etichetta del POI.

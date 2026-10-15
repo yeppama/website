@@ -58,13 +58,18 @@ export default function Hotspots({ pois, style }) {
 
   useEffect(() => {
     let alive = true
+    let made = null
     whenFontsReady().then(() => {
       if (!alive) return
-      setTextures(Object.fromEntries(pois.map((p) => [p.id, makeHotspot({
+      made = Object.fromEntries(pois.map((p) => [p.id, makeHotspot({
         label: p.label, color: style.color, textColor: tokens.color.text.primary,
-      })])))
+      })]))
+      setTextures(made)
     })
-    return () => { alive = false }
+    return () => {
+      alive = false
+      if (made) for (const t of Object.values(made)) t.dispose()
+    }
   }, [pois, style.color])
 
   if (!textures || inFocus) return null

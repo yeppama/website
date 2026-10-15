@@ -19,6 +19,7 @@ export default function BrandWall({ brandWall, brand, lookbook, assets, material
 
   useEffect(() => {
     let alive = true
+    let made = null
     whenFontsReady().then(() => {
       if (!alive) return
       // P1: finché manca il logo vettoriale (`url: null`) si usa il fallback tipografico.
@@ -36,9 +37,14 @@ export default function BrandWall({ brandWall, brand, lookbook, assets, material
         textColor: tokens.color.text.primary,
         bg: materials[brandWall.panel.materialId].color,
       })
-      setTextures({ sign, panel })
+      made = { sign, panel }
+      setTextures(made)
     })
-    return () => { alive = false }
+    return () => {
+      alive = false
+      made?.sign?.texture.dispose()
+      made?.panel.dispose()
+    }
   }, [brand, brandWall, entry, logo, materials])
 
   const panelMaterial = useMemo(() => {
@@ -49,6 +55,8 @@ export default function BrandWall({ brandWall, brand, lookbook, assets, material
     m.color = new THREE.Color(0xffffff)
     return m
   }, [textures, brandWall.panel.materialId, materials])
+  // Il clone è di questo componente, non della cache: lo libera lui.
+  useEffect(() => () => panelMaterial?.dispose(), [panelMaterial])
 
   if (!textures) return null
   const { sign, panel } = brandWall

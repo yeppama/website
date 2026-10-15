@@ -11,9 +11,10 @@ export default function FloorLabels({ zones }) {
 
   useEffect(() => {
     let alive = true
+    let made = []
     whenFontsReady().then(() => {
       if (!alive) return
-      setLabels(zones.map((zone, i) => ({ zone, index: i + 1 })).filter(({ zone }) => zone.floorLabel).map(({ zone, index }) => {
+      made = zones.map((zone, i) => ({ zone, index: i + 1 })).filter(({ zone }) => zone.floorLabel).map(({ zone, index }) => {
         const [[x0, z0], [x1, z1]] = zone.bounds
         return {
           id: zone.id,
@@ -24,9 +25,13 @@ export default function FloorLabels({ zones }) {
             accentColor: tokens.color.accent.flame, textColor: tokens.color.text.primary,
           }),
         }
-      }))
+      })
+      setLabels(made)
     })
-    return () => { alive = false }
+    return () => {
+      alive = false
+      for (const l of made) l.texture.dispose()
+    }
   }, [zones])
 
   return (

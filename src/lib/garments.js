@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { registerGpuCache } from './gpuCaches.js'
 
 /**
  * Geometrie segnaposto dei capi, generate da codice e condivise.
@@ -9,6 +10,7 @@ import * as THREE from 'three'
  */
 
 const cache = new Map()
+registerGpuCache(() => { for (const g of cache.values()) g.dispose(); cache.clear() })
 
 function topShape() {
   const s = new THREE.Shape()

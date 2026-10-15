@@ -26,8 +26,11 @@ export default function Minimap() {
   const [vx, vz] = project(pose.x - Math.sin(pose.yaw) * 3, pose.z - Math.cos(pose.yaw) * 3)
 
   return (
-    <div className="w-20 sm:w-44">
-      <p className="micro mb-2 hidden sm:block">pianta</p>
+    // Su schermi bassi (telefono in orizzontale) la pianta resta piccola anche se
+    // lo schermo è largo: alta 1,5 volte la larghezza, spingerebbe la barra "Vai a"
+    // fuori dallo schermo.
+    <div className="w-20 sm:w-44 [@media(max-height:520px)]:w-16">
+      <p className="micro mb-2 hidden sm:block [@media(max-height:520px)]:hidden">pianta</p>
       <div
         className="relative border border-line-subtle bg-surface-1"
         style={{ aspectRatio: `${w} / ${d}` }}
