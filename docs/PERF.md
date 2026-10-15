@@ -51,7 +51,17 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-15 | Container di sviluppo (verifica strumenti) | ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) | Chrome 141 headless | fase 6 | low | 1.0 | 640×400 | 1 | 10.5 | 174.4 | 4.6 | 21 / 44 | 7764 | NO · rendering software |
 
+| 2026-10-15 | Pixel | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 5d3d750 | medium | 1.5 | 411×801 | 3 | 60.2 | 17.5 | 49.8 | 31 / 42 | 12910 | sì |
+
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
+
+### Note alle misure
+
+- **Pixel, 2026-10-15** — modello non indicato. La GPU PowerVR D-Series DXT è quella dei Pixel
+  di fascia alta più recenti, non del Pixel 6a di riferimento per il tier low: vale come misura
+  del tier **medium** su un telefono di punta. Esito contro la soglia mobile medium (p50 ≥ 55,
+  1% low ≥ 40): **superata** (60,2 / 49,8). p50 a 60,2 con tetto a 60 è lo scarto del limitatore
+  (soglia al 90% dell'intervallo), non un superamento del tetto.
 
 ## Peso del caricamento (misurato sulla build, non dipende dal dispositivo)
 
