@@ -19,6 +19,7 @@ export default function PlaceholderImage({
   variant = 'product',
   state = 'placeholder',
   seed = '',
+  compact = false,   // miniature: etichetta piccola, niente sigla PLH
   className = '',
 }) {
   const cfg = storeConfig.placeholders
@@ -85,7 +86,7 @@ export default function PlaceholderImage({
       {/* Etichetta e categoria restano visibili: è così che si distingue
           un segnaposto voluto da un caricamento che non finisce mai. */}
       {!isLoading && (
-        <div className="absolute inset-0 flex flex-col justify-between p-3">
+        <div className={`absolute inset-0 flex flex-col justify-between ${compact ? 'p-2' : 'p-3'}`}>
           <div className="flex items-start justify-between gap-2">
             <span className="micro" style={{ color: spec.fg }}>
               {isError ? 'ERRORE' : ratio}
@@ -97,11 +98,11 @@ export default function PlaceholderImage({
           <div className="flex items-end justify-between gap-2">
             <span
               className="font-display font-black uppercase leading-none"
-              style={{ color: spec.fg, fontSize: 'var(--text-lg)', letterSpacing: 'var(--tracking-tight)' }}
+              style={{ color: spec.fg, fontSize: compact ? 'var(--text-xs)' : 'var(--text-lg)', letterSpacing: 'var(--tracking-tight)' }}
             >
               {label}
             </span>
-            <span className="micro" style={{ color: spec.fg, opacity: 0.6 }}>PLH</span>
+            {!compact && <span className="micro" style={{ color: spec.fg, opacity: 0.6 }}>PLH</span>}
           </div>
         </div>
       )}

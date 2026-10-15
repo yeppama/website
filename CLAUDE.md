@@ -13,4 +13,4 @@ Piano completo, schema dati e limiti dell'ambiente: `PLAN.md`.
 - Collisioni solo sui box di `colliders`, mai sulle mesh.
 - Prima di ogni commit: `npm run build`, `npm run test:nav` e le suite `scripts/e2e/` interessate, **leggendo l'esito**.
 - Report di fine fase: eseguito / non eseguito / bloccato, mai una verifica impossibile presentata come superata.
-- Branch di lavoro: `claude/determined-thompson-yfnsdc`.
+- Branch di lavoro: `claude/cool-edison-2svzgj` (dalla Fase 5; allineato a `claude/determined-thompson-yfnsdc`, che resta com'era a fine Fase 4).

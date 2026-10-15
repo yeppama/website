@@ -18,6 +18,9 @@ const SPRINT = new Set(['ShiftLeft', 'ShiftRight'])
 const yawToward = (fromX, fromZ, toX, toZ) => Math.atan2(-(toX - fromX), -(toZ - fromZ))
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a))
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi)
+// Il pannello del Lookbook sta dentro lo spessore del collider del muro: il raggio
+// colpisce prima il collider, poi il pannello qualche centimetro dietro.
+const PANEL_DEPTH_TOLERANCE = 0.3
 
 /**
  * Controller del player — Fase 3.
@@ -70,7 +73,7 @@ export default function PlayerController({ config, device }) {
 
   const blocked = () => {
     const app = useAppStore.getState()
-    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle'
+    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle' || app.dialogs.length > 0
   }
 
   const notify = (text) => useAppStore.getState().showNotice(text)
@@ -116,6 +119,39 @@ export default function PlayerController({ config, device }) {
     const near = Math.hypot(w.position[0] - r.pos.x, w.position[2] - r.pos.z) < 1.2 || r.poiState[poi?.id] === 'active'
     if (near) enterFocusFor(display)
     else goTo([w.position[0], w.position[2]], poi?.anchor ?? null, { focus: display.id })
+  }
+
+  /** Apre il Lookbook: tasti e percorso azzerati, cursore liberato dalla sottoscrizione più sotto. */
+  const openLookbook = (lookbookId) => {
+    const feature = config.features.lookbook
+    if (!feature.enabled) {
+      notify(`${config.copy.hints.comingInPhase} ${feature.availableInPhase}`)
+      return
+    }
+    if (rt.current.faceYaw !== null) rt.current.yaw = rt.current.faceYaw
+    rt.current.faceYaw = null
+    useAppStore.getState().openDialog('lookbook', lookbookId)
+  }
+
+  /** Tap sull'hotspot del Lookbook o sul suo pannello: da vicino si apre, da lontano prima ci si avvicina. */
+  const approachOrOpenLookbook = (poi) => {
+    if (rt.current.poiState[poi.id] === 'active') { openLookbook(poi.targetLookbookId); return }
+    const w = waypoints.get(poi.approachWaypointId)
+    goTo([w.position[0], w.position[2]], poi.anchor, { lookbook: poi.targetLookbookId })
+  }
+
+  // Il pannello della parete del brand: un piano verticale rivolto verso +z.
+  // Un raggio che lo colpisce apre il Lookbook a cui il pannello è legato.
+  const brandPanel = config.environment.brandWall.panel
+  const lookbookPoi = pois.find((p) => p.targetLookbookId === brandPanel.lookbookId) ?? null
+  const panelHit = (o, d) => {
+    if (Math.abs(d[2]) < 1e-6) return null
+    const [cx, cy, cz] = brandPanel.center
+    const t = (cz - o[2]) / d[2]
+    if (t <= 0) return null
+    const x = o[0] + d[0] * t
+    const y = o[1] + d[1] * t
+    return Math.abs(x - cx) <= brandPanel.size[0] / 2 && Math.abs(y - cy) <= brandPanel.size[1] / 2 ? t : null
   }
 
   /** Avvia un percorso automatico verso un punto del pavimento. */
@@ -186,9 +222,12 @@ export default function PlayerController({ config, device }) {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --- Menu aperto: movimento sospeso, cursore liberato ---------------------------
+  // --- Menu o scheda aperti: movimento sospeso, cursore liberato ------------------
+  // All'apertura si azzerano tasti, velocità e percorso: un tasto tenuto premuto
+  // prima dell'apertura non deve far partire il player alla chiusura. Alla
+  // chiusura il Pointer Lock NON si riprende: serve un nuovo click esplicito.
   useEffect(() => useAppStore.subscribe((s, prev) => {
-    if (s.menuOpen && !prev.menuOpen) {
+    if ((s.menuOpen && !prev.menuOpen) || (s.dialogs.length && !prev.dialogs.length)) {
       rt.current.keys.clear()
       rt.current.vel.x = rt.current.vel.z = 0
       cancelRoute()
@@ -264,11 +303,15 @@ export default function PlayerController({ config, device }) {
       approachOrFocus(best.display)
     } else if (best.kind === 'poi' && best.poi.targetDisplayId) {
       approachOrFocus(displayById.get(best.poi.targetDisplayId))
+    } else if (best.kind === 'poi' && best.poi.targetLookbookId) {
+      approachOrOpenLookbook(best.poi)
     } else if (best.kind === 'poi') {
       const w = waypoints.get(best.poi.approachWaypointId)
       goTo([w.position[0], w.position[2]], best.poi.anchor)
     } else if (best.kind === 'floor') {
       goTo(best.point)
+    } else if (best.kind === 'wall' && lookbookPoi && panelHit(o, d) !== null && panelHit(o, d) <= best.t + PANEL_DEPTH_TOLERANCE) {
+      approachOrOpenLookbook(lookbookPoi)
     } else if (best.kind === 'wall') {
       const p = [o[0] + d[0] * best.t, o[2] + d[2] * best.t]
       ping(p[0], p[1], false)
@@ -307,9 +350,12 @@ export default function PlayerController({ config, device }) {
           if (t !== null && t > 0 && t < aimedT) { aimedT = t; aimed = displayByCollider.get(col.id) ?? null }
         }
         if (aimed) { enterFocusFor(aimed); return }
+        const pt = panelHit(o, dir)
+        if (lookbookPoi && pt !== null && pt <= aimedT + PANEL_DEPTH_TOLERANCE) { openLookbook(lookbookPoi.targetLookbookId); return }
         const activeId = usePlayerStore.getState().activePoiId
         const poi = pois.find((p) => p.id === activeId)
         if (poi?.targetDisplayId) { enterFocusFor(displayById.get(poi.targetDisplayId)); return }
+        if (poi?.targetLookbookId) { openLookbook(poi.targetLookbookId); return }
         if (poi?.requires && !config.features[poi.requires]?.enabled) {
           notify(`${config.copy.hints.comingInPhase} ${config.features[poi.requires].availableInPhase}`)
         }
@@ -408,6 +454,7 @@ export default function PlayerController({ config, device }) {
             if (face) r.faceYaw = yawToward(r.pos.x, r.pos.z, face[0], face[2])
             cancelRoute()
             if (arrive?.focus) enterFocusFor(displayById.get(arrive.focus))
+            if (arrive?.lookbook) openLookbook(arrive.lookbook)
           }
         } else {
           let remaining = d

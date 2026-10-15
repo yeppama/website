@@ -31,6 +31,11 @@ export const useAppStore = create((set, get) => ({
   // in cui si trova la camera in quel momento, senza aspettare la fine.
   focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null },
 
+  // Finestre di dialogo (Fase 5) — una pila: [{ kind: 'product' | 'lookbook', id }].
+  // Dal Lookbook si apre un capo e "Indietro" riporta al Lookbook; "Chiudi"
+  // svuota la pila. Finché la pila non è vuota il player è sospeso.
+  dialogs: [],
+
   setPhase: (phase) => set({ phase }),
   setDevice: (device) => set({ device }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
@@ -63,6 +68,16 @@ export const useAppStore = create((set, get) => ({
   cycleProduct: (delta, count) => set((s) => ({
     focus: { ...s.focus, productIndex: (s.focus.productIndex + delta + count) % count },
   })),
+
+  openDialog: (kind, id) => {
+    const stack = get().dialogs
+    // Già nella pila (Lookbook → capo → di nuovo il Lookbook): si torna lì invece
+    // di accumulare livelli, così "Indietro" non gira in tondo.
+    const at = stack.findIndex((d) => d.kind === kind && d.id === id)
+    set({ dialogs: at >= 0 ? stack.slice(0, at + 1) : [...stack, { kind, id }] })
+  },
+  backDialog: () => set((s) => ({ dialogs: s.dialogs.slice(0, -1) })),
+  closeDialogs: () => set({ dialogs: [] }),
 
   enterStore: () => {
     if (get().phase === APP_PHASE.ONBOARDING) set({ phase: APP_PHASE.EXPLORING })

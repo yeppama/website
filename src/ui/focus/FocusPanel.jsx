@@ -1,18 +1,21 @@
 import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useAppStore } from '../../state/useAppStore.js'
+import { formatPrice } from '../../lib/format.js'
 import Button from '../primitives/Button.jsx'
 
 /**
  * Pannello del Focus Mode. Compare già durante l'ingresso, così "Esci" è
  * disponibile da subito: l'uscita non deve mai aspettare la fine di una
  * transizione. ESC funziona allo stesso modo.
- * La scheda completa con taglie e immagini è la Fase 5: qui si dichiara.
+ * "Scheda completa" apre la scheda prodotto (Fase 5) sopra il Focus: chiusa la
+ * scheda si torna qui, con la camera ancora sul capo.
  */
 export default function FocusPanel({ device }) {
   const focus = useAppStore((s) => s.focus)
   const exitFocus = useAppStore((s) => s.exitFocus)
   const cycleProduct = useAppStore((s) => s.cycleProduct)
+  const openDialog = useAppStore((s) => s.openDialog)
   const exitButton = useRef(null)
   const visible = focus.state === 'entering' || focus.state === 'focused'
 
@@ -31,6 +34,7 @@ export default function FocusPanel({ device }) {
   const product = products[focus.productIndex]
   const copy = storeConfig.copy.focus
   const multi = products.length > 1
+  const sheet = storeConfig.features.productModal
 
   return (
     <div
@@ -55,7 +59,7 @@ export default function FocusPanel({ device }) {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="font-mono text-text-primary" style={{ fontSize: 'var(--text-lg)' }}>
-            {product.price.amount} {product.price.currency}
+            {formatPrice(product.price, storeConfig.meta.brand.locale)}
           </p>
           <ul className="flex gap-2" aria-label="Varianti colore">
             {product.colorways.map((cw) => (
@@ -65,7 +69,13 @@ export default function FocusPanel({ device }) {
           </ul>
         </div>
 
-        <p className="micro mt-4 border-t border-line-subtle pt-3">{copy.detailsSoon}</p>
+        <div className="mt-4 border-t border-line-subtle pt-3">
+          {sheet.enabled ? (
+            <Button className="w-full" onClick={() => openDialog('product', product.id)}>{copy.details} →</Button>
+          ) : (
+            <p className="micro">{storeConfig.copy.hints.comingInPhase} {sheet.availableInPhase}</p>
+          )}
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {multi && (

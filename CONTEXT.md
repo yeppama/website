@@ -1,11 +1,11 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-15 · branch `claude/determined-thompson-yfnsdc` · ultimo commit applicativo `fafa31f`
-> Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.4.
+> Stato al 2026-10-15 · branch `claude/cool-edison-2svzgj` · Fase 5 consegnata
+> Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.5.
 
 ## 1. Stato attuale
 
-Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence), con architettura data-driven pronta per un e-commerce reale. **Fasi 0–4 completate, verificate e pubblicate**; in attesa del comando dell'utente `Approvato, procedi alla fase 5` (schede prodotto 2D + Lookbook).
+Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence), con architettura data-driven pronta per un e-commerce reale. **Fasi 0–5 completate, verificate e pubblicate**; in attesa del comando dell'utente `Approvato, procedi alla fase 6` (prestazioni, dispose GPU, responsive).
 
 ## 2. Decisioni tecniche
 
@@ -16,9 +16,10 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 
 **Architettura data-driven**
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 20 invarianti (I1–I20), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 22 invarianti (I1–I22), errore bloccante solo in DEV, rimosso dal bundle di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
-- `features` in config (`navigation`, `focusMode` attivi; `productModal` spento, fase 5): l'interfaccia mostra "in arrivo · fase N" per ciò che non esiste.
+- `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
+- Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
 
 **Identità visiva**
 - Accento unico **Flame Orange #F98E30** (PANTONE 15-1157 TPG, simulazione a schermo), token `accent.flame`. Fondi `#060606` (negozio) e `#dcdcd8` (studio). Testo osso `#f2f0ea`. Il rosso `#c21025` solo come stato d'errore.
@@ -40,6 +41,9 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 - Desktop: WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo.
 - Mobile: tap = vai/avvicinati; trascinamento = guarda (soglie `navigation.input`); barra "Vai a" solo verso waypoint `safeForTeleport`.
 - Focus Mode: macchina a stati `idle → entering → focused → exiting → idle`, interrompibile in ogni stato. La luce "studio" nasce dal contrasto (gli altri faretti scendono), non da più luce sul capo.
+- Schede (Fase 5): pila `dialogs` in `useAppStore`, una sola finestra visibile (`DialogHost`, z `dialog` = 45, sopra menu e Focus). Si aprono da: "Scheda completa" nel Focus, capi del menu, "Apri la Brand Story" nel menu, hotspot `poi-look-01`, pannello della parete del brand (tap o click col mirino), capi del Lookbook. ESC/Indietro tolgono un livello, Chiudi/fondo tutti; riaprire una voce già nella pila torna lì invece di accumulare.
+- Con una scheda aperta `blocked()` è vero; all'apertura tasti, velocità e percorso si azzerano e il Pointer Lock si rilascia; alla chiusura non si riprende da solo.
+- `useFocusTrap` (schede e menu): pila globale di trappole, solo l'ultima risponde; ESC catturato in fase di cattura sulla finestra con `stopPropagation`, così non chiude anche il menu o il Focus sotto. Il focus torna a chi ha aperto.
 - Hosting: integrazione Git di Vercel; ogni push sul branch produce una Preview. GitHub Pages disattivato (dichiarato dall'utente, non verificabile dal container).
 
 ## 3. Codice di riferimento
@@ -50,8 +54,8 @@ src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js
 src/state/         useAppStore.js · usePlayerStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
-src/ui/            onboarding/ · hud/ · menu/ · focus/ · primitives/ · fx/ · fallback/
-scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4}.mjs
+src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · primitives/ · fx/ · fallback/
+scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4,5}.mjs
 ```
 
 **Geometria (`src/lib/geometry.js`) — convenzione di three, verificata contro le sue matrici**
@@ -88,7 +92,8 @@ while (remaining > 1e-6) { const dt = Math.min(remaining, I.maxStepDt); step(dt,
 
 **Stato e comandi**
 ```js
-useAppStore: enterFocus(displayId, returnPose{ x, z, eye, yaw, pitch, fov }), exitFocus(), setFocusState(s),
+useAppStore: openDialog(kind: 'product' | 'lookbook', id), backDialog(), closeDialogs(),
+             enterFocus(displayId, returnPose{ x, z, eye, yaw, pitch, fov }), exitFocus(), setFocusState(s),
              finishFocusExit(), cycleProduct(delta, count), showNotice(text, ms)
 usePlayerStore.getState().issue({ type: 'teleport', waypointId })          // solo waypoint safeForTeleport
 usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
@@ -101,7 +106,7 @@ usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
 npm run dev | build | preview          # predev/prebuild rigenerano i token
 npm run test:nav                       # logica di navigazione, 9 test
 npx vite preview --port 4173 &         # poi, per ogni suite:
-node scripts/e2e/e2e-phase4.mjs http://127.0.0.1:4173/ <cartella-output>
+node scripts/e2e/e2e-phase5.mjs http://127.0.0.1:4173/ <cartella-output>   # 34 verifiche
 # CHROMIUM_PATH sovrascrive il Chromium di default (/opt/pw-browsers/chromium-1194/…)
 ```
 
@@ -127,6 +132,9 @@ node scripts/e2e/e2e-phase4.mjs http://127.0.0.1:4173/ <cartella-output>
 - Uscendo dal Focus dopo un avvicinamento, la rotazione verso l'espositore va applicata prima di salvare la posa di ritorno.
 
 **UX**
+- Test verdi non dicono che la resa è giusta: in Fase 5 la galleria del Lookbook tagliava l'immagine 16:9 e le miniature troncavano l'etichetta, con 34/34. Guardare sempre gli screenshot.
+- Immagini di ratio diversi in una cornice fissa: `h-full` + `aspect-ratio` sfora se l'immagine è più larga della cornice; scegliere in JS fra `w-full` e `h-full` confrontando i ratio.
+- Su telefono nome e prezzo vanno sopra la galleria, o un 4:5 a tutta larghezza li spinge sotto la piega.
 - Mai istruzioni per comandi che non esistono: l'utente ha creduto rotto il touch. Feature flag + I15.
 - L'onboarding deve scorrere: su un telefono in orizzontale (~390 px) "Entra" era irraggiungibile.
 - Prompt fissi in percentuale e prompt nel flusso si sovrappongono: stessa colonna, impilati.
@@ -147,8 +155,8 @@ node scripts/e2e/e2e-phase4.mjs http://127.0.0.1:4173/ <cartella-output>
 
 **Regole di processo (dall'utente):** una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi alla fase X`; a fine fase build, dev server, verifica nel browser, report che distingue eseguito / non eseguito / bloccato, poi stop. Fase 8 (e-commerce reale) solo su comando futuro.
 
-- **Fase 5** — modale prodotto 2D: `<PlaceholderImage />` per i media, selettore taglie demo, prezzo fittizio, movimento sospeso e ripristinato in modo coerente; Lookbook / Brand Story da `lookbook` e `meta.brand`; attivare `features.productModal` (sblocca `poi-look-01` e la riga "Scheda completa…" del Focus).
+- ~~Fase 5~~ — consegnata: scheda prodotto, Lookbook / Brand Story, trappola del focus, I21–I22, suite `e2e-phase5.mjs`.
 - **Fase 6** — dispose GPU legato al teardown del contesto; HUD prestazioni e percorso di benchmark `?bench=1`; `docs/PERF.md` con misure su dispositivi reali (fatte dall'utente); verifiche responsive.
 - **Fase 7** — verifica del deploy di produzione su `main` (l'URL pubblico lo verifica l'utente).
-- **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" · dati prodotto reali.
-- **In attesa di riscontro dall'utente:** checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
+- **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
+- **In attesa di riscontro dall'utente:** checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).

@@ -13,6 +13,7 @@ import Hud from './ui/hud/Hud.jsx'
 import NoticeToast from './ui/hud/NoticeToast.jsx'
 import MenuDrawer from './ui/menu/MenuDrawer.jsx'
 import FocusPanel from './ui/focus/FocusPanel.jsx'
+import DialogHost from './ui/dialog/DialogHost.jsx'
 import GrainOverlay from './ui/fx/GrainOverlay.jsx'
 import FadeOverlay from './ui/fx/FadeOverlay.jsx'
 import WebGLFallback from './ui/fallback/WebGLFallback.jsx'
@@ -96,6 +97,7 @@ export default function App() {
           <NoticeToast />
           <FocusPanel device={device} />
           <MenuDrawer />
+          <DialogHost device={device} />
         </>
       ) : (
         <OnboardingScreen

@@ -39,7 +39,8 @@ export const tokens = {
   radius: { none: '0', sm: '2px' },        // spigoli vivi, nessuna eccezione
   border: { hairline: '1px', thick: '2px' },
   motion: { fast: 140, base: 240, slow: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-  z: { canvas: 0, hotspot: 10, hud: 20, quickTravel: 25, modal: 40, onboarding: 50, fallback: 60 },
+  // dialog: scheda prodotto e Lookbook, sopra menu e pannello del Focus da cui si aprono.
+  z: { canvas: 0, hotspot: 10, hud: 20, quickTravel: 25, modal: 40, dialog: 45, onboarding: 50, fallback: 60 },
   breakpoint: { sm: 480, md: 768, lg: 1024, xl: 1440 },
   touchTarget: { min: 44 },
 }

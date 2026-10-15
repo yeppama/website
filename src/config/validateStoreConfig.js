@@ -169,6 +169,38 @@ export function validateStoreConfig(config) {
     if (!prod.colorways?.length) fail('I20', `prodotto ${prod.id}: nessuna variante colore`)
   }
 
+  // I21 — Lookbook e catalogo si citano a vicenda: un capo che dice di stare in un
+  // lookbook ci compare, e viceversa. Senza, la Brand Story e la scheda divergono.
+  const lookbookById = new Map(config.lookbook.map((l) => [l.id, l]))
+  for (const l of config.lookbook) {
+    for (const img of l.images) if (!ratioIds.has(img.ratio)) fail('I21', `lookbook ${l.id}: ratio "${img.ratio}" non previsto`)
+    if (!l.images.length) fail('I21', `lookbook ${l.id}: nessuna immagine`)
+    for (const pid of l.productIds) {
+      const prod = config.products.find((x) => x.id === pid)
+      if (!prod) fail('I21', `lookbook ${l.id}: prodotto "${pid}" inesistente`)
+      else if (!prod.lookbookIds.includes(l.id)) fail('I21', `lookbook ${l.id}: il prodotto ${pid} non lo elenca (relazione non bidirezionale)`)
+    }
+  }
+  for (const prod of config.products) {
+    for (const lid of prod.lookbookIds) {
+      const l = lookbookById.get(lid)
+      if (!l) fail('I21', `prodotto ${prod.id}: lookbook "${lid}" inesistente`)
+      else if (!l.productIds.includes(prod.id)) fail('I21', `prodotto ${prod.id}: il lookbook ${lid} non lo elenca (relazione non bidirezionale)`)
+    }
+  }
+
+  // I22 — ogni scheda prodotto ha di che riempirsi: immagini, taglie e un prezzo
+  // che la locale del brand sa formattare (una valuta sbagliata lancia a runtime).
+  for (const prod of config.products) {
+    if (!prod.media.length) fail('I22', `prodotto ${prod.id}: nessuna immagine`)
+    if (!prod.sizes.length) fail('I22', `prodotto ${prod.id}: nessuna taglia`)
+    try {
+      new Intl.NumberFormat(config.meta.brand.locale, { style: 'currency', currency: prod.price.currency })
+    } catch {
+      fail('I22', `prodotto ${prod.id}: valuta "${prod.price.currency}" o locale "${config.meta.brand.locale}" non validi`)
+    }
+  }
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
@@ -191,5 +223,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 20 invarianti verificate, nessun errore')
+  console.info('storeConfig: 22 invarianti verificate, nessun errore')
 }

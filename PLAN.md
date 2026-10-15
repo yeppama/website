@@ -1,6 +1,13 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.5 — **Fase 5 consegnata.** Scheda prodotto 2D (galleria segnaposto, colori e taglie
+> come gruppi radio da tastiera, prezzo formattato con `meta.brand.locale`, acquisto spento e
+> dichiarato dalla feature `checkout`) e Lookbook / Brand Story da `lookbook` e `meta.brand`. Le
+> finestre sono una pila (`dialogs`): dal Lookbook a un capo e ritorno. Trappola del focus comune a
+> schede e menu. Invarianti estese a 22 (I21 Lookbook ↔ catalogo, I22 dati della scheda).
+> Struttura reale: `ui/dialog/DialogHost.jsx`, `ui/product/ProductSheet.jsx` + `OptionGroup.jsx`,
+> `ui/lookbook/LookbookSheet.jsx`, `ui/primitives/useFocusTrap.js`, `lib/format.js`.
 > Changelog 1.4 — **Fase 4 consegnata.** Cinque espositori (manichino ×2, rack, plinto, parete),
 > sette prodotti demo, Focus Mode come macchina a stati interrompibile. Invarianti estese a 20
 > (I19 espositori, I20 forme dei capi). Illuminazione ritarata: i faretti dei prodotti sono bianco
@@ -558,6 +565,8 @@ copy: {
 | I18 | colonne, pedane, binari e parete del brand referenziano materiali, collider, asset e lookbook esistenti | geometria nera o pannello vuoto |
 | I19 | ogni espositore ha un tipo supportato, un faretto esistente, un POI che lo referenzia a sua volta, e la camera di Focus fuori dai collider e dentro il negozio | Focus dentro una colonna, hotspot che apre l'espositore sbagliato |
 | I20 | ogni prodotto ha una forma segnaposto per la sua categoria e almeno una variante colore | capo invisibile o senza colore |
+| I21 | Lookbook e catalogo si citano a vicenda (`products[].lookbookIds` ↔ `lookbook[].productIds`); immagini del lookbook con ratio previsti | Brand Story e scheda prodotto divergono |
+| I22 | ogni prodotto ha immagini, taglie e una valuta che la locale del brand sa formattare | scheda vuota o eccezione di `Intl` a runtime |
 
 Il validatore lancia un errore bloccante in `import.meta.env.DEV` e viene eliminato dal bundle di
 produzione via tree-shaking. **Questo è il meccanismo che rende il data-driven affidabile:** senza

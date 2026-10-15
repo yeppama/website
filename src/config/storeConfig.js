@@ -49,6 +49,8 @@ export const storeConfig = {
       credit: 'Curated and produced by Tommaso Inturrisi',
       tagline: "We're just looking for somewhere",   // P3: da confermare
       currency: 'EUR',
+      // Formattazione di prezzi e numeri nell'interfaccia (Intl.NumberFormat).
+      locale: 'it-IT',
       logo: { assetId: 'asset-logo-primary', shape: 'oval', onDark: 'invert' },
     },
     units: 'meters',
@@ -82,7 +84,10 @@ export const storeConfig = {
   features: {
     navigation:   { enabled: true,  availableInPhase: 3 },
     focusMode:    { enabled: true,  availableInPhase: 4 },
-    productModal: { enabled: false, availableInPhase: 5 },
+    productModal: { enabled: true,  availableInPhase: 5 },
+    lookbook:     { enabled: true,  availableInPhase: 5 },
+    // Nessun acquisto in questo prototipo: il bottone c'è, spento, e lo dichiara.
+    checkout:     { enabled: false, availableInPhase: 8 },
   },
 
   // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
@@ -393,7 +398,7 @@ export const storeConfig = {
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-wall-01', approachWaypointId: 'wp-aisle-e-p8', requires: 'focusMode' },
     { id: 'poi-look-01', type: 'lookbook', label: 'Brand Story', anchor: [0, 2.0, -14.0],
       proximity: { showRadius: 9.0, activateRadius: 3.0, hideRadius: 11.0 }, icon: 'book',
-      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: 'lb-001', approachWaypointId: 'wp-look-01', requires: 'productModal' },
+      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: 'lb-001', approachWaypointId: 'wp-look-01', requires: 'lookbook' },
   ],
 
   products: [
@@ -463,12 +468,20 @@ export const storeConfig = {
       displayId: 'disp-wall-01', lookbookIds: [], badges: ['ARCHIVE'] },
   ],
 
+  // Lookbook / Brand Story (Fase 5). Testi e immagini sono segnaposto dichiarati:
+  // i contenuti reali della campagna li fornisce il brand. La relazione con i
+  // prodotti è bidirezionale (products[].lookbookIds ↔ lookbook[].productIds, I21).
   lookbook: [
     { id: 'lb-001', title: 'DROP 01', subtitle: 'Placeholder subtitle', zoneId: 'zone-lookbook',
-      body: ['Paragrafo segnaposto uno.', 'Paragrafo segnaposto due.'],
+      season: 'FW26',
+      body: [
+        'Paragrafo segnaposto uno: il racconto della collezione, in due o tre righe di copy editoriale.',
+        'Paragrafo segnaposto due: luoghi, materiali, persone. Il testo definitivo arriva dal brand.',
+      ],
       images: [{ id: 'lbi1', ratio: '16:9', label: 'Campaign 01', variant: 'editorial' },
-               { id: 'lbi2', ratio: '1:1', label: 'Detail 01', variant: 'editorial' }],
-      productIds: ['prod-001'] },
+               { id: 'lbi2', ratio: '4:5', label: 'Look 01', variant: 'editorial' },
+               { id: 'lbi3', ratio: '1:1', label: 'Detail 01', variant: 'editorial' }],
+      productIds: ['prod-001', 'prod-004', 'prod-002'] },
   ],
 
   assets: {
@@ -492,6 +505,9 @@ export const storeConfig = {
       studio:    { bg: '#dcdcd8', fg: '#060606', pattern: 'none',     showCategory: true,  grain: false },
     },
     skeleton: { shimmerMs: 1400, minVisibleMs: 400, timeoutMs: 8000 },
+    // Cornice fissa della galleria del Lookbook: immagini di ratio diverso ci
+    // stanno dentro senza cambiarne l'altezza, così i bottoni non saltano.
+    galleryFrame: [16, 10],
   },
 
   copy: {
@@ -527,8 +543,32 @@ export const storeConfig = {
       exitHint: 'ESC per uscire',
       previous: 'Precedente',
       next: 'Successivo',
-      detailsSoon: 'Scheda completa con taglie: in arrivo nella Fase 5',
+      details: 'Scheda completa',
       of: 'di',
+    },
+    // Finestre di dialogo della Fase 5: scheda prodotto e Lookbook.
+    dialog: { close: 'Chiudi', back: 'Indietro', closeHint: 'ESC per chiudere' },
+    product: {
+      eyebrow: 'Scheda prodotto',
+      sizes: 'Taglia',
+      colorways: 'Colore',
+      soldOut: 'esaurita',
+      chooseSize: 'Scegli una taglia',
+      selected: 'Selezione',
+      media: 'Immagini',
+      details: 'Dettagli',
+      inLookbook: 'Nel lookbook',
+    },
+    lookbook: {
+      eyebrow: 'Brand Story',
+      gallery: 'Immagini della campagna',
+      galleryRole: 'galleria',
+      previous: 'Immagine precedente',
+      next: 'Immagine successiva',
+      image: 'Immagine',
+      products: 'Capi del look',
+      origin: 'Origine',
+      open: 'Apri la Brand Story',
     },
     hud: {
       menu: 'Menu', close: 'Chiudi', focusExit: 'Esci', youAreHere: 'Sei qui',

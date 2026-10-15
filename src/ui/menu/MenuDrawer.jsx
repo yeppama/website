@@ -1,33 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
+import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { useFocusTrap } from '../primitives/useFocusTrap.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import Button from '../primitives/Button.jsx'
 
 /**
  * Menu a tendina. Contenuto generato da storeConfig: zone, capi, brand.
- * Chiusura con Esc e focus riportato sull'elemento che l'ha aperto.
+ * Chiusura con Esc, focus trattenuto nel pannello e riportato sull'elemento che
+ * l'ha aperto. Capi e Brand Story aprono le loro schede sopra il menu: chiuse
+ * quelle, si torna qui.
  */
 export default function MenuDrawer() {
   const open = useAppStore((s) => s.menuOpen)
   const close = useAppStore((s) => s.closeMenu)
   const issue = usePlayerStore((s) => s.issue)
   const zoneId = usePlayerStore((s) => s.zoneId)
+  const openDialog = useAppStore((s) => s.openDialog)
   const panel = useRef(null)
-  const previouslyFocused = useRef(null)
 
-  useEffect(() => {
-    if (!open) return
-    previouslyFocused.current = document.activeElement
-    panel.current?.focus()
-    const onKey = (e) => { if (e.key === 'Escape') close() }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      previouslyFocused.current?.focus?.()
-    }
-  }, [open, close])
+  useFocusTrap(panel, open, close)
 
   if (!open) return null
 
@@ -35,6 +29,8 @@ export default function MenuDrawer() {
   const { zones } = storeConfig.environment
   const { quickTravel } = storeConfig.navigation
   const menu = storeConfig.copy.menu
+  const { features } = storeConfig
+  const lookbook = storeConfig.lookbook.find((l) => l.id === storeConfig.environment.brandWall.panel.lookbookId)
 
   return (
     <div className="fixed inset-0" style={{ zIndex: 'var(--z-modal)' }}>
@@ -101,20 +97,24 @@ export default function MenuDrawer() {
           <div className="grid grid-cols-2 gap-3">
             {storeConfig.products.map((product) => (
               <article key={product.id}>
-                <PlaceholderImage
-                  ratio={product.media[0].ratio}
-                  variant={product.media[0].variant}
-                  label={product.media[0].label}
-                  category={product.category}
-                  seed={product.id}
-                />
-                <p className="mt-2 font-display font-bold uppercase text-text-primary"
-                   style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
-                  {product.name}
-                </p>
-                <p className="micro mt-0.5">
-                  {product.sku} · {product.price.amount} {product.price.currency}
-                </p>
+                <button type="button" className="group block w-full text-left"
+                        disabled={!features.productModal.enabled}
+                        onClick={() => openDialog('product', product.id)}>
+                  <PlaceholderImage
+                    ratio={product.media[0].ratio}
+                    variant={product.media[0].variant}
+                    label={product.media[0].label}
+                    category={product.category}
+                    seed={product.id}
+                  />
+                  <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
+                        style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
+                    {product.name}
+                  </span>
+                  <span className="micro mt-0.5 block">
+                    {product.sku} · {formatPrice(product.price, brand.locale)}
+                  </span>
+                </button>
               </article>
             ))}
           </div>
@@ -129,6 +129,11 @@ export default function MenuDrawer() {
           <div className="rule my-4" />
           <p className="micro">{brand.origin.city}, {brand.origin.country} · {brand.origin.coords}</p>
           <p className="micro mt-1">{brand.credit}</p>
+          {features.lookbook.enabled && lookbook && (
+            <Button className="mt-5" onClick={() => openDialog('lookbook', lookbook.id)}>
+              {storeConfig.copy.lookbook.open} →
+            </Button>
+          )}
         </section>
       </aside>
     </div>
