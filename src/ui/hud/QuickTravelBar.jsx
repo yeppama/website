@@ -12,17 +12,21 @@ export default function QuickTravelBar() {
   const { quickTravel } = storeConfig.navigation
 
   return (
-    <nav aria-label={storeConfig.copy.hud.quickTravel} className="pointer-events-auto -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <ul className="flex gap-px bg-line-subtle" style={{ minWidth: 'max-content' }}>
+    // Colonne uguali che riempiono la larghezza: una voce tagliata dal bordo
+    // dello schermo sembra un errore anche se la barra scorre.
+    <nav aria-label={storeConfig.copy.hud.quickTravel} className="pointer-events-auto">
+      <ul className="grid gap-px bg-line-subtle" style={{ gridTemplateColumns: `repeat(${quickTravel.length}, minmax(0, 1fr))` }}>
         {quickTravel.map((qt) => {
           const here = Boolean(zoneId) && qt.zoneId === zoneId
           return (
-            <li key={qt.id}>
+            <li key={qt.id} className="flex">
               <button
                 type="button"
                 onClick={() => issue({ type: 'teleport', waypointId: qt.waypointId })}
-                className={`whitespace-nowrap bg-bg-base/85 px-4 font-display font-bold uppercase backdrop-blur-sm ${here ? 'text-accent-flame' : 'text-text-primary'}`}
-                style={{ minHeight: 'var(--touch-min)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)' }}
+                className={`h-full w-full bg-bg-base/85 px-1 py-2 text-center font-display font-bold uppercase leading-tight backdrop-blur-sm ${here ? 'text-accent-flame' : 'text-text-primary'}`}
+                // Il corpo scala con la larghezza: a 320 px una parola sola come
+                // LOOKBOOK deve ancora entrare. Mai sotto 9 px.
+                style={{ minHeight: 'var(--touch-min)', fontSize: 'clamp(0.5625rem, 2.7vw, var(--text-xs))', letterSpacing: '0.02em' }}
               >
                 {qt.label}
               </button>
