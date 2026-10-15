@@ -1,6 +1,8 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
-Versione documento: 0.1 · Data: 2026-10-15 · Stato: in attesa di approvazione
+Versione documento: 0.2 · Data: 2026-10-15 · Stato: in attesa di approvazione
+> Changelog 0.2 — D5 risolta parzialmente (direzione visiva da reference; nome brand ancora aperto):
+> palette riscritta, direzione artistica in §4.4, nuova decisione D6 (grana).
 
 > Questo documento è l'unico output della Fase 0. Nessun progetto è stato inizializzato,
 > nessuna dipendenza installata, nessun codice applicativo scritto.
@@ -16,6 +18,7 @@ Tre tensioni vanno risolte prima di scrivere codice, perché cambiano la forma d
 | T1 | "Faretti SpotLight + ombre proiettate" vs "60 fps su mobile" | Ogni SpotLight con `castShadow` costa un render pass aggiuntivo della scena. 4 spot con ombre = 5 pass. Su GPU mobile integrate questo è il singolo costo dominante. Rifarlo in Fase 6 significa riscrivere `lighting` e i materiali. |
 | T2 | Ordine Fase 1 (UI overlay) → Fase 2 (3D) | Il deliverable della Fase 1 è una UI che fluttua sul nulla: non è valutabile esteticamente né dimostra la promessa "impressionante dal primo prototipo". |
 | T3 | "Tap su pavimento" + "percorsi validati che non attraversano i collider" | Implica pathfinding, non un semplice `lerp` verso il punto toccato. Serve un grafo di waypoint navigabile con A*, e la proiezione del tap sul nodo raggiungibile più vicino. Va modellato in `storeConfig.js` dall'inizio (campo `navigation.links`), non aggiunto in Fase 3. |
+| T4 | Grana pesante (firma della reference) vs budget mobile | La grana è un passaggio a schermo intero dopo il rendering: stesso tipo di costo delle ombre. Senza grana il negozio non somiglia al brand; con grana "vera" si perde il margine su mobile. Risolta come D6 con un velo in compositing, fuori dalla pipeline WebGL. |
 
 Le proposte di risoluzione sono in §7 (Decisioni aperte). T1 e T3 sono già incorporate nello schema dati
 di §3 in modo da non pregiudicare nessuna delle due opzioni.
@@ -169,6 +172,7 @@ export const storeConfig = {
 ```js
 meta: {
   schemaVersion: '1.0.0',
+  // NOME ANCORA APERTO: la reference ha fissato la direzione visiva, non il naming.
   brand: { id: 'brand-demo', name: 'PLACEHOLDER', tagline: 'Placeholder tagline', currency: 'EUR' },
   units: 'meters',
 },
@@ -190,6 +194,14 @@ performance: {
   },
   // Sostituto delle ombre real-time quando maxShadowCasters = 0 (vedi D3)
   groundShadow: { mode: 'blob', opacity: 0.45, radiusScale: 1.15 },
+  // Grana: firma visiva del brand. `overlay` = velo in compositing fuori dalla pipeline WebGL
+  // (costo ~0 sul render loop); `postprocess` = passaggio a schermo intero. Vedi D6.
+  postFx: {
+    grain:     { mode: 'overlay', opacity: { high: 0.14, medium: 0.12, low: 0.10 },
+                 tileSize: 256, animateHz: 12, blend: 'overlay' },
+    vignette:  { enabled: true, strength: 0.38 },     // CSS radial-gradient, costo nullo
+    chromatic: { enabled: false },                     // solo tier high, valutato in Fase 6
+  },
 },
 ```
 
@@ -214,13 +226,13 @@ environment: {
   ],
   zones: [
     { id: 'zone-entrance',  label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],
-      accentColor: 'accent.lime', ambientBoost: 0.15 },
+      accentColor: 'accent.ember', ambientBoost: 0.15 },
     { id: 'zone-new',       label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],
-      accentColor: 'accent.lime', ambientBoost: 0.0 },
+      accentColor: 'accent.ember', ambientBoost: 0.0 },
     { id: 'zone-archive',   label: 'Archivio',     bounds: [[2, 2], [11, 12]],
-      accentColor: 'accent.amber', ambientBoost: -0.05 },
+      accentColor: 'accent.crimson', ambientBoost: -0.05 },
     { id: 'zone-lookbook',  label: 'Lookbook',     bounds: [[-6, -16], [6, -6]],
-      accentColor: 'accent.white', ambientBoost: 0.1 },
+      accentColor: 'accent.bone', ambientBoost: 0.1 },
   ],
   entrance: { waypointId: 'wp-entrance', lookAtWaypointId: 'wp-hall-01' },
   fog: { enabled: true, color: '#070707', near: 14, far: 44 },
@@ -238,13 +250,13 @@ lighting: {
   spots: [
     { id: 'spot-new-01', priority: 1, zoneId: 'zone-new', targetDisplayId: 'disp-mannequin-01',
       position: [-6.5, 3.8, 7.0], angle: 0.42, penumbra: 0.6, intensity: 28, distance: 14,
-      decay: 1.6, color: '#fff6e8', castShadow: true, volumetricHint: false },
+      decay: 1.6, color: '#fff1e2', kind: 'studio', castShadow: true, volumetricHint: false },
     { id: 'spot-archive-01', priority: 2, zoneId: 'zone-archive', targetDisplayId: 'disp-plinth-01',
       position: [6.5, 3.8, 7.0], angle: 0.40, penumbra: 0.7, intensity: 24, distance: 14,
-      decay: 1.6, color: '#ffe9c7', castShadow: true, volumetricHint: false },
+      decay: 1.7, color: '#ff7a33', kind: 'ember', castShadow: true, volumetricHint: false },
     { id: 'spot-entrance', priority: 3, zoneId: 'zone-entrance', targetPosition: [0, 0, 15],
       position: [0, 4.0, 15.5], angle: 0.55, penumbra: 0.8, intensity: 18, distance: 12,
-      decay: 1.5, color: '#eaf4ff', castShadow: false },
+      decay: 1.5, color: '#ff5a1f', kind: 'ember', castShadow: false },
     // ...
   ],
   materials: {
@@ -253,7 +265,9 @@ lighting: {
     'mat-ceiling-matte':     { type: 'standard', color: '#0a0a0c', roughness: 1.0,  metalness: 0.0 },
     'mat-steel-brushed':     { type: 'standard', color: '#8d9298', roughness: 0.32, metalness: 0.95 },
     'mat-mannequin':         { type: 'standard', color: '#cfd2d6', roughness: 0.42, metalness: 0.08 },
-    'mat-accent-lime':       { type: 'standard', color: '#c8ff00', roughness: 0.4, emissive: '#c8ff00', emissiveIntensity: 0.35 },
+    'mat-accent-ember':      { type: 'standard', color: '#ff5a1f', roughness: 0.4, emissive: '#ff5a1f', emissiveIntensity: 0.45 },
+    'mat-accent-crimson':    { type: 'standard', color: '#c21025', roughness: 0.45, emissive: '#c21025', emissiveIntensity: 0.25 },
+    'mat-bone-seamless':     { type: 'standard', color: '#dcdcd8', roughness: 0.95, metalness: 0.0 }, // fondo "studio" dietro i display
   },
 },
 ```
@@ -448,7 +462,8 @@ placeholders: {
   ratios: { '1:1': [1, 1], '16:9': [16, 9], '4:5': [4, 5] },
   variants: {
     product:   { bg: '#111214', fg: '#8a9099', pattern: 'grid',  showCategory: true },
-    editorial: { bg: '#0c0d0f', fg: '#c8ff00', pattern: 'diagonal', showCategory: false },
+    editorial: { bg: '#0a0a0b', fg: '#ff5a1f', pattern: 'diagonal', showCategory: false, grain: true },
+    studio:    { bg: '#dcdcd8', fg: '#060606', pattern: 'none',     showCategory: true,  grain: false },
   },
   skeleton: { shimmerMs: 1400, minVisibleMs: 400 },  // minVisibleMs evita il flash dello skeleton
 },
@@ -506,25 +521,34 @@ validazione, un ID sbagliato diventa un bug runtime silenzioso.
 
 ```js
 export const tokens = {
+  // Palette derivata dalla reference fornita (screenshot griglia Instagram, vedi §4.4).
+  // Sistema a DUE fondi: nero editoriale (negozio) e osso/studio (prodotto in Focus Mode).
   color: {
-    bg:      { base: '#070707', raised: '#0d0e10', overlay: 'rgba(7,7,7,0.82)' },
-    surface: { 1: '#101114', 2: '#16181c', 3: '#1e2126' },
-    border:  { subtle: '#242830', strong: '#3a404a', hard: '#ffffff' },
-    text:    { primary: '#f4f4f2', secondary: '#9aa0a6', muted: '#5f666e', inverse: '#070707' },
-    accent:  { lime: '#c8ff00', amber: '#ffb347', white: '#ffffff' },
-    state:   { danger: '#ff4d4d', ok: '#5ef08a' },
+    bg:      { base: '#060606', raised: '#0c0c0d', overlay: 'rgba(6,6,6,0.86)',
+               studio: '#dcdcd8' },                       // fondo seamless dei product shot
+    surface: { 1: '#101011', 2: '#17171a', 3: '#202024' },
+    border:  { subtle: '#232326', strong: '#3a3a40', hard: '#f2f0ea' },
+    text:    { primary: '#f2f0ea',   // bianco osso, non bianco puro
+               secondary: '#9b9b96', muted: '#5c5c58', inverse: '#060606' },
+    accent:  { ember:   '#ff5a1f',   // arancione brace: cordino, fuoco — accento PRIMARIO
+               crimson: '#c21025',   // rosso tecnico dei poster su fondo chiaro — SECONDARIO
+               bone:    '#f2f0ea' }, // il "terzo colore" è l'assenza di colore
+    state:   { danger: '#c21025', ok: '#9b9b96' },        // niente verde: fuori palette
   },
   type: {
     // Due famiglie, non più: una condensata bold per i titoli, una mono per i dati.
-    family: { display: '"Archivo Expanded", "Arial Black", system-ui, sans-serif',
-              mono: '"JetBrains Mono", ui-monospace, monospace' },
+    // Tre registri, come nella reference: gotico per i titoli d'impatto, grottesca
+    // stretta per le etichette, mono per i micro-dati tecnici.
+    family: { gothic:  '"UnifrakturCook", "Pirata One", serif',   // usare con parsimonia
+              display: '"Archivo Expanded", "Arial Black", system-ui, sans-serif',
+              mono:    '"JetBrains Mono", ui-monospace, monospace' },
     scale: { xs: '0.6875rem', sm: '0.8125rem', base: '0.9375rem',
              lg: '1.25rem', xl: '2rem', '2xl': '3.25rem', '3xl': '5rem' },
     tracking: { tight: '-0.02em', normal: '0', wide: '0.08em', brutal: '0.18em' },
     weight: { regular: 400, bold: 700, black: 900 },
   },
   space: { 0: '0', 1: '4px', 2: '8px', 3: '12px', 4: '16px', 6: '24px', 8: '32px', 12: '48px', 16: '64px' },
-  radius: { none: '0', sm: '2px' },          // brutalist: spigoli vivi
+  radius: { none: '0', sm: '2px' },          // spigoli vivi, nessuna eccezione
   border: { hairline: '1px', thick: '2px' },
   shadow: { none: 'none', hard: '4px 4px 0 #000' },
   motion: { fast: 140, base: 240, slow: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
@@ -534,9 +558,9 @@ export const tokens = {
 };
 ```
 
-Direzione estetica: fondo quasi nero, un solo accento (lime) usato con parsimonia, bordi hairline,
-zero border-radius, tipografia display molto larga in maiuscolo con tracking ampio, etichette
-monospace per i dati (prezzo, taglia, SKU). Il 3D fornisce il colore; la UI resta quasi monocroma.
+Direzione estetica: vedi §4.4. In sintesi — fondo quasi nero, bianco osso come testo, **arancione
+brace come unico accento vivo**, rosso tecnico in dosi minime, zero border-radius, bordi hairline,
+grana su tutto. Il 3D fornisce il calore (i faretti ember); la UI resta monocroma e tecnica.
 
 ### 4.2 `<PlaceholderImage />` — contratto API
 
@@ -574,6 +598,37 @@ Comportamento richiesto:
 
 Le texture a griglia sono generate proceduralmente in `lib/materials.js` e messe in cache per ID
 materiale: un solo `CanvasTexture` condiviso, non una per mesh.
+
+### 4.4 Direzione artistica (derivata dalla reference)
+
+**Fonte:** screenshot della griglia Instagram di `@into_industries` fornito il 2026-10-15.
+**Limite dichiarato:** instagram.com non è raggiungibile da questo container (`ENOTFOUND`): la lettura
+è basata esclusivamente sullo screenshot, non sul profilo. Se la griglia non è rappresentativa del
+brand, questa sezione va rivista.
+
+**Cosa ho letto nella reference**
+
+| Elemento | Osservazione | Traduzione nel progetto |
+|---|---|---|
+| Due mondi visivi | Product shot su fondo grigio-osso seamless, luce morbida e frontale **vs** poster editoriali nero profondo, grana pesante, contrasto estremo | **Mappa direttamente sulla nostra architettura:** il negozio è il mondo nero; il Focus Mode su un prodotto alza una pozza di luce chiara che cita il fondo studio. La transizione di Focus (Fase 4) diventa un passaggio editoriale→studio, non solo un movimento di camera |
+| Accento | Arancione brace: cordino sui pantaloni, auto in fiamme, iride. Usato in dosi piccolissime su grandi campiture nere | `accent.ember` `#ff5a1f`. Nella scena 3D è la temperatura dei faretti d'atmosfera, non una vernice sugli oggetti |
+| Accento secondario | Rosso tecnico `#c21025` su fondo chiaro (poster "STAR USURPER", "DESTINY Paths") | `accent.crimson`, riservato a stati e micro-dati. Mai insieme all'ember nello stesso blocco |
+| Bianco | Osso, mai puro | `#f2f0ea` per tutto il testo primario |
+| Grana | Su tutte le immagini editoriali, pesante, è la firma | `performance.postFx.grain` — vedi **D6** |
+| Tipografia | Tre registri: gotico/blackletter per l'impatto, grottesca stretta per le etichette, mono micro per i dati tecnici (crocini di registro, codici, numeri di serie) | `type.family` a tre voci. Il gotico va dosato: uno per schermata, mai nella UI funzionale |
+| Densità | Micro-testo tecnico ovunque, crocini, mirini, codici | Vale come **texture**, non come informazione. Nel 3D diventa decalcomania sui pannelli; nella UI diventa l'etichetta mono di `<PlaceholderImage />` |
+
+**Regole operative che ne derivano**
+
+1. **Il nero è il protagonista, non il fondo.** Niente grigi medi: si passa da `#060606` a `#dcdcd8`, poco in mezzo.
+2. **Un solo accento acceso per inquadratura.** Ember *oppure* crimson, mai entrambi.
+3. **La luce calda sostituisce la vernice calda.** Gli oggetti restano desaturati; il colore lo mette il faretto. Questo tiene i materiali economici e coerenti.
+4. **Tutto ha grana.** Il 3D pulito è fuori brand. La grana è anche l'alleato tecnico che maschera shadow map a bassa risoluzione e banding — vedi D3.
+5. **Il gotico non entra mai in un bottone.** Solo titoli di schermata, loader e lookbook.
+
+**Nota sul naming.** Il nome `INTO INDUSTRIES` appartiene alla reference ed è usato qui **solo** come
+riferimento stilistico: non comparirà in nessun asset, testo o configurazione. `meta.brand.name`
+resta `PLACEHOLDER` finché non fornisci il tuo.
 
 ---
 
@@ -687,9 +742,29 @@ blockout minima (pavimento + 4 muri + 2 faretti), così il deliverable della Fas
 Se preferisci l'ordine originale, lo rispetto: il deliverable della F1 sarà UI 2D su fondo scuro,
 senza 3D, e lo dichiarerò come tale.
 
-**D5 — Brand.** Uso `PLACEHOLDER` come nome e la palette di §4.1 (nero + lime), oppure hai già un
-nome, un logo e un accento da usare? Il nome è un singolo campo in `meta.brand`: cambiarlo dopo
-costa zero, ma l'accento influenza le scelte di lighting della Fase 2.
+**D5 — Brand. → RISOLTA A METÀ (2026-10-15).**
+*Colori e direzione visiva:* **chiusi.** Reference `@into_industries` (screenshot). Palette riscritta
+in §4.1, direzione artistica in §4.4: nero `#060606` / osso `#f2f0ea` / ember `#ff5a1f` / crimson
+`#c21025`. Il lime della v0.1 è eliminato.
+*Nome, tagline, logo:* **ancora aperti.** `meta.brand.name` resta `PLACEHOLDER`. Il nome costa zero
+da cambiare in qualsiasi fase; il logo invece, se è un segno da mostrare in 3D (insegna all'ingresso,
+decal sui pannelli), va saputo entro la Fase 2.
+
+**D6 — NUOVA: come rendere la grana.** È la firma della reference: senza, il risultato sarà un render
+generico e non quel brand. Due strade:
+- **(a) Post-processing reale** (`EffectComposer` + effetto grana). Resa perfetta, ma è un passaggio
+  a schermo intero su render target aggiuntivo: stesso tipo di costo delle ombre di D3, proprio dove
+  il budget mobile è già stretto. Disattiva anche l'antialiasing nativo, che va riottenuto via shader.
+- **(b) Velo in compositing — mia raccomandazione.** Un `<div>` sopra il canvas con una texture di
+  rumore ripetuta (generata una volta su `<canvas>`, 256×256), `mix-blend-mode: overlay`, animata a
+  scatti via `background-position` a ~12 Hz. **La pipeline WebGL non la vede:** il costo lo paga il
+  compositore del browser, su un percorso diverso e scarico. Vignettatura con un `radial-gradient` CSS,
+  costo nullo.
+  Resa stimata ~85% di (a); su un'estetica già sporca e ad alto contrasto la differenza non è leggibile.
+
+→ Raccomandazione: **(b) su tutti i tier**, con (a) come opzione attivabile solo su tier high e da
+valutare con misure reali in Fase 6. Lo schema (`performance.postFx.grain.mode`) supporta entrambe:
+la scelta resta un campo di configurazione, non una riscrittura.
 
 ---
 
@@ -707,11 +782,17 @@ costa zero, ma l'accento influenza le scelte di lighting della Fase 2.
 | Avvio dev server | **Non applicabile** | Idem |
 | Verifica UI nel browser | **Non applicabile** | Nessuna UI esistente |
 | Misurazione fps reale | **Bloccata (ambiente)** | Container senza GPU, §5.4. Richiede i tuoi dispositivi fisici |
+| Lettura della reference di brand | **Parziale** | instagram.com non raggiungibile dal container (`ENOTFOUND`): §4.4 deriva dal solo screenshot fornito |
 
 ---
 
 ## 9. Stato
 
 **Fase 0 completata. Nessuna fase successiva è autorizzata.**
-Per procedere servono: (1) la tua approvazione del piano, (2) le risposte a D1-D5 (o la delega a
-decidere secondo le mie raccomandazioni), (3) il comando esplicito `"Approvato, procedi alla fase 1"`.
+
+Decisioni: **D5 chiusa su colori e direzione visiva**, aperta su nome/logo.
+**D1, D2, D3, D4, D6 ancora aperte.**
+
+Per procedere servono: (1) la tua approvazione del piano, (2) le risposte alle decisioni aperte
+(o la delega esplicita a decidere secondo le mie raccomandazioni), (3) il comando esplicito
+`"Approvato, procedi alla fase 1"` (o `"fase 1b"` / `"fase 2"` a seconda di come chiudi D4).
