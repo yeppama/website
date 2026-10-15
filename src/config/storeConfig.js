@@ -56,7 +56,7 @@ export const storeConfig = {
 
   performance: {
     targetFps: 60,
-    toneMappingExposure: 0.92,
+    toneMappingExposure: 0.85,
     tiers: {
       high:   { dprRange: [1, 2],    maxShadowCasters: 2, shadowMapSize: 1024, envMapResolution: 256, antialias: true },
       medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  envMapResolution: 128, antialias: true },
@@ -100,7 +100,13 @@ export const storeConfig = {
   // passa dal mondo editoriale al mondo "studio" del brand: il faretto
   // dell'espositore sale e si raffredda, il resto della scena si abbassa.
   focus: {
-    lighting: { spotBoost: 1.55, studioColor: '#f6f3ec', othersDim: 0.4, ambientDim: 0.65, blendMs: 700 },
+    // Il "mondo studio" nasce dal contrasto (il resto si spegne), non da più luce
+    // sul capo: con un aumento forte, il nero diventava grigio e il chiaro bruciava.
+    lighting: { spotBoost: 1.15, studioColor: '#f6f3ec', othersDim: 0.3, ambientDim: 0.6, blendMs: 700 },
+    // Come per il player: in verticale il fov della posa si allarga quanto basta
+    // a garantire questo campo orizzontale, senza superare il massimo.
+    minHorizontalFov: 34,
+    maxVerticalFov: 72,
     idleDrift: { amplitude: 0.035, periodSeconds: 9 },
     // Click a cursore catturato: un espositore oltre questa distanza non si apre.
     maxClickDistance: 7.5,
@@ -214,11 +220,11 @@ export const storeConfig = {
     spots: [
       { id: 'spot-hall-studio', priority: 1, kind: 'studio', zoneId: 'zone-new',
         position: [-6.5, 3.95, 10.2], targetPosition: [-6.5, 0.6, 6.6],
-        angle: 0.5, penumbra: 0.65, intensity: 230, distance: 26, decay: 1.4,
+        angle: 0.5, penumbra: 0.65, intensity: 140, distance: 26, decay: 1.4,
         color: '#fff1e2', castShadow: true },
       { id: 'spot-hall-flame',  priority: 2, kind: 'flame', zoneId: 'zone-archive',
         position: [6.5, 3.95, 10.0], targetPosition: [6.5, 0, 7.0],
-        angle: 0.52, penumbra: 0.8, intensity: 200, distance: 26, decay: 1.4,
+        angle: 0.52, penumbra: 0.8, intensity: 125, distance: 26, decay: 1.4,
         color: '#ffe6cc', castShadow: true },
       { id: 'spot-entrance',    priority: 3, kind: 'flame', zoneId: 'zone-entrance',
         position: [0, 3.95, 13.0], targetPosition: [0, 0, 9.5],
@@ -234,11 +240,11 @@ export const storeConfig = {
         color: '#e9edf2', castShadow: false },
       { id: 'spot-rack', priority: 8, kind: 'studio', zoneId: 'zone-new',
         position: [-10.5, 3.95, 9.4], targetPosition: [-11.5, 1.15, 8.0],
-        angle: 0.62, penumbra: 0.75, intensity: 150, distance: 12, decay: 1.4,
+        angle: 0.62, penumbra: 0.75, intensity: 95, distance: 12, decay: 1.4,
         color: '#f2efe8', castShadow: false },
       { id: 'spot-wall-01', priority: 9, kind: 'flame', zoneId: 'zone-archive',
         position: [10.5, 3.95, 9.4], targetPosition: [11.55, 1.4, 8.0],
-        angle: 0.62, penumbra: 0.75, intensity: 140, distance: 12, decay: 1.4,
+        angle: 0.62, penumbra: 0.75, intensity: 90, distance: 12, decay: 1.4,
         color: '#f6ece0', castShadow: false },
       { id: 'spot-wash-w', priority: 5, kind: 'studio', zoneId: 'zone-new',
         position: [-10.5, 3.95, 3.0], targetPosition: [-11.8, 1.6, -8.0],

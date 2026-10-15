@@ -13,7 +13,15 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
  * Nello stato `focused` aggiunge una deriva minima, così l'immagine respira.
  */
 export default function FocusCameraRig({ config, reducedMotion }) {
-  const { camera } = useThree()
+  const { camera, size } = useThree()
+  // Fov verticale effettivo per lo schermo corrente: su uno schermo stretto la
+  // posa configurata diventerebbe un primissimo piano.
+  const fovFor = (verticalFov) => {
+    const aspect = size.width / size.height
+    const minH = THREE.MathUtils.degToRad(config.focus.minHorizontalFov)
+    const fromH = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(minH / 2) / aspect))
+    return Math.min(config.focus.maxVerticalFov, Math.max(verticalFov, fromH))
+  }
   const tr = useRef(null)
   const focusPose = useRef(null)
   // Una camera d'appoggio: il suo lookAt orienta già −z verso il bersaglio.
@@ -30,7 +38,7 @@ export default function FocusCameraRig({ config, reducedMotion }) {
       const fc = displays.get(f.displayId).focusCamera
       helper.position.set(...fc.position)
       helper.lookAt(...fc.target)
-      const to = { pos: helper.position.clone(), quat: helper.quaternion.clone(), fov: fc.fov }
+      const to = { pos: helper.position.clone(), quat: helper.quaternion.clone(), fov: fovFor(fc.fov) }
       focusPose.current = to
       tr.current = { kind: 'enter', from: snapshot(), to, start: performance.now(), duration: reducedMotion ? 0 : fc.enterMs }
     }
@@ -42,7 +50,7 @@ export default function FocusCameraRig({ config, reducedMotion }) {
       const fc = displays.get(f.displayId).focusCamera
       tr.current = { kind: 'exit', from: snapshot(), to, start: performance.now(), duration: reducedMotion ? 0 : fc.exitMs }
     }
-  }), [camera, displays, helper, reducedMotion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [camera, displays, helper, reducedMotion, size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame(({ clock }) => {
     const t = tr.current
