@@ -4,7 +4,7 @@ import { brandMotif } from '../../config/designTokens.js'
  * Bottone. La variante `primary` usa l'ellisse del marchio come bordo:
  * il motivo del logo si ripete nella meccanica dell'interfaccia.
  */
-export default function Button({ variant = 'ghost', children, className = '', ...props }) {
+export default function Button({ variant = 'ghost', children, className = '', ref, ...props }) {
   const base =
     'inline-flex items-center justify-center gap-2 font-display font-bold uppercase ' +
     'transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none'
@@ -22,6 +22,7 @@ export default function Button({ variant = 'ghost', children, className = '', ..
 
   return (
     <button
+      ref={ref}
       type="button"
       {...props}
       className={`${styles.className} ${className}`}

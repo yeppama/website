@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { tokens } from '../../config/designTokens.js'
 import { whenFontsReady, makeHotspot } from '../../lib/canvasText.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { useAppStore } from '../../state/useAppStore.js'
 
 /**
  * Indicatori fluttuanti dei POI. Leggono solo `pois` di storeConfig e lo stato
@@ -52,6 +53,7 @@ function Hotspot({ poi, texture, state, style }) {
 
 export default function Hotspots({ pois, style }) {
   const states = usePlayerStore((s) => s.poiStates)
+  const inFocus = useAppStore((s) => s.focus.state !== 'idle')
   const [textures, setTextures] = useState(null)
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function Hotspots({ pois, style }) {
     return () => { alive = false }
   }, [pois, style.color])
 
-  if (!textures) return null
+  if (!textures || inFocus) return null
   return pois.map((poi) => (
     <Hotspot key={poi.id} poi={poi} texture={textures[poi.id]} state={states[poi.id] ?? 'hidden'} style={style} />
   ))

@@ -25,6 +25,12 @@ export const useAppStore = create((set, get) => ({
   loadStage: 'boot',
   notice: null,          // messaggio breve mostrato sopra la scena
 
+  // Focus Mode (Fase 4) — macchina a stati:
+  //   idle → entering → focused → exiting → idle
+  // L'uscita è sempre possibile, anche durante l'ingresso: si parte dalla posa
+  // in cui si trova la camera in quel momento, senza aspettare la fine.
+  focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null },
+
   setPhase: (phase) => set({ phase }),
   setDevice: (device) => set({ device }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
@@ -43,6 +49,20 @@ export const useAppStore = create((set, get) => ({
 
   toggleMenu: () => set({ menuOpen: !get().menuOpen }),
   closeMenu: () => set({ menuOpen: false }),
+
+  enterFocus: (displayId, returnPose) => {
+    if (get().focus.state !== 'idle') return
+    set({ focus: { state: 'entering', displayId, productIndex: 0, returnPose }, menuOpen: false })
+  },
+  exitFocus: () => {
+    const f = get().focus
+    if (f.state === 'entering' || f.state === 'focused') set({ focus: { ...f, state: 'exiting' } })
+  },
+  setFocusState: (state) => set((s) => ({ focus: { ...s.focus, state } })),
+  finishFocusExit: () => set({ focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null } }),
+  cycleProduct: (delta, count) => set((s) => ({
+    focus: { ...s.focus, productIndex: (s.focus.productIndex + delta + count) % count },
+  })),
 
   enterStore: () => {
     if (get().phase === APP_PHASE.ONBOARDING) set({ phase: APP_PHASE.EXPLORING })

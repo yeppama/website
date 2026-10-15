@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { makeGrainDataUrl } from '../../lib/noise.js'
 import { storeConfig } from '../../config/storeConfig.js'
+import { useAppStore } from '../../state/useAppStore.js'
 
 /**
  * D6-B — la grana del brand come velo in compositing, NON come passaggio di
@@ -11,6 +12,8 @@ import { storeConfig } from '../../config/storeConfig.js'
  */
 export default function GrainOverlay({ tier, reducedMotion }) {
   const fx = storeConfig.performance.postFx
+  const inFocus = useAppStore((s) => s.focus.state === 'entering' || s.focus.state === 'focused')
+  const vignette = inFocus ? storeConfig.focus.vignetteStrength : fx.vignette.strength
   const noise = useMemo(() => makeGrainDataUrl(fx.grain.tileSize), [fx.grain.tileSize])
   const opacity = fx.grain.opacity[tier] ?? fx.grain.opacity.medium
   // Un granello = un pixel fisico. Senza questa correzione, a DPR 3 ogni granello
@@ -40,7 +43,9 @@ export default function GrainOverlay({ tier, reducedMotion }) {
         <div
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,${fx.vignette.strength}) 100%)`,
+            background: `radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,1) 100%)`,
+            opacity: vignette,
+            transition: 'opacity 700ms ease',
           }}
         />
       )}

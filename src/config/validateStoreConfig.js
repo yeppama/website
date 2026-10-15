@@ -145,6 +145,30 @@ export function validateStoreConfig(config) {
   if (!lookbookIds.has(bw.panel.lookbookId)) fail('I18', `pannello: lookbook "${bw.panel.lookbookId}" inesistente`)
   if (!materialIds.has(bw.panel.materialId)) fail('I18', `pannello: materiale "${bw.panel.materialId}" inesistente`)
 
+  // I19 — espositori: tipo supportato, faretto esistente, POI reciproco, posa di
+  // Focus con la camera fuori dai collider e dentro il negozio.
+  const KINDS = new Set(['mannequin', 'plinth', 'rack', 'wall'])
+  const spotIds = ids(config.lighting.spots)
+  const poiById = new Map(config.pois.map((x) => [x.id, x]))
+  for (const d of config.displays) {
+    if (!KINDS.has(d.kind)) fail('I19', `display ${d.id}: tipo "${d.kind}" non supportato`)
+    if (!spotIds.has(d.spotlightId)) fail('I19', `display ${d.id}: faretto "${d.spotlightId}" inesistente`)
+    if (!d.productIds.length) fail('I19', `display ${d.id}: nessun prodotto`)
+    const poi = poiById.get(d.poiId)
+    if (poi && poi.targetDisplayId !== d.id) fail('I19', `display ${d.id}: il POI ${poi.id} punta a "${poi.targetDisplayId}" (relazione non reciproca)`)
+    const [fx, , fz] = d.focusCamera.position
+    for (const c of config.colliders) {
+      if (pointInCollider([fx, fz], c, 0.15)) fail('I19', `display ${d.id}: camera di Focus dentro il collider ${c.id}`)
+    }
+    if (!inAnyArea([fx, fz], config.navigation.walkableAreas)) fail('I19', `display ${d.id}: camera di Focus fuori dal negozio`)
+  }
+
+  // I20 — ogni prodotto ha una forma segnaposto per la sua categoria e almeno una variante colore.
+  for (const prod of config.products) {
+    if (!config.garments.shapeByCategory[prod.category]) fail('I20', `prodotto ${prod.id}: nessuna forma per la categoria "${prod.category}"`)
+    if (!prod.colorways?.length) fail('I20', `prodotto ${prod.id}: nessuna variante colore`)
+  }
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
@@ -167,5 +191,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 18 invarianti verificate, nessun errore')
+  console.info('storeConfig: 20 invarianti verificate, nessun errore')
 }

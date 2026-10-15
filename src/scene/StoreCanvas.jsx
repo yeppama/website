@@ -14,6 +14,8 @@ import ColliderDebug from './debug/ColliderDebug.jsx'
 import PlayerController from './player/PlayerController.jsx'
 import Hotspots from './player/Hotspots.jsx'
 import MoveFeedback from './player/MoveFeedback.jsx'
+import FocusCameraRig from './player/FocusCameraRig.jsx'
+import Displays from './displays/Displays.jsx'
 import { useAppStore } from '../state/useAppStore.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
@@ -27,11 +29,11 @@ const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2
  * aggiunge un'oscillazione minima. Con "riduci animazioni" il cambio è un taglio
  * netto e l'oscillazione è spenta. La navigazione libera arriva in Fase 3.
  */
-function CameraRig({ camera, reducedMotion }) {
+function CameraRig({ camera, reducedMotion, debugPoseFor }) {
   const { camera: cam } = useThree()
   const activeShotId = useAppStore((s) => s.activeShotId)
   const key = debugParams().get('debug')
-  const debugPose = camera.debugPoses?.[key] ?? camera.shots.find((x) => x.id === key)
+  const debugPose = debugPoseFor(key)
   const shot = debugPose
     ?? camera.shots.find((x) => x.id === activeShotId)
     ?? camera.shots.find((x) => x.id === camera.defaultShotId)
@@ -160,12 +162,20 @@ function SceneContents({ config, tier }) {
         materials={lighting.materials}
       />
       <FloorLabels zones={environment.zones} />
+      <Displays config={config} />
       <GroundShadows
-        objects={environment.architecture.columns}
+        objects={[
+          ...environment.architecture.columns,
+          // Sotto gli espositori, l'impronta è quella del loro collider.
+          ...config.displays.filter((d) => d.groundShadow).map((d) => {
+            const c = config.colliders.find((x) => x.id === d.colliderId)
+            return { id: d.id, position: d.position, size: c.size, groundShadow: true }
+          }),
+        ]}
         groundShadow={config.performance.groundShadow}
         enabled={tier.maxShadowCasters === 0}
       />
-      <LightingRig lighting={lighting} tier={tier} fog={environment.fog} />
+      <LightingRig lighting={lighting} tier={tier} fog={environment.fog} displays={config.displays} focusConfig={config.focus} />
       <LightFixtures
         spots={lighting.spots}
         architecture={environment.architecture}
@@ -186,7 +196,11 @@ export default function StoreCanvas({ config, device, onStage }) {
     : config.performance.targetFps
 
   const debugKey = params.get('debug')
-  const staticView = Boolean(config.camera.debugPoses?.[debugKey] ?? config.camera.shots.find((x) => x.id === debugKey))
+  // Pose fisse di verifica: pianta, inquadrature della Fase 2, pose di Focus degli espositori.
+  const debugPoseFor = (key) => config.camera.debugPoses?.[key]
+    ?? config.camera.shots.find((x) => x.id === key)
+    ?? config.displays.find((d) => d.id === key)?.focusCamera
+  const staticView = Boolean(debugPoseFor(debugKey))
 
   // Il modulo del motore 3D è arrivato e il componente è montato.
   useEffect(() => { onStage?.('module') }, [onStage])
@@ -199,7 +213,7 @@ export default function StoreCanvas({ config, device, onStage }) {
       gl={{ antialias: tier.antialias, powerPreference: 'high-performance', alpha: false }}
       onCreated={({ gl, scene }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = 1.05
+        gl.toneMappingExposure = config.performance.toneMappingExposure
         gl.outputColorSpace = THREE.SRGBColorSpace
         scene.background = new THREE.Color(config.environment.fog.color)
         // Aggancio di ispezione, attivo solo con ?debug=: serve a verificare la
@@ -214,8 +228,13 @@ export default function StoreCanvas({ config, device, onStage }) {
       {/* Fase 3: la camera è gli occhi del player. Le pose fisse restano solo per
           la verifica (?debug=top | front | <id inquadratura>). */}
       {staticView
-        ? <CameraRig camera={config.camera} reducedMotion={device.reducedMotion} />
-        : <PlayerController config={config} device={device} />}
+        ? <CameraRig camera={config.camera} reducedMotion={device.reducedMotion} debugPoseFor={debugPoseFor} />
+        : (
+          <>
+            <PlayerController config={config} device={device} />
+            <FocusCameraRig config={config} reducedMotion={device.reducedMotion} />
+          </>
+        )}
       <Hotspots pois={config.pois} style={config.navigation.hotspot} />
       <MoveFeedback feedback={config.navigation.feedback} />
       <FrameLimiter targetFps={targetFps} />

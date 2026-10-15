@@ -1,6 +1,11 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.4 — **Fase 4 consegnata.** Cinque espositori (manichino ×2, rack, plinto, parete),
+> sette prodotti demo, Focus Mode come macchina a stati interrompibile. Invarianti estese a 20
+> (I19 espositori, I20 forme dei capi). Illuminazione ritarata: i faretti dei prodotti sono bianco
+> caldo, il colore d'atmosfera resta su pareti e accenti. Geometrie statiche unite per materiale e
+> corpi illuminanti a istanze: sul tier low la zona più densa scende da 64 a 31 draw call.
 > Changelog 1.3 — **Fase 3 consegnata.** Grafo di navigazione esteso con due corridoi laterali
 > (16 waypoint, 21 collegamenti): il test sui percorsi ha trovato il 2% dei punti calpestabili
 > invisibile da ogni nodo. Corretta la convenzione di rotazione dei collider, speculare rispetto a
@@ -551,6 +556,8 @@ copy: {
 | I16 | nessun collegamento del grafo attraversa un collider (margine `player.radius`) | in Fase 3 il player cammina dentro un mobile o una colonna |
 | I17 | ogni inquadratura ha una zona valida e la camera fuori dai collider; `defaultShotId` esiste | camera dentro una colonna, HUD incoerente |
 | I18 | colonne, pedane, binari e parete del brand referenziano materiali, collider, asset e lookbook esistenti | geometria nera o pannello vuoto |
+| I19 | ogni espositore ha un tipo supportato, un faretto esistente, un POI che lo referenzia a sua volta, e la camera di Focus fuori dai collider e dentro il negozio | Focus dentro una colonna, hotspot che apre l'espositore sbagliato |
+| I20 | ogni prodotto ha una forma segnaposto per la sua categoria e almeno una variante colore | capo invisibile o senza colore |
 
 Il validatore lancia un errore bloccante in `import.meta.env.DEV` e viene eliminato dal bundle di
 produzione via tree-shaking. **Questo è il meccanismo che rende il data-driven affidabile:** senza

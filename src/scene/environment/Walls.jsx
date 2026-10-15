@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { getMaterial } from '../../lib/materials.js'
+import MergeByMaterial from '../MergeByMaterial.jsx'
 
 /**
  * Muri generati dai segmenti in storeConfig.
@@ -36,13 +37,13 @@ export default function Walls({ walls, ceiling, floor, materials }) {
   )
 
   return (
-    <group>
+    <MergeByMaterial>
       {walls.map((wall) => <Wall key={wall.id} wall={wall} materials={materials} />)}
       {ceiling.visible && (
         <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ceiling.height, 0]} material={ceilingMaterial}>
           <planeGeometry args={floor.size} />
         </mesh>
       )}
-    </group>
+    </MergeByMaterial>
   )
 }

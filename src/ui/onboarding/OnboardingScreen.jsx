@@ -27,10 +27,13 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
   }, [progress])
 
   return (
+    // Scorre se lo schermo è basso: un telefono in orizzontale è alto ~390 px e
+    // senza scorrimento il pulsante "Entra" finiva fuori schermo, irraggiungibile.
     <div
-      className="fixed inset-0 flex flex-col justify-between bg-bg-base px-6 py-8 sm:px-12 sm:py-12"
+      className="fixed inset-0 overflow-y-auto overscroll-contain bg-bg-base"
       style={{ zIndex: 'var(--z-onboarding)' }}
     >
+      <div className="flex min-h-full flex-col justify-between gap-10 px-6 py-8 sm:px-12 sm:py-12">
       <header className="flex items-start justify-between gap-4">
         <p className="micro">{copy.eyebrow}</p>
         <p className="micro text-right">
@@ -110,6 +113,7 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
         <p className="micro max-w-md">{copy.phaseNotice}</p>
         <p className="micro text-right">{brand.credit}</p>
       </footer>
+      </div>
     </div>
   )
 }

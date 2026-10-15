@@ -1,16 +1,17 @@
 import ConfigBox from './ConfigBox.jsx'
+import MergeByMaterial from '../MergeByMaterial.jsx'
 
 /**
  * Elementi architettonici della Fase 2, tutti da storeConfig.environment:
  * colonne, pedane "studio", binari a soffitto, architrave e soglia d'ingresso.
  * La collisione di questi oggetti NON è derivata da qui: vive in `colliders`.
  */
-export default function Architecture({ environment, materials }) {
+export default function Architecture({ environment, materials, merge = true }) {
   const { architecture: arch, entrance, ceiling } = environment
   const trackY = ceiling.height - arch.trackSection / 2 - 0.08
 
   return (
-    <group>
+    <MergeByMaterial enabled={merge}>
       {arch.columns.map((c) => (
         <ConfigBox
           key={c.id}
@@ -51,6 +52,6 @@ export default function Architecture({ environment, materials }) {
           <meshBasicMaterial color={entrance.exteriorGlow.color} transparent opacity={entrance.exteriorGlow.intensity} />
         </mesh>
       )}
-    </group>
+    </MergeByMaterial>
   )
 }

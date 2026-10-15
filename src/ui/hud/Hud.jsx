@@ -66,13 +66,14 @@ export default function Hud({ device }) {
   const zoneId = usePlayerStore((s) => s.zoneId)
   const locked = usePlayerStore((s) => s.pointerLocked)
   const activePoiId = usePlayerStore((s) => s.activePoiId)
+  const inFocus = useAppStore((s) => s.focus.state !== 'idle')
 
   const zone = storeConfig.environment.zones.find((z) => z.id === zoneId)
   const poi = storeConfig.pois.find((p) => p.id === activePoiId)
 
   return (
     <>
-      {!device.isTouch && locked && <Crosshair />}
+      {!device.isTouch && locked && !inFocus && <Crosshair />}
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
         <header className="flex items-start justify-between gap-4">
@@ -83,14 +84,14 @@ export default function Hud({ device }) {
             </p>
             <p className="micro mt-1" data-testid="zone-label">{zone ? zone.label : copy.noZone}</p>
           </div>
-          <div className="pointer-events-auto">
+          <div className={`pointer-events-auto ${inFocus ? 'invisible' : ''}`}>
             <Button onClick={toggleMenu} aria-expanded={menuOpen} aria-controls="menu-drawer">
               {menuOpen ? copy.close : copy.menu}
             </Button>
           </div>
         </header>
 
-        <footer className="flex flex-col gap-3">
+        <footer className={`flex flex-col gap-3 ${inFocus ? 'invisible' : ''}`}>
           {/* Prompt impilati nella stessa colonna: non possono sovrapporsi a
               nessuna altezza di schermo, qualunque sia la taglia della minimappa. */}
           {poi && <ProximityPrompt poi={poi} isTouch={device.isTouch} />}

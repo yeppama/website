@@ -38,6 +38,9 @@ export default function PlayerController({ config, device }) {
   const I = config.navigation.input
   const waypoints = useMemo(() => new Map(config.navigation.waypoints.map((w) => [w.id, w])), [config])
   const pois = config.pois
+  const displayById = useMemo(() => new Map(config.displays.map((d) => [d.id, d])), [config])
+  const displayByCollider = useMemo(() => new Map(config.displays.map((d) => [d.colliderId, d])), [config])
+  const poiByDisplay = useMemo(() => new Map(config.pois.filter((p) => p.targetDisplayId).map((p) => [p.targetDisplayId, p])), [config])
   const moveOpts = useMemo(() => ({
     radius: P.radius, colliders: config.colliders, walkableAreas: config.navigation.walkableAreas, maxStep: P.radius * 0.5,
   }), [P.radius, config])
@@ -67,7 +70,7 @@ export default function PlayerController({ config, device }) {
 
   const blocked = () => {
     const app = useAppStore.getState()
-    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen
+    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle'
   }
 
   const notify = (text) => useAppStore.getState().showNotice(text)
@@ -80,8 +83,43 @@ export default function PlayerController({ config, device }) {
 
   const ping = (x, z, ok) => usePlayerStore.setState({ ping: { id: performance.now(), x, z, ok } })
 
+  /**
+   * Focus Mode su un espositore: cursore liberato, input azzerati, posa del
+   * player salvata per il ritorno. La camera la prende FocusCameraRig.
+   */
+  const enterFocusFor = (display) => {
+    const feature = config.features.focusMode
+    if (!feature.enabled) {
+      notify(`${config.copy.hints.comingInPhase} ${feature.availableInPhase}`)
+      return
+    }
+    const r = rt.current
+    r.keys.clear()
+    r.vel.x = r.vel.z = 0
+    // Se il player stava per voltarsi verso l'espositore (arrivo da un tap), la
+    // rotazione si applica subito: altrimenti all'uscita dal Focus la camera
+    // tornerebbe allo sguardo "di marcia" e poi girerebbe da sola.
+    if (r.faceYaw !== null) r.yaw = r.faceYaw
+    r.faceYaw = null
+    cancelRoute()
+    if (document.pointerLockElement) document.exitPointerLock()
+    useAppStore.getState().enterFocus(display.id, {
+      x: r.pos.x, z: r.pos.z, eye: P.eyeHeight, yaw: r.yaw, pitch: r.pitch, fov: camera.fov,
+    })
+  }
+
+  /** Tap o click su un espositore: da vicino si apre subito, da lontano prima ci si avvicina. */
+  const approachOrFocus = (display) => {
+    const r = rt.current
+    const w = waypoints.get(display.approachWaypointId)
+    const poi = poiByDisplay.get(display.id)
+    const near = Math.hypot(w.position[0] - r.pos.x, w.position[2] - r.pos.z) < 1.2 || r.poiState[poi?.id] === 'active'
+    if (near) enterFocusFor(display)
+    else goTo([w.position[0], w.position[2]], poi?.anchor ?? null, { focus: display.id })
+  }
+
   /** Avvia un percorso automatico verso un punto del pavimento. */
-  const goTo = (target, faceAt = null) => {
+  const goTo = (target, faceAt = null, onArrive = null) => {
     const r = rt.current
     const res = nav.plan([r.pos.x, r.pos.z], target)
     if (!res.ok) {
@@ -89,7 +127,7 @@ export default function PlayerController({ config, device }) {
       notify(config.copy.hints.unreachable)
       return false
     }
-    r.route = { points: res.points.map((p) => [...p]), faceAt }
+    r.route = { points: res.points.map((p) => [...p]), faceAt, onArrive }
     r.faceYaw = null
     r.stuckFor = 0
     ping(target[0], target[1], true)
@@ -188,6 +226,9 @@ export default function PlayerController({ config, device }) {
   const handleTap = (clientX, clientY) => {
     const rect = gl.domElement.getBoundingClientRect()
     ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    // La matrice della camera si aggiorna al render: senza questo, un tap
+    // arrivato fra due fotogrammi mirerebbe dalla posa precedente.
+    camera.updateMatrixWorld()
     raycaster.setFromCamera(ndc, camera)
     const o = raycaster.ray.origin.toArray()
     const d = raycaster.ray.direction.toArray()
@@ -209,7 +250,9 @@ export default function PlayerController({ config, device }) {
     // 2. Muri e colonne: se il dito li colpisce prima del pavimento, il tap è su di loro.
     for (const col of config.colliders) {
       const t = rayHitsCollider(o, d, col)
-      if (t !== null && t > 0 && t < best.t) best = { t, kind: 'wall' }
+      if (t === null || t <= 0 || t >= best.t) continue
+      const display = displayByCollider.get(col.id)
+      best = display ? { t, kind: 'display', display } : { t, kind: 'wall' }
     }
     // 3. Pavimento.
     if (d[1] < -1e-4) {
@@ -217,7 +260,11 @@ export default function PlayerController({ config, device }) {
       if (t < best.t) best = { t, kind: 'floor', point: [o[0] + d[0] * t, o[2] + d[2] * t] }
     }
 
-    if (best.kind === 'poi') {
+    if (best.kind === 'display') {
+      approachOrFocus(best.display)
+    } else if (best.kind === 'poi' && best.poi.targetDisplayId) {
+      approachOrFocus(displayById.get(best.poi.targetDisplayId))
+    } else if (best.kind === 'poi') {
       const w = waypoints.get(best.poi.approachWaypointId)
       goTo([w.position[0], w.position[2]], best.poi.anchor)
     } else if (best.kind === 'floor') {
@@ -248,9 +295,21 @@ export default function PlayerController({ config, device }) {
           }
           return
         }
-        // Click a cursore catturato: interazione con l'hotspot attivo.
+        // Click a cursore catturato: prima l'espositore sotto il mirino, poi quello attivo.
+        camera.updateMatrixWorld()
+        raycaster.setFromCamera(ndc.set(0, 0), camera)
+        const o = raycaster.ray.origin.toArray()
+        const dir = raycaster.ray.direction.toArray()
+        let aimed = null
+        let aimedT = config.focus.maxClickDistance
+        for (const col of config.colliders) {
+          const t = rayHitsCollider(o, dir, col)
+          if (t !== null && t > 0 && t < aimedT) { aimedT = t; aimed = displayByCollider.get(col.id) ?? null }
+        }
+        if (aimed) { enterFocusFor(aimed); return }
         const activeId = usePlayerStore.getState().activePoiId
         const poi = pois.find((p) => p.id === activeId)
+        if (poi?.targetDisplayId) { enterFocusFor(displayById.get(poi.targetDisplayId)); return }
         if (poi?.requires && !config.features[poi.requires]?.enabled) {
           notify(`${config.copy.hints.comingInPhase} ${config.features[poi.requires].availableInPhase}`)
         }
@@ -345,8 +404,10 @@ export default function PlayerController({ config, device }) {
           r.route.points.shift()
           if (!r.route.points.length) {
             const face = r.route.faceAt
+            const arrive = r.route.onArrive
             if (face) r.faceYaw = yawToward(r.pos.x, r.pos.z, face[0], face[2])
             cancelRoute()
+            if (arrive?.focus) enterFocusFor(displayById.get(arrive.focus))
           }
         } else {
           let remaining = d
@@ -392,7 +453,11 @@ export default function PlayerController({ config, device }) {
     const r = rt.current
     const now = performance.now()
 
-    for (const cmd of usePlayerStore.getState().drain()) runCommand(cmd)
+    const commands = usePlayerStore.getState().drain()
+    // Durante il Focus Mode la camera appartiene a FocusCameraRig: il player è
+    // sospeso e i comandi (teletrasporti) vengono scartati, non accodati.
+    if (useAppStore.getState().focus.state !== 'idle') return
+    for (const cmd of commands) runCommand(cmd)
 
     // Teletrasporto: si sposta a schermo nero, poi la dissolvenza si riapre.
     if (r.teleport && now >= r.teleport.swapAt) {
