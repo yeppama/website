@@ -11,6 +11,9 @@ import GroundShadows from './environment/GroundShadows.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 import LightFixtures from './lighting/LightFixtures.jsx'
 import ColliderDebug from './debug/ColliderDebug.jsx'
+import PlayerController from './player/PlayerController.jsx'
+import Hotspots from './player/Hotspots.jsx'
+import MoveFeedback from './player/MoveFeedback.jsx'
 import { useAppStore } from '../state/useAppStore.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
@@ -27,7 +30,8 @@ const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2
 function CameraRig({ camera, reducedMotion }) {
   const { camera: cam } = useThree()
   const activeShotId = useAppStore((s) => s.activeShotId)
-  const debugPose = camera.debugPoses?.[debugParams().get('debug')]
+  const key = debugParams().get('debug')
+  const debugPose = camera.debugPoses?.[key] ?? camera.shots.find((x) => x.id === key)
   const shot = debugPose
     ?? camera.shots.find((x) => x.id === activeShotId)
     ?? camera.shots.find((x) => x.id === camera.defaultShotId)
@@ -181,6 +185,9 @@ export default function StoreCanvas({ config, device, onStage }) {
     ? Number(params.get('fps'))
     : config.performance.targetFps
 
+  const debugKey = params.get('debug')
+  const staticView = Boolean(config.camera.debugPoses?.[debugKey] ?? config.camera.shots.find((x) => x.id === debugKey))
+
   // Il modulo del motore 3D è arrivato e il componente è montato.
   useEffect(() => { onStage?.('module') }, [onStage])
 
@@ -204,7 +211,13 @@ export default function StoreCanvas({ config, device, onStage }) {
         onStage?.('context')
       }}
     >
-      <CameraRig camera={config.camera} reducedMotion={device.reducedMotion} />
+      {/* Fase 3: la camera è gli occhi del player. Le pose fisse restano solo per
+          la verifica (?debug=top | front | <id inquadratura>). */}
+      {staticView
+        ? <CameraRig camera={config.camera} reducedMotion={device.reducedMotion} />
+        : <PlayerController config={config} device={device} />}
+      <Hotspots pois={config.pois} style={config.navigation.hotspot} />
+      <MoveFeedback feedback={config.navigation.feedback} />
       <FrameLimiter targetFps={targetFps} />
       <FirstFrameSignal onStage={onStage} />
       <Suspense fallback={null}>

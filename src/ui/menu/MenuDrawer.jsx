@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useAppStore } from '../../state/useAppStore.js'
+import { usePlayerStore } from '../../state/usePlayerStore.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import Button from '../primitives/Button.jsx'
 
@@ -11,8 +12,8 @@ import Button from '../primitives/Button.jsx'
 export default function MenuDrawer() {
   const open = useAppStore((s) => s.menuOpen)
   const close = useAppStore((s) => s.closeMenu)
-  const activeShotId = useAppStore((s) => s.activeShotId)
-  const setShot = useAppStore((s) => s.setShot)
+  const issue = usePlayerStore((s) => s.issue)
+  const zoneId = usePlayerStore((s) => s.zoneId)
   const panel = useRef(null)
   const previouslyFocused = useRef(null)
 
@@ -32,7 +33,7 @@ export default function MenuDrawer() {
 
   const { brand } = storeConfig.meta
   const { zones } = storeConfig.environment
-  const { shots } = storeConfig.camera
+  const { quickTravel } = storeConfig.navigation
   const menu = storeConfig.copy.menu
 
   return (
@@ -63,31 +64,29 @@ export default function MenuDrawer() {
           <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[0].label}
           </h3>
-          {/* Inquadrature statiche (Fase 2): ogni voce sposta la camera su una posa
-              fissa. Non è navigazione libera, che arriva in Fase 3. */}
+          {/* Teletrasporto verso le destinazioni sicure configurate (Fase 3). */}
           <ul className="grid gap-px bg-line-subtle">
-            {shots.map((shot, i) => {
-              const active = shot.id === activeShotId
-              const zone = zones.find((z) => z.id === shot.zoneId)
+            {quickTravel.map((qt, i) => {
+              const here = Boolean(zoneId) && qt.zoneId === zoneId
               return (
-                <li key={shot.id}>
+                <li key={qt.id}>
                   <button
                     type="button"
-                    onClick={() => { setShot(shot); close() }}
-                    aria-current={active ? 'true' : undefined}
+                    onClick={() => { issue({ type: 'teleport', waypointId: qt.waypointId }); close() }}
+                    aria-current={here ? 'true' : undefined}
                     className="flex w-full items-center justify-between gap-3 bg-bg-raised px-3 py-3 text-left transition-colors hover:bg-surface-2"
                     style={{ minHeight: 'var(--touch-min)' }}
                   >
                     <span className="flex items-baseline gap-3">
-                      <span className="micro" style={{ color: active ? 'var(--color-accent-flame)' : undefined }}>
+                      <span className="micro" style={{ color: here ? 'var(--color-accent-flame)' : undefined }}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
-                      <span className={`font-display font-bold uppercase ${active ? 'text-accent-flame' : 'text-text-primary'}`}
+                      <span className={`font-display font-bold uppercase ${here ? 'text-accent-flame' : 'text-text-primary'}`}
                             style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-wide)' }}>
-                        {shot.label}
+                        {qt.label}
                       </span>
                     </span>
-                    <span className="micro">{active ? '● attiva' : zone?.label}</span>
+                    <span className="micro">{here ? '● sei qui' : qt.waypointId}</span>
                   </button>
                 </li>
               )

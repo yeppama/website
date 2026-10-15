@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
-import { useAppStore } from '../../state/useAppStore.js'
+import { usePlayerStore } from '../../state/usePlayerStore.js'
 
 /**
  * Minimappa disegnata interamente da storeConfig: pianta del pavimento, zone,
@@ -9,10 +9,10 @@ import { useAppStore } from '../../state/useAppStore.js'
  * In Fase 1b l'indicatore "sei qui" mostra la camera statica; in Fase 3
  * diventerà la posizione reale del player senza cambiare questo componente.
  */
-export default function Minimap({ activeZoneId }) {
-  const { environment, navigation, camera } = storeConfig
-  const activeShotId = useAppStore((s) => s.activeShotId)
-  const shot = camera.shots.find((x) => x.id === activeShotId) ?? camera.shots[0]
+export default function Minimap() {
+  const { environment, navigation } = storeConfig
+  const pose = usePlayerStore((s) => s.pose)
+  const activeZoneId = usePlayerStore((s) => s.zoneId)
   const [w, d] = environment.floor.size
   const pad = 2
 
@@ -21,12 +21,9 @@ export default function Minimap({ activeZoneId }) {
     [w, d],
   )
 
-  const [cx, cz] = project(shot.position[0], shot.position[2])
-  // Direzione di vista: un segmento verso il punto inquadrato, lungo al massimo 3 m.
-  const dx = shot.target[0] - shot.position[0]
-  const dz = shot.target[2] - shot.position[2]
-  const len = Math.hypot(dx, dz) || 1
-  const [vx, vz] = project(shot.position[0] + (dx / len) * 3, shot.position[2] + (dz / len) * 3)
+  const [cx, cz] = project(pose.x, pose.z)
+  // Direzione di vista del player: 3 m davanti a sé (yaw = 0 guarda verso −z).
+  const [vx, vz] = project(pose.x - Math.sin(pose.yaw) * 3, pose.z - Math.cos(pose.yaw) * 3)
 
   return (
     <div className="w-20 sm:w-44">

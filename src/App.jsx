@@ -13,6 +13,7 @@ import Hud from './ui/hud/Hud.jsx'
 import NoticeToast from './ui/hud/NoticeToast.jsx'
 import MenuDrawer from './ui/menu/MenuDrawer.jsx'
 import GrainOverlay from './ui/fx/GrainOverlay.jsx'
+import FadeOverlay from './ui/fx/FadeOverlay.jsx'
 import WebGLFallback from './ui/fallback/WebGLFallback.jsx'
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
@@ -86,6 +87,7 @@ export default function App() {
       </div>
 
       <GrainOverlay tier={device.tier} reducedMotion={device.reducedMotion} />
+      <FadeOverlay />
 
       {exploring ? (
         <>

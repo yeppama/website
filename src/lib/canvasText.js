@@ -145,3 +145,38 @@ export function getBlobTexture() {
   blobTexture = makeTexture(canvas)
   return blobTexture
 }
+
+/**
+ * Hotspot: l'ellisse del marchio con un punto al centro e l'etichetta del POI.
+ * Indipendente dai modelli 3D (Fase 4): rappresenta il POI configurato.
+ */
+export function makeHotspot({ label, color, textColor }) {
+  const w = 512
+  const h = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  const ovalH = 92
+  const ovalW = ovalH * brandMotif.oval.ratio
+  ctx.strokeStyle = color
+  ctx.lineWidth = 10
+  ctx.beginPath()
+  ctx.ellipse(w / 2, 62, ovalW / 2 - 6, ovalH / 2 - 6, 0, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.arc(w / 2, 62, 11, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = '700 40px "JetBrains Mono"'
+  const text = label.toUpperCase()
+  const tw = ctx.measureText(text).width
+  ctx.fillStyle = 'rgba(6,6,6,0.72)'
+  ctx.fillRect(w / 2 - tw / 2 - 16, 140, tw + 32, 58)
+  ctx.fillStyle = textColor
+  ctx.fillText(text, w / 2, 183)
+  return makeTexture(canvas)
+}

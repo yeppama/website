@@ -1,6 +1,11 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.3 — **Fase 3 consegnata.** Grafo di navigazione esteso con due corridoi laterali
+> (16 waypoint, 21 collegamenti): il test sui percorsi ha trovato il 2% dei punti calpestabili
+> invisibile da ogni nodo. Corretta la convenzione di rotazione dei collider, speculare rispetto a
+> three fino alla Fase 2. Ogni destinazione rapida dichiara la sua `zoneId`; ogni POI il suo
+> `approachWaypointId` e la funzione che richiede.
 > Changelog 1.2 — **Fase 2 consegnata.** Invarianti estese a 18 (I15–I18, §3.11). Grafo di
 > navigazione corretto: rimosse le diagonali verso `wp-hall-02`, una delle quali attraversava il
 > plinto (rilevato da I16). P4 risolta per assunzione: logo come insegna sulla parete di fondo.

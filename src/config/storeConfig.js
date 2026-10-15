@@ -11,6 +11,23 @@
 // Colonne strutturali: una griglia dichiarata qui, da cui derivano sia la
 // geometria visibile sia i collider. Nessun componente conosce queste posizioni.
 const COLUMN_GRID = { xs: [-9, 9], zs: [12, 4, -4, -12], size: [0.7, 4.2, 0.7] }
+// Corridoi laterali del grafo di navigazione, fra le colonne e le pareti.
+const AISLE_X = 10.35
+const AISLE_ZS = [16, 8, 0, -8, -16]
+const aisleId = (side, z) => `wp-aisle-${side}-${z < 0 ? 'm' : 'p'}${Math.abs(z)}`
+const AISLE_WAYPOINTS = ['w', 'e'].flatMap((side) => AISLE_ZS.map((z) => ({
+  id: aisleId(side, z), position: [side === 'w' ? -AISLE_X : AISLE_X, 0, z], label: null, safeForTeleport: false,
+})))
+const AISLE_LINKS = ['w', 'e'].flatMap((side) => [
+  // catena lungo il corridoio
+  ...AISLE_ZS.slice(1).map((z, i) => [aisleId(side, AISLE_ZS[i]), aisleId(side, z)]),
+  // raccordi con il grafo centrale
+  ['wp-entrance', aisleId(side, 16)],
+  [side === 'w' ? 'wp-new-01' : 'wp-arch-01', aisleId(side, 8)],
+  ['wp-hall-02', aisleId(side, 0)],
+  ['wp-look-01', aisleId(side, -8)],
+])
+
 const COLUMNS = COLUMN_GRID.xs.flatMap((x) => COLUMN_GRID.zs.map((z) => ({
   id: `col-${x < 0 ? 'w' : 'e'}-${z < 0 ? 'm' : 'p'}${Math.abs(z)}`,
   position: [x, 0, z],
@@ -62,7 +79,7 @@ export const storeConfig = {
   // promette comandi che non funzionano ancora: un'istruzione per una funzione
   // spenta viene mostrata come "in arrivo", non come un comando.
   features: {
-    navigation:   { enabled: false, availableInPhase: 3 },
+    navigation:   { enabled: true,  availableInPhase: 3 },
     focusMode:    { enabled: false, availableInPhase: 4 },
     productModal: { enabled: false, availableInPhase: 5 },
   },
@@ -237,9 +254,26 @@ export const storeConfig = {
       walkSpeed: 3.0, sprintMultiplier: 1.6, acceleration: 14, damping: 10,
       lookSensitivity: { desktop: 0.0022, mobileDrag: 0.0045 },
       pitchClamp: [-1.2, 1.2],
+      // In verticale lo schermo è stretto: il fov verticale si allarga quanto basta
+      // a garantire un campo orizzontale minimo, senza superare il massimo.
+      fov: { vertical: 60, minHorizontal: 50, maxVertical: 85 },
       autoMove: { speed: 3.4, arriveRadius: 0.25, turnSpeed: 6.0 },
     },
     walkableAreas: [{ id: 'walk-hall', bounds: [[-11, -17], [11, 17]] }],
+    input: {
+      // Un tocco diventa trascinamento oltre questa distanza o durata: sotto
+      // entrambe è un tap. Senza soglie, ogni sguardo diventerebbe uno spostamento.
+      tapMaxMovePx: 10,
+      tapMaxMs: 350,
+      // Un frame lento si recupera in più passi da al massimo `maxStepDt`, così la
+      // camminata resta in tempo reale anche a pochi fps. Oltre `maxCatchUp`
+      // (es. ritorno da un'altra scheda) si accetta il rallentatore, non il salto.
+      maxStepDt: 0.05,
+      maxCatchUp: 0.25,
+    },
+    teleport: { fadeMs: 220 },
+    hotspot: { color: '#f98e30', width: 0.9, bob: 0.06, bobPeriodSeconds: 3.2, tapRadius: 0.9, pinColor: '#f98e30' },
+    feedback: { pingMs: 650, pathColor: '#f98e30' },
     waypoints: [
       { id: 'wp-entrance', position: [0, 0, 15.5],  label: 'Ingresso',      safeForTeleport: true,  lookAt: [0, 1.65, 10] },
       { id: 'wp-hall-01',  position: [0, 0, 10.0],  label: null,            safeForTeleport: false },
@@ -247,6 +281,7 @@ export const storeConfig = {
       { id: 'wp-arch-01',  position: [6.5, 0, 9.0],  label: 'Archivio',     safeForTeleport: true,  lookAt: [6.5, 1.1, 7.0] },
       { id: 'wp-hall-02',  position: [0, 0, 0.0],   label: null,            safeForTeleport: false },
       { id: 'wp-look-01',  position: [0, 0, -9.0],  label: 'Lookbook',      safeForTeleport: true,  lookAt: [0, 1.6, -14] },
+      ...AISLE_WAYPOINTS,
     ],
     // Le diagonali wp-new-01/wp-arch-01 → wp-hall-02 sono state rimosse in Fase 2:
     // l'invariante I16 ha rilevato che la seconda attraversava il plinto, e la
@@ -255,12 +290,13 @@ export const storeConfig = {
     links: [
       ['wp-entrance', 'wp-hall-01'], ['wp-hall-01', 'wp-new-01'], ['wp-hall-01', 'wp-arch-01'],
       ['wp-hall-01', 'wp-hall-02'], ['wp-hall-02', 'wp-look-01'],
+      ...AISLE_LINKS,
     ],
     quickTravel: [
-      { id: 'qt-entrance', waypointId: 'wp-entrance', label: 'Ingresso' },
-      { id: 'qt-new',      waypointId: 'wp-new-01',   label: 'Nuovi Arrivi' },
-      { id: 'qt-archive',  waypointId: 'wp-arch-01',  label: 'Archivio' },
-      { id: 'qt-look',     waypointId: 'wp-look-01',  label: 'Lookbook' },
+      { id: 'qt-entrance', waypointId: 'wp-entrance', label: 'Ingresso', zoneId: 'zone-entrance' },
+      { id: 'qt-new',      waypointId: 'wp-new-01',   label: 'Nuovi Arrivi', zoneId: 'zone-new' },
+      { id: 'qt-archive',  waypointId: 'wp-arch-01',  label: 'Archivio', zoneId: 'zone-archive' },
+      { id: 'qt-look',     waypointId: 'wp-look-01',  label: 'Lookbook', zoneId: 'zone-lookbook' },
     ],
   },
 
@@ -283,13 +319,13 @@ export const storeConfig = {
   pois: [
     { id: 'poi-new-01', type: 'display', label: 'Nuovi Arrivi', anchor: [-6.5, 1.9, 7.0],
       proximity: { showRadius: 7.0, activateRadius: 2.6, hideRadius: 9.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per avvicinarti' }, targetDisplayId: 'disp-mannequin-01' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per avvicinarti' }, targetDisplayId: 'disp-mannequin-01', approachWaypointId: 'wp-new-01', requires: 'focusMode' },
     { id: 'poi-arch-01', type: 'display', label: 'Archivio', anchor: [6.5, 1.6, 7.0],
       proximity: { showRadius: 7.0, activateRadius: 2.6, hideRadius: 9.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per avvicinarti' }, targetDisplayId: 'disp-plinth-01' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per avvicinarti' }, targetDisplayId: 'disp-plinth-01', approachWaypointId: 'wp-arch-01', requires: 'focusMode' },
     { id: 'poi-look-01', type: 'lookbook', label: 'Brand Story', anchor: [0, 2.0, -14.0],
       proximity: { showRadius: 9.0, activateRadius: 3.0, hideRadius: 11.0 }, icon: 'book',
-      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: 'lb-001' },
+      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: 'lb-001', approachWaypointId: 'wp-look-01', requires: 'productModal' },
   ],
 
   products: [
@@ -360,22 +396,21 @@ export const storeConfig = {
       desktop: {
         heading: 'Navigazione desktop',
         lines: [
-          { text: 'Menu → Inquadrature per cambiare punto di vista', requires: null },
-          { text: 'WASD o frecce per muoverti',           requires: 'navigation' },
-          { text: 'Muovi il mouse per guardarti attorno', requires: 'navigation' },
-          { text: 'Click su un espositore per esaminarlo', requires: 'focusMode' },
-          { text: 'ESC per liberare il cursore',          requires: 'navigation' },
+          { text: 'Click sulla scena per guardarti attorno col mouse', requires: 'navigation' },
+          { text: 'WASD o frecce per muoverti · Shift per correre',   requires: 'navigation' },
+          { text: 'ESC per liberare il cursore',                      requires: 'navigation' },
+          { text: 'Menu → Vai a per spostarti subito',                requires: 'navigation' },
+          { text: 'Click su un espositore per esaminarlo',            requires: 'focusMode' },
         ],
         cta: 'Entra',
       },
       mobile: {
         heading: 'Navigazione mobile',
         lines: [
-          { text: 'Menu → Inquadrature per cambiare punto di vista', requires: null },
           { text: 'Tap sul pavimento per spostarti',            requires: 'navigation' },
           { text: 'Trascina per orientare la visuale',          requires: 'navigation' },
-          { text: 'Tap su un espositore per esaminarlo',        requires: 'focusMode' },
           { text: 'Usa la barra in basso per spostarti subito', requires: 'navigation' },
+          { text: 'Tap su un espositore per esaminarlo',        requires: 'focusMode' },
         ],
         cta: 'Entra',
       },
@@ -383,14 +418,24 @@ export const storeConfig = {
       comingSoon: 'in arrivo · fase',
       phaseNotice: 'Prototipo in costruzione. I comandi segnati "in arrivo" non sono ancora attivi.',
     },
-    hud: { menu: 'Menu', close: 'Chiudi', focusExit: 'Esci', youAreHere: 'Sei qui' },
+    hud: {
+      menu: 'Menu', close: 'Chiudi', focusExit: 'Esci', youAreHere: 'Sei qui',
+      noZone: 'Corridoio',
+      lockPrompt: 'Click per guardarti attorno',
+      lockPromptSub: 'WASD per muoverti · ESC per liberare il cursore',
+      quickTravel: 'Vai a',
+    },
     hints: {
-      navigationLocked: 'La navigazione arriva nella Fase 3 · intanto: Menu → Inquadrature',
+      navigationLocked: 'La navigazione arriva nella Fase 3',
+      unreachable: 'Punto non raggiungibile',
+      wall: 'Lì c\'è un muro',
+      pointerLockFailed: 'Il browser non ha concesso il controllo del mouse: riprova con un click',
+      comingInPhase: 'In arrivo nella Fase',
     },
     menu: {
       title: 'Indice',
       sections: [
-        { id: 'sec-shots', label: 'Inquadrature' },
+        { id: 'sec-travel', label: 'Vai a' },
         { id: 'sec-products', label: 'Capi' },
         { id: 'sec-brand', label: 'Brand' },
       ],

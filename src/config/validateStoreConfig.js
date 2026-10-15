@@ -8,15 +8,9 @@
  * Gira solo in sviluppo: in produzione la chiamata viene eliminata dal bundle.
  */
 
-import { pointInCollider, segmentHitsCollider } from '../lib/geometry.js'
+import { pointInCollider, segmentHitsCollider, inAnyArea } from '../lib/geometry.js'
 
 const ids = (list) => new Set(list.map((item) => item.id))
-
-function inAnyArea([x, z], areas) {
-  return areas.some(({ bounds: [[x0, z0], [x1, z1]] }) =>
-    x >= Math.min(x0, x1) && x <= Math.max(x0, x1) &&
-    z >= Math.min(z0, z1) && z <= Math.max(z0, z1))
-}
 
 export function validateStoreConfig(config) {
   const errors = []
@@ -52,6 +46,8 @@ export function validateStoreConfig(config) {
   }
 
   for (const poi of config.pois) {
+    if (!waypointIds.has(poi.approachWaypointId)) fail('I5', `poi ${poi.id}: approachWaypointId "${poi.approachWaypointId}" inesistente`)
+    if (poi.requires && !(poi.requires in (config.features ?? {}))) fail('I15', `poi ${poi.id}: richiede la funzione inesistente "${poi.requires}"`)
     if (poi.targetDisplayId && !displayIds.has(poi.targetDisplayId)) fail('I5', `poi ${poi.id}: display "${poi.targetDisplayId}" inesistente`)
     if (poi.targetLookbookId && !lookbookIds.has(poi.targetLookbookId)) fail('I5', `poi ${poi.id}: lookbook "${poi.targetLookbookId}" inesistente`)
   }
@@ -77,7 +73,9 @@ export function validateStoreConfig(config) {
     }
   }
 
+  const zoneIdsForQt = ids(config.environment.zones)
   for (const qt of config.navigation.quickTravel) {
+    if (!zoneIdsForQt.has(qt.zoneId)) fail('I8', `quickTravel ${qt.id}: zona "${qt.zoneId}" inesistente`)
     const w = waypointById.get(qt.waypointId)
     if (!w) fail('I8', `quickTravel ${qt.id}: waypoint "${qt.waypointId}" inesistente`)
     else if (!w.safeForTeleport) fail('I8', `quickTravel ${qt.id}: "${w.id}" non è marcato safeForTeleport`)
