@@ -41,13 +41,19 @@ export function pickTier({ pointer, cores, memory, renderer }) {
   return 'low'
 }
 
+export { zoneAt } from './geometry.js'
+
 export function getDeviceProfile() {
   const pointer = detectPointer()
   const webgl = detectWebGL2()
   const cores = navigator.hardwareConcurrency ?? 4
   const memory = navigator.deviceMemory ?? 4
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  const tier = pickTier({ pointer, cores, memory, renderer: webgl.renderer })
+  const params = new URLSearchParams(window.location.search)
+  const forced = params.get('debug') && params.get('tier')
+  const tier = ['high', 'medium', 'low'].includes(forced)
+    ? forced
+    : pickTier({ pointer, cores, memory, renderer: webgl.renderer })
   return {
     pointer,
     isTouch: pointer === 'coarse',
@@ -60,9 +66,3 @@ export function getDeviceProfile() {
   }
 }
 
-/** In quale zona cade un punto del pavimento? Usato da HUD e minimappa. */
-export function zoneAt([x, z], zones) {
-  return zones.find(({ bounds: [[x0, z0], [x1, z1]] }) =>
-    x >= Math.min(x0, x1) && x <= Math.max(x0, x1) &&
-    z >= Math.min(z0, z1) && z <= Math.max(z0, z1)) ?? null
-}

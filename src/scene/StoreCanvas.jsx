@@ -4,41 +4,83 @@ import * as THREE from 'three'
 
 import Floor from './environment/Floor.jsx'
 import Walls from './environment/Walls.jsx'
+import Architecture from './environment/Architecture.jsx'
+import BrandWall from './environment/BrandWall.jsx'
+import FloorLabels from './environment/FloorLabels.jsx'
+import GroundShadows from './environment/GroundShadows.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
+import LightFixtures from './lighting/LightFixtures.jsx'
+import ColliderDebug from './debug/ColliderDebug.jsx'
+import { useAppStore } from '../state/useAppStore.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
 
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+
 /**
- * Camera della Fase 1b: posa fissa da storeConfig, con un'oscillazione minima
- * che toglie la sensazione di fotografia morta. La navigazione arriva in Fase 3.
- * L'oscillazione si spegne da sola se l'utente ha chiesto meno animazioni.
+ * Camera della Fase 2: inquadrature statiche da storeConfig.camera.shots.
+ * Al cambio di inquadratura la camera viaggia dalla posa corrente alla nuova
+ * (posizione, punto guardato, fov) con un'interpolazione morbida; a riposo
+ * aggiunge un'oscillazione minima. Con "riduci animazioni" il cambio è un taglio
+ * netto e l'oscillazione è spenta. La navigazione libera arriva in Fase 3.
  */
-function StaticCamera({ camera, reducedMotion }) {
+function CameraRig({ camera, reducedMotion }) {
   const { camera: cam } = useThree()
-  const debugKey = debugParams().get('debug')
-  const pose = camera.debugPoses?.[debugKey] ?? camera.staticPose
-  const base = useRef(new THREE.Vector3(...pose.position))
-  const target = useRef(new THREE.Vector3(...pose.target))
+  const activeShotId = useAppStore((s) => s.activeShotId)
+  const debugPose = camera.debugPoses?.[debugParams().get('debug')]
+  const shot = debugPose
+    ?? camera.shots.find((x) => x.id === activeShotId)
+    ?? camera.shots.find((x) => x.id === camera.defaultShotId)
+
+  const current = useRef({
+    position: new THREE.Vector3(...shot.position),
+    target: new THREE.Vector3(...shot.target),
+    fov: shot.fov,
+  })
+  const transition = useRef(null)
 
   useEffect(() => {
-    cam.position.copy(base.current)
-    cam.lookAt(target.current)
-    cam.fov = pose.fov
     cam.near = camera.near
     cam.far = camera.far
-    cam.updateProjectionMatrix()
-  }, [cam, camera, pose])
+  }, [cam, camera.near, camera.far])
+
+  useEffect(() => {
+    const goal = { position: new THREE.Vector3(...shot.position), target: new THREE.Vector3(...shot.target), fov: shot.fov }
+    if (reducedMotion) {
+      current.current = goal
+      transition.current = null
+      return
+    }
+    transition.current = {
+      from: { position: current.current.position.clone(), target: current.current.target.clone(), fov: current.current.fov },
+      goal,
+      start: performance.now(),
+    }
+  }, [shot, reducedMotion])
 
   const sway = camera.idleSway
   useFrame(({ clock }) => {
-    if (!sway.enabled || reducedMotion || pose !== camera.staticPose) return
-    const t = (clock.elapsedTime / sway.periodSeconds) * Math.PI * 2
-    cam.position.set(
-      base.current.x + Math.sin(t) * sway.amplitude,
-      base.current.y + Math.sin(t * 0.6) * sway.amplitude * 0.5,
-      base.current.z,
-    )
-    cam.lookAt(target.current)
+    const tr = transition.current
+    if (tr) {
+      const t = Math.min(1, (performance.now() - tr.start) / camera.transitionMs)
+      const e = easeInOutCubic(t)
+      current.current.position.lerpVectors(tr.from.position, tr.goal.position, e)
+      current.current.target.lerpVectors(tr.from.target, tr.goal.target, e)
+      current.current.fov = tr.from.fov + (tr.goal.fov - tr.from.fov) * e
+      if (t >= 1) transition.current = null
+    }
+
+    cam.position.copy(current.current.position)
+    if (!tr && sway.enabled && !reducedMotion && !debugPose) {
+      const k = (clock.elapsedTime / sway.periodSeconds) * Math.PI * 2
+      cam.position.x += Math.sin(k) * sway.amplitude
+      cam.position.y += Math.sin(k * 0.6) * sway.amplitude * 0.5
+    }
+    cam.lookAt(current.current.target)
+    if (cam.fov !== current.current.fov) {
+      cam.fov = current.current.fov
+      cam.updateProjectionMatrix()
+    }
   })
 
   return null
@@ -87,6 +129,7 @@ function FirstFrameSignal({ onStage }) {
 
 function SceneContents({ config, tier }) {
   const { environment, lighting } = config
+  const showColliders = debugParams().get('debug') && debugParams().get('colliders') === '1'
 
   // NOTA: qui c'era un `useEffect(() => disposeMaterialCache, [])`. In StrictMode
   // React monta, smonta e rimonta: al primo smontaggio le texture venivano
@@ -104,7 +147,28 @@ function SceneContents({ config, tier }) {
         floor={environment.floor}
         materials={lighting.materials}
       />
+      <Architecture environment={environment} materials={lighting.materials} />
+      <BrandWall
+        brandWall={environment.brandWall}
+        brand={config.meta.brand}
+        lookbook={config.lookbook}
+        assets={config.assets}
+        materials={lighting.materials}
+      />
+      <FloorLabels zones={environment.zones} />
+      <GroundShadows
+        objects={environment.architecture.columns}
+        groundShadow={config.performance.groundShadow}
+        enabled={tier.maxShadowCasters === 0}
+      />
       <LightingRig lighting={lighting} tier={tier} fog={environment.fog} />
+      <LightFixtures
+        spots={lighting.spots}
+        architecture={environment.architecture}
+        ceiling={environment.ceiling}
+        materials={lighting.materials}
+      />
+      {showColliders && <ColliderDebug colliders={config.colliders} navigation={config.navigation} />}
     </>
   )
 }
@@ -140,7 +204,7 @@ export default function StoreCanvas({ config, device, onStage }) {
         onStage?.('context')
       }}
     >
-      <StaticCamera camera={config.camera} reducedMotion={device.reducedMotion} />
+      <CameraRig camera={config.camera} reducedMotion={device.reducedMotion} />
       <FrameLimiter targetFps={targetFps} />
       <FirstFrameSignal onStage={onStage} />
       <Suspense fallback={null}>

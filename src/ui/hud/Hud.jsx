@@ -14,8 +14,8 @@ export default function Hud({ device }) {
   const menuOpen = useAppStore((s) => s.menuOpen)
   const toggleMenu = useAppStore((s) => s.toggleMenu)
   const activeZoneId = useAppStore((s) => s.activeZoneId)
-
-  const zone = storeConfig.environment.zones.find((z) => z.id === activeZoneId)
+  const activeShotId = useAppStore((s) => s.activeShotId)
+  const shot = storeConfig.camera.shots.find((x) => x.id === activeShotId)
 
   return (
     <div className="pointer-events-none fixed inset-0 p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
@@ -26,7 +26,7 @@ export default function Hud({ device }) {
                style={{ fontSize: 'var(--text-lg)', letterSpacing: 'var(--tracking-brutal)' }}>
               {brand.wordmark}
             </p>
-            <p className="micro mt-1">{zone ? zone.label : brand.descriptor}</p>
+            <p className="micro mt-1">{shot ? shot.label : brand.descriptor}</p>
           </div>
 
           <div className="pointer-events-auto">

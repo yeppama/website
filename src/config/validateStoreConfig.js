@@ -8,19 +8,9 @@
  * Gira solo in sviluppo: in produzione la chiamata viene eliminata dal bundle.
  */
 
-const ids = (list) => new Set(list.map((item) => item.id))
+import { pointInCollider, segmentHitsCollider } from '../lib/geometry.js'
 
-/** Punto 2D dentro un box orientato? Usato per I9: nessun waypoint dentro un collider. */
-function pointInCollider([x, z], collider, margin = 0) {
-  const [cx, , cz] = collider.center
-  const [sx, , sz] = collider.size
-  const a = -(collider.rotationY || 0)
-  const dx = x - cx
-  const dz = z - cz
-  const lx = dx * Math.cos(a) - dz * Math.sin(a)
-  const lz = dx * Math.sin(a) + dz * Math.cos(a)
-  return Math.abs(lx) <= sx / 2 + margin && Math.abs(lz) <= sz / 2 + margin
-}
+const ids = (list) => new Set(list.map((item) => item.id))
 
 function inAnyArea([x, z], areas) {
   return areas.some(({ bounds: [[x0, z0], [x1, z1]] }) =>
@@ -114,6 +104,49 @@ export function validateStoreConfig(config) {
     if (!spot.targetPosition && !spot.targetDisplayId) fail('I14', `faretto ${spot.id}: nessun bersaglio`)
   }
 
+  // I16 — nessun collegamento del grafo attraversa un collider, con un margine pari
+  // al raggio del player. In Fase 3 questi segmenti sono i percorsi che il player
+  // camminerà: un link che taglia una colonna è un player che ci passa attraverso.
+  for (const [a, b] of config.navigation.links) {
+    const wa = waypointById.get(a)
+    const wb = waypointById.get(b)
+    if (!wa || !wb) continue
+    for (const c of config.colliders) {
+      if (segmentHitsCollider([wa.position[0], wa.position[2]], [wb.position[0], wb.position[2]], c, margin)) {
+        fail('I16', `link [${a} → ${b}] attraversa il collider ${c.id}`)
+      }
+    }
+  }
+
+  // I17 — inquadrature: zona esistente, camera fuori dai collider, default valido.
+  const zoneIds = ids(config.environment.zones)
+  const shotIds = ids(config.camera.shots)
+  if (!shotIds.has(config.camera.defaultShotId)) fail('I17', `defaultShotId "${config.camera.defaultShotId}" inesistente`)
+  for (const shot of config.camera.shots) {
+    if (!zoneIds.has(shot.zoneId)) fail('I17', `inquadratura ${shot.id}: zona "${shot.zoneId}" inesistente`)
+    for (const c of config.colliders) {
+      if (pointInCollider([shot.position[0], shot.position[2]], c, 0.2)) fail('I17', `inquadratura ${shot.id}: camera dentro il collider ${c.id}`)
+    }
+  }
+
+  // I18 — architettura e parete del brand: riferimenti validi.
+  const arch = config.environment.architecture
+  for (const col of arch.columns) {
+    if (!colliderIds.has(col.colliderId)) fail('I18', `colonna ${col.id}: colliderId "${col.colliderId}" inesistente`)
+    if (!materialIds.has(col.materialId)) fail('I18', `colonna ${col.id}: materiale "${col.materialId}" inesistente`)
+  }
+  for (const pl of arch.platforms) {
+    if (!zoneIds.has(pl.zoneId)) fail('I18', `pedana ${pl.id}: zona "${pl.zoneId}" inesistente`)
+    if (!materialIds.has(pl.materialId)) fail('I18', `pedana ${pl.id}: materiale "${pl.materialId}" inesistente`)
+  }
+  for (const tr of arch.ceilingTracks) {
+    if (!materialIds.has(tr.materialId)) fail('I18', `binario ${tr.id}: materiale "${tr.materialId}" inesistente`)
+  }
+  const bw = config.environment.brandWall
+  if (!assetIds.has(bw.sign.assetId)) fail('I18', `insegna: asset "${bw.sign.assetId}" inesistente`)
+  if (!lookbookIds.has(bw.panel.lookbookId)) fail('I18', `pannello: lookbook "${bw.panel.lookbookId}" inesistente`)
+  if (!materialIds.has(bw.panel.materialId)) fail('I18', `pannello: materiale "${bw.panel.materialId}" inesistente`)
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
@@ -136,5 +169,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 15 invarianti verificate, nessun errore')
+  console.info('storeConfig: 18 invarianti verificate, nessun errore')
 }

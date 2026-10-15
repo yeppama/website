@@ -1,6 +1,9 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.2 — **Fase 2 consegnata.** Invarianti estese a 18 (I15–I18, §3.11). Grafo di
+> navigazione corretto: rimosse le diagonali verso `wp-hall-02`, una delle quali attraversava il
+> plinto (rilevato da I16). P4 risolta per assunzione: logo come insegna sulla parete di fondo.
 > Changelog 1.1 — accento primario sostituito: **Flame Orange, PANTONE 15-1157 TPG (#F98E30)**
 > al posto dell'arancio-rosso `#ff5a1f`; token rinominato `ember` → `flame`. Nessun rosso di brand:
 > `#c21025` sopravvive solo come colore di stato per gli errori.
@@ -539,6 +542,10 @@ copy: {
 | I12 | ogni `assetId` esiste in `assets.registry` e ha `fallback` o `url` | mesh mancante |
 | I13 | ogni `media[].ratio` esiste in `placeholders.ratios` | layout rotto |
 | I14 | ogni `spots[].targetDisplayId` esiste (se presente) | faretto puntato nel vuoto |
+| I15 | ogni istruzione dell'onboarding richiede una funzione esistente in `features` | l'interfaccia promette comandi senza sapere se esistono |
+| I16 | nessun collegamento del grafo attraversa un collider (margine `player.radius`) | in Fase 3 il player cammina dentro un mobile o una colonna |
+| I17 | ogni inquadratura ha una zona valida e la camera fuori dai collider; `defaultShotId` esiste | camera dentro una colonna, HUD incoerente |
+| I18 | colonne, pedane, binari e parete del brand referenziano materiali, collider, asset e lookbook esistenti | geometria nera o pannello vuoto |
 
 Il validatore lancia un errore bloccante in `import.meta.env.DEV` e viene eliminato dal bundle di
 produzione via tree-shaking. **Questo è il meccanismo che rende il data-driven affidabile:** senza
@@ -780,7 +787,7 @@ correggere dopo. Suggerisco di dedicare a entrambe un giro di revisione in più.
 | **P1** | **Logo vettoriale** (`.svg` / `.ai` / `.pdf`) o PNG trasparente ≥ 2000 px. Il file ricevuto è 150×150 px su fondo bianco | **Fase 2** (prima dell'insegna 3D) | Uso un segnaposto tipografico e lo dichiaro |
 | **P2** | **Font del marchio**, se ne esiste uno proprietario con licenza | Fase 1b | Uso un open font vicino e dichiaro che non è identico (L7) |
 | **P3** | **Conferma della tagline** `We're just looking for somewhere` — l'ho letta dal micro-testo del logo a bassa risoluzione, potrebbe essere incompleta | Fase 5 (Lookbook) | La marco come da verificare nel file di configurazione |
-| **P4** | **Il logo deve comparire in 3D?** (insegna sopra l'ingresso, decal sui pannelli) o solo nella UI 2D? | **Fase 2** | Assumo insegna all'ingresso + decal sul pannello del lookbook, e te lo mostro |
+| ~~P4~~ | ~~Il logo deve comparire in 3D?~~ | **Fase 2: risolta per assunzione** | Insegna sulla parete di fondo (punto di fuga dell'ingresso) con wordmark nell'ellisse del marchio, pannello Lookbook sotto. Da confermare o correggere |
 
 ## 8. Verifiche della Fase 0
 

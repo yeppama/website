@@ -11,6 +11,8 @@ import Button from '../primitives/Button.jsx'
 export default function MenuDrawer() {
   const open = useAppStore((s) => s.menuOpen)
   const close = useAppStore((s) => s.closeMenu)
+  const activeShotId = useAppStore((s) => s.activeShotId)
+  const setShot = useAppStore((s) => s.setShot)
   const panel = useRef(null)
   const previouslyFocused = useRef(null)
 
@@ -30,6 +32,7 @@ export default function MenuDrawer() {
 
   const { brand } = storeConfig.meta
   const { zones } = storeConfig.environment
+  const { shots } = storeConfig.camera
   const menu = storeConfig.copy.menu
 
   return (
@@ -60,16 +63,35 @@ export default function MenuDrawer() {
           <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[0].label}
           </h3>
+          {/* Inquadrature statiche (Fase 2): ogni voce sposta la camera su una posa
+              fissa. Non è navigazione libera, che arriva in Fase 3. */}
           <ul className="grid gap-px bg-line-subtle">
-            {zones.map((zone) => (
-              <li key={zone.id} className="flex items-center justify-between bg-bg-raised px-3 py-3">
-                <span className="font-display font-bold uppercase text-text-primary"
-                      style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-wide)' }}>
-                  {zone.label}
-                </span>
-                <span className="micro">{zone.id}</span>
-              </li>
-            ))}
+            {shots.map((shot, i) => {
+              const active = shot.id === activeShotId
+              const zone = zones.find((z) => z.id === shot.zoneId)
+              return (
+                <li key={shot.id}>
+                  <button
+                    type="button"
+                    onClick={() => { setShot(shot); close() }}
+                    aria-current={active ? 'true' : undefined}
+                    className="flex w-full items-center justify-between gap-3 bg-bg-raised px-3 py-3 text-left transition-colors hover:bg-surface-2"
+                    style={{ minHeight: 'var(--touch-min)' }}
+                  >
+                    <span className="flex items-baseline gap-3">
+                      <span className="micro" style={{ color: active ? 'var(--color-accent-flame)' : undefined }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className={`font-display font-bold uppercase ${active ? 'text-accent-flame' : 'text-text-primary'}`}
+                            style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-wide)' }}>
+                        {shot.label}
+                      </span>
+                    </span>
+                    <span className="micro">{active ? '● attiva' : zone?.label}</span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </section>
 

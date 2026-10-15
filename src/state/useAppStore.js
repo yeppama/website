@@ -20,6 +20,7 @@ export const useAppStore = create((set, get) => ({
   device: null,          // popolato da useDeviceProfile
   menuOpen: false,
   activeZoneId: null,
+  activeShotId: null,    // inquadratura statica corrente (Fase 2)
   reducedMotion: false,
   loadStage: 'boot',
   notice: null,          // messaggio breve mostrato sopra la scena
@@ -28,6 +29,8 @@ export const useAppStore = create((set, get) => ({
   setDevice: (device) => set({ device }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   setActiveZone: (activeZoneId) => set({ activeZoneId }),
+  // Un'inquadratura porta con sé la sua zona: HUD e minimappa restano coerenti.
+  setShot: (shot) => set({ activeShotId: shot.id, activeZoneId: shot.zoneId }),
   setLoadStage: (loadStage) => set({ loadStage }),
 
   // Un solo messaggio alla volta, che si nasconde da solo. `id` evita che un

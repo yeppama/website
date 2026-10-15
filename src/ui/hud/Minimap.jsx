@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
+import { useAppStore } from '../../state/useAppStore.js'
 
 /**
  * Minimappa disegnata interamente da storeConfig: pianta del pavimento, zone,
@@ -10,6 +11,8 @@ import { storeConfig } from '../../config/storeConfig.js'
  */
 export default function Minimap({ activeZoneId }) {
   const { environment, navigation, camera } = storeConfig
+  const activeShotId = useAppStore((s) => s.activeShotId)
+  const shot = camera.shots.find((x) => x.id === activeShotId) ?? camera.shots[0]
   const [w, d] = environment.floor.size
   const pad = 2
 
@@ -18,7 +21,12 @@ export default function Minimap({ activeZoneId }) {
     [w, d],
   )
 
-  const [cx, cz] = project(camera.staticPose.position[0], camera.staticPose.position[2])
+  const [cx, cz] = project(shot.position[0], shot.position[2])
+  // Direzione di vista: un segmento verso il punto inquadrato, lungo al massimo 3 m.
+  const dx = shot.target[0] - shot.position[0]
+  const dz = shot.target[2] - shot.position[2]
+  const len = Math.hypot(dx, dz) || 1
+  const [vx, vz] = project(shot.position[0] + (dx / len) * 3, shot.position[2] + (dz / len) * 3)
 
   return (
     <div className="w-20 sm:w-44">
@@ -53,10 +61,21 @@ export default function Minimap({ activeZoneId }) {
                 stroke="var(--color-line-strong)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
             )
           })}
+          {environment.architecture.platforms.map((p) => {
+            const [ax, az] = project(p.center[0] - p.size[0] / 2, p.center[2] - p.size[2] / 2)
+            const [bx, bz] = project(p.center[0] + p.size[0] / 2, p.center[2] + p.size[2] / 2)
+            return <rect key={p.id} x={ax} y={az} width={bx - ax} height={bz - az} fill="var(--color-bg-studio)" fillOpacity="0.18" />
+          })}
+          {environment.architecture.columns.map((c) => {
+            const [ax, az] = project(c.position[0] - c.size[0] / 2, c.position[2] - c.size[2] / 2)
+            const [bx, bz] = project(c.position[0] + c.size[0] / 2, c.position[2] + c.size[2] / 2)
+            return <rect key={c.id} x={ax} y={az} width={bx - ax} height={bz - az} fill="var(--color-line-strong)" />
+          })}
           {navigation.waypoints.filter((wp) => wp.label).map((wp) => {
             const [x, z] = project(wp.position[0], wp.position[2])
             return <circle key={wp.id} cx={x} cy={z} r="1.6" fill="var(--color-text-muted)" />
           })}
+          <line x1={cx} y1={cz} x2={vx} y2={vz} stroke="var(--color-accent-flame)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {/* "Sei qui": l'ellisse del marchio, ancora una volta. */}
           <ellipse cx={cx} cy={cz} rx="4" ry="2.2"
             fill="none" stroke="var(--color-accent-flame)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, lazy, Suspense } from 'react'
 import { storeConfig } from './config/storeConfig.js'
 import { assertStoreConfig } from './config/validateStoreConfig.js'
-import { getDeviceProfile, zoneAt } from './lib/deviceProfile.js'
+import { getDeviceProfile } from './lib/deviceProfile.js'
 import { useAppStore, APP_PHASE } from './state/useAppStore.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
@@ -28,7 +28,7 @@ export default function App() {
   const device = useAppStore((s) => s.device)
   const setDevice = useAppStore((s) => s.setDevice)
   const enterStore = useAppStore((s) => s.enterStore)
-  const setActiveZone = useAppStore((s) => s.setActiveZone)
+  const setShot = useAppStore((s) => s.setShot)
   const loadStage = useAppStore((s) => s.loadStage)
   const setLoadStage = useAppStore((s) => s.setLoadStage)
   const showNotice = useAppStore((s) => s.showNotice)
@@ -40,11 +40,11 @@ export default function App() {
     setDevice(profile)
     setPhase(profile.webgl2 ? APP_PHASE.ONBOARDING : APP_PHASE.UNSUPPORTED)
 
-    // La zona attiva deriva dalla posa della camera. In Fase 3 deriverà dalla
-    // posizione del player, senza toccare HUD né minimappa.
-    const [cx, , cz] = storeConfig.camera.staticPose.position
-    setActiveZone(zoneAt([cx, cz], storeConfig.environment.zones)?.id ?? null)
-  }, [setDevice, setPhase, setActiveZone])
+    // Inquadratura iniziale. L'inquadratura porta con sé la sua zona, quindi HUD e
+    // minimappa sono coerenti da subito. In Fase 3 la zona deriverà dal player.
+    const { shots, defaultShotId } = storeConfig.camera
+    setShot(shots.find((x) => x.id === defaultShotId))
+  }, [setDevice, setPhase, setShot])
 
   // Gli stadi avanzano solo in avanti: StrictMode e i rimontaggi non possono
   // far tornare indietro la barra.

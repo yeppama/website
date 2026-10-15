@@ -8,6 +8,18 @@
  * Unità: metri. Y verso l'alto. Rotazioni in radianti.
  */
 
+// Colonne strutturali: una griglia dichiarata qui, da cui derivano sia la
+// geometria visibile sia i collider. Nessun componente conosce queste posizioni.
+const COLUMN_GRID = { xs: [-9, 9], zs: [12, 4, -4, -12], size: [0.7, 4.2, 0.7] }
+const COLUMNS = COLUMN_GRID.xs.flatMap((x) => COLUMN_GRID.zs.map((z) => ({
+  id: `col-${x < 0 ? 'w' : 'e'}-${z < 0 ? 'm' : 'p'}${Math.abs(z)}`,
+  position: [x, 0, z],
+  size: COLUMN_GRID.size,
+  materialId: 'mat-concrete-raw',
+  colliderId: `colb-${x < 0 ? 'w' : 'e'}-${z < 0 ? 'm' : 'p'}${Math.abs(z)}`,
+  groundShadow: true,
+})))
+
 export const storeConfig = {
   meta: {
     schemaVersion: '1.0.0',
@@ -67,8 +79,23 @@ export const storeConfig = {
   },
 
   // Camera della Fase 1b: posa fissa. La navigazione arriva in Fase 3.
+  // Fase 2: inquadrature statiche. La camera non si muove liberamente (quella è
+  // la Fase 3): passa da una posa fissa all'altra con una transizione.
   camera: {
-    staticPose: { position: [0, 1.75, 15.5], target: [0, 1.5, -2], fov: 52 },
+    defaultShotId: 'shot-entrance',
+    transitionMs: 1400,
+    shots: [
+      { id: 'shot-entrance', label: 'Ingresso',     zoneId: 'zone-entrance',
+        position: [0, 1.75, 15.5],  target: [0, 1.85, -4],   fov: 54 },
+      { id: 'shot-new',      label: 'Nuovi Arrivi', zoneId: 'zone-new',
+        position: [-1.4, 1.7, 13.2], target: [-7.2, 0.7, 6.0], fov: 52 },
+      { id: 'shot-archive',  label: 'Archivio',     zoneId: 'zone-archive',
+        position: [1.4, 1.7, 13.2],  target: [7.2, 0.7, 6.0],  fov: 52 },
+      { id: 'shot-lookbook', label: 'Brand Wall',   zoneId: 'zone-lookbook',
+        position: [0, 1.6, -3.5],   target: [0, 2.2, -18],   fov: 56 },
+      { id: 'shot-portal',   label: 'Uscita',       zoneId: 'zone-entrance',
+        position: [0, 1.7, 6.5],    target: [0, 1.8, 18],    fov: 56 },
+    ],
     idleSway: { enabled: true, amplitude: 0.055, periodSeconds: 14 },
     near: 0.1,
     far: 70,
@@ -97,12 +124,50 @@ export const storeConfig = {
       { id: 'wall-s-right', from: [  1.5, 18], to: [ 12,  18], height: 4.2, thickness: 0.2, materialId: 'mat-plaster-dark', colliderId: 'col-wall-s-right' },
     ],
     zones: [
-      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   accentColor: 'accent.flame',   ambientBoost: 0.15 },
-      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  accentColor: 'accent.flame',   ambientBoost: 0.0 },
-      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    accentColor: 'accent.flame', ambientBoost: -0.05 },
-      { id: 'zone-lookbook', label: 'Lookbook',     bounds: [[-6, -16], [6, -6]],  accentColor: 'accent.bone',    ambientBoost: 0.1 },
+      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   accentColor: 'accent.flame',   ambientBoost: 0.15, floorLabel: false },
+      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  accentColor: 'accent.flame',   ambientBoost: 0.0,  floorLabel: true },
+      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    accentColor: 'accent.flame', ambientBoost: -0.05, floorLabel: true },
+      { id: 'zone-lookbook', label: 'Lookbook',     bounds: [[-6, -16], [6, -6]],  accentColor: 'accent.bone',    ambientBoost: 0.1,  floorLabel: true },
     ],
-    entrance: { waypointId: 'wp-entrance', lookAtWaypointId: 'wp-hall-01' },
+    entrance: {
+      waypointId: 'wp-entrance', lookAtWaypointId: 'wp-hall-01',
+      // L'architrave è sopra la testa: niente collider, non deve bloccare il passaggio.
+      lintel:    { center: [0, 3.65, 18], size: [3.2, 1.1, 0.2], materialId: 'mat-plaster-dark' },
+      threshold: { center: [0, 0.006, 17.75], size: [3.0, 0.012, 0.14], materialId: 'mat-accent-flame' },
+      // Oltre la soglia si intravede il mondo "studio" del brand: senza, il vano
+      // della porta è un rettangolo nero e l'inquadratura d'uscita non ha soggetto.
+      exteriorGlow: { center: [0, 1.6, 18.9], size: [3.4, 3.4], color: '#dcdcd8', intensity: 0.62 },
+    },
+
+    architecture: {
+      columns: COLUMNS,
+      // Pedane "studio": il mondo chiaro del brand, sotto le zone espositive.
+      // 6 cm: calpestabili, senza collider.
+      platforms: [
+        { id: 'plat-new',     zoneId: 'zone-new',      center: [-6.5, 0.03, 7.0],  size: [5.0, 0.06, 4.0], materialId: 'mat-bone-seamless' },
+        { id: 'plat-archive', zoneId: 'zone-archive',  center: [6.5, 0.03, 7.0],   size: [5.0, 0.06, 4.0], materialId: 'mat-bone-seamless' },
+        { id: 'plat-look',    zoneId: 'zone-lookbook', center: [0, 0.03, -15.6],   size: [8.0, 0.06, 4.4], materialId: 'mat-bone-seamless' },
+      ],
+      // Binari a soffitto: giustificano i faretti. Un faretto che pende dal nulla
+      // si legge come un effetto, uno appeso a un binario come architettura.
+      ceilingTracks: [
+        { id: 'track-w',      from: [-6.5, 12.5], to: [-6.5, 2.0],  materialId: 'mat-steel-dark' },
+        { id: 'track-e',      from: [6.5, 12.5],  to: [6.5, 2.0],   materialId: 'mat-steel-dark' },
+        { id: 'track-c',      from: [0, 15.0],    to: [0, -14.0],   materialId: 'mat-steel-dark' },
+        { id: 'track-wash-w', from: [-10.5, 13.0], to: [-10.5, 7.0], materialId: 'mat-steel-dark' },
+        { id: 'track-wash-e', from: [10.5, 13.0],  to: [10.5, 7.0],  materialId: 'mat-steel-dark' },
+      ],
+      trackSection: 0.08,
+      fixture: { radius: 0.11, length: 0.28, materialId: 'mat-steel-dark' },
+    },
+
+    // Parete del brand: il punto di fuga dell'inquadratura d'ingresso.
+    // P1: il logo vettoriale non è ancora arrivato, quindi il segno è il wordmark
+    // tipografico di fallback dichiarato in assets.registry.
+    brandWall: {
+      sign:  { assetId: 'asset-logo-primary', center: [0, 2.95, -17.86], width: 5.4, color: '#f98e30' },
+      panel: { lookbookId: 'lb-001', center: [0, 1.15, -17.86], size: [4.8, 1.5], materialId: 'mat-sign-panel' },
+    },
     fog: { enabled: true, color: '#060606', near: 26, far: 72 },
   },
 
@@ -112,27 +177,31 @@ export const storeConfig = {
     // Ordinati per `priority`: il tier taglia dalla coda oltre maxShadowCasters.
     spots: [
       { id: 'spot-hall-studio', priority: 1, kind: 'studio', zoneId: 'zone-new',
-        position: [-5.5, 3.9, 6.0], targetPosition: [-5.5, 0, 4.0],
+        position: [-6.5, 3.95, 10.0], targetPosition: [-6.5, 0, 7.0],
         angle: 0.5, penumbra: 0.65, intensity: 420, distance: 26, decay: 1.4,
         color: '#fff1e2', castShadow: true },
       { id: 'spot-hall-flame',  priority: 2, kind: 'flame', zoneId: 'zone-archive',
-        position: [5.5, 3.9, 6.0], targetPosition: [5.5, 0, 4.0],
+        position: [6.5, 3.95, 10.0], targetPosition: [6.5, 0, 7.0],
         angle: 0.52, penumbra: 0.8, intensity: 360, distance: 26, decay: 1.4,
         color: '#ffa04a', castShadow: true },
       { id: 'spot-entrance',    priority: 3, kind: 'flame', zoneId: 'zone-entrance',
-        position: [0, 4.0, 13.0], targetPosition: [0, 0, 9.5],
+        position: [0, 3.95, 13.0], targetPosition: [0, 0, 9.5],
         angle: 0.62, penumbra: 0.9, intensity: 150, distance: 18, decay: 1.6,
         color: '#f98e30', castShadow: false },
       { id: 'spot-deep',        priority: 4, kind: 'studio', zoneId: 'zone-lookbook',
-        position: [0, 3.8, -12.0], targetPosition: [0, 1.4, -17.5],
+        position: [0, 3.95, -11.5], targetPosition: [0, 1.1, -17.8],
         angle: 0.58, penumbra: 0.7, intensity: 400, distance: 24, decay: 1.3,
         color: '#e8edf2', castShadow: false },
+      { id: 'spot-portal', priority: 7, kind: 'studio', zoneId: 'zone-entrance',
+        position: [0, 3.95, 12.5], targetPosition: [0, 1.6, 18.0],
+        angle: 0.75, penumbra: 0.9, intensity: 240, distance: 16, decay: 1.4,
+        color: '#e9edf2', castShadow: false },
       { id: 'spot-wash-w', priority: 5, kind: 'studio', zoneId: 'zone-new',
-        position: [-10.5, 4.0, 10.0], targetPosition: [-11.8, 1.6, 0.0],
+        position: [-10.5, 3.95, 10.0], targetPosition: [-11.8, 1.6, 0.0],
         angle: 0.95, penumbra: 1.0, intensity: 520, distance: 34, decay: 1.1,
         color: '#c9d2dc', castShadow: false },
       { id: 'spot-wash-e', priority: 6, kind: 'flame', zoneId: 'zone-archive',
-        position: [10.5, 4.0, 10.0], targetPosition: [11.8, 1.6, 0.0],
+        position: [10.5, 3.95, 10.0], targetPosition: [11.8, 1.6, 0.0],
         angle: 0.95, penumbra: 1.0, intensity: 460, distance: 34, decay: 1.1,
         color: '#ffad5e', castShadow: false },
     ],
@@ -143,6 +212,9 @@ export const storeConfig = {
       'mat-steel-brushed':     { color: '#8d9298', roughness: 0.32, metalness: 0.95 },
       'mat-mannequin':         { color: '#cfd2d6', roughness: 0.42, metalness: 0.08 },
       'mat-bone-seamless':     { color: '#dcdcd8', roughness: 0.95, metalness: 0.0 },
+      'mat-concrete-raw':      { color: '#3a3b40', roughness: 0.96, metalness: 0.0 },
+      'mat-steel-dark':        { color: '#2a2c31', roughness: 0.38, metalness: 0.85 },
+      'mat-sign-panel':        { color: '#0d0d0f', roughness: 0.7,  metalness: 0.0 },
       'mat-accent-flame':      { color: '#f98e30', roughness: 0.4,  metalness: 0.0, emissive: '#f98e30', emissiveIntensity: 0.6 },
     },
   },
@@ -155,6 +227,7 @@ export const storeConfig = {
     { id: 'col-wall-s-left',  center: [-6.75, 2.1, 18], size: [10.5, 4.2, 0.4], rotationY: 0 },
     { id: 'col-wall-s-right', center: [6.75, 2.1, 18],  size: [10.5, 4.2, 0.4], rotationY: 0 },
     { id: 'col-disp-mann-01', center: [-6.5, 1.0, 7.0], size: [1.2, 2.0, 1.2],  rotationY: 0.4 },
+    ...COLUMNS.map((c) => ({ id: c.colliderId, center: [c.position[0], c.size[1] / 2, c.position[2]], size: c.size, rotationY: 0 })),
     { id: 'col-plinth-01',    center: [6.5, 0.5, 7.0],  size: [1.4, 1.0, 1.4],  rotationY: 0 },
   ],
 
@@ -175,10 +248,13 @@ export const storeConfig = {
       { id: 'wp-hall-02',  position: [0, 0, 0.0],   label: null,            safeForTeleport: false },
       { id: 'wp-look-01',  position: [0, 0, -9.0],  label: 'Lookbook',      safeForTeleport: true,  lookAt: [0, 1.6, -14] },
     ],
+    // Le diagonali wp-new-01/wp-arch-01 → wp-hall-02 sono state rimosse in Fase 2:
+    // l'invariante I16 ha rilevato che la seconda attraversava il plinto, e la
+    // prima passava solo grazie alla rotazione del manichino. Il grafo resta
+    // connesso attraverso wp-hall-01.
     links: [
       ['wp-entrance', 'wp-hall-01'], ['wp-hall-01', 'wp-new-01'], ['wp-hall-01', 'wp-arch-01'],
       ['wp-hall-01', 'wp-hall-02'], ['wp-hall-02', 'wp-look-01'],
-      ['wp-new-01', 'wp-hall-02'], ['wp-arch-01', 'wp-hall-02'],
     ],
     quickTravel: [
       { id: 'qt-entrance', waypointId: 'wp-entrance', label: 'Ingresso' },
@@ -284,6 +360,7 @@ export const storeConfig = {
       desktop: {
         heading: 'Navigazione desktop',
         lines: [
+          { text: 'Menu → Inquadrature per cambiare punto di vista', requires: null },
           { text: 'WASD o frecce per muoverti',           requires: 'navigation' },
           { text: 'Muovi il mouse per guardarti attorno', requires: 'navigation' },
           { text: 'Click su un espositore per esaminarlo', requires: 'focusMode' },
@@ -294,6 +371,7 @@ export const storeConfig = {
       mobile: {
         heading: 'Navigazione mobile',
         lines: [
+          { text: 'Menu → Inquadrature per cambiare punto di vista', requires: null },
           { text: 'Tap sul pavimento per spostarti',            requires: 'navigation' },
           { text: 'Trascina per orientare la visuale',          requires: 'navigation' },
           { text: 'Tap su un espositore per esaminarlo',        requires: 'focusMode' },
@@ -307,12 +385,12 @@ export const storeConfig = {
     },
     hud: { menu: 'Menu', close: 'Chiudi', focusExit: 'Esci', youAreHere: 'Sei qui' },
     hints: {
-      navigationLocked: 'La navigazione arriva nella Fase 3.',
+      navigationLocked: 'La navigazione arriva nella Fase 3 · intanto: Menu → Inquadrature',
     },
     menu: {
       title: 'Indice',
       sections: [
-        { id: 'sec-zones', label: 'Zone' },
+        { id: 'sec-shots', label: 'Inquadrature' },
         { id: 'sec-products', label: 'Capi' },
         { id: 'sec-brand', label: 'Brand' },
       ],
