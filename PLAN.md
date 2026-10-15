@@ -1,6 +1,8 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
-Versione documento: 0.4 · Data: 2026-10-15 · Stato: in attesa di approvazione
+Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.0 — **tutte le decisioni chiuse** (D1-A, D2-A, D3-A, D4-B, D6-B, D7-A; brand:
+> INTO Industries, logo fornito). Piano esecutivo: nessuna ambiguità residua.
 > Changelog 0.4 — L1 (hosting) **risolta**: integrazione Vercel attiva e verificata. Aggiunti
 > L12 e la decisione D7 (doppio hosting).
 > Changelog 0.3 — aggiunta §10: capacità e limiti dell'ambiente, **verificati**, con piano di
@@ -15,17 +17,27 @@ Versione documento: 0.4 · Data: 2026-10-15 · Stato: in attesa di approvazione
 
 ## 0. Sommario esecutivo e tensioni del brief
 
-Tre tensioni vanno risolte prima di scrivere codice, perché cambiano la forma dei dati:
+Quattro tensioni andavano risolte prima di scrivere codice. **Tutte chiuse il 2026-10-15.**
+
+| # | Tensione | Esito |
+|---|----------|-------|
+| **T1** | Faretti con ombre vs 60 fps mobile | **Chiusa → D3-A.** Max 2 ombre reali su tier high/medium, 0 su low con ombre "blob" a terra |
+| **T2** | Ordine Fase 1 → Fase 2 | **Chiusa → D4-B.** La Fase 1 diventa **Fase 1b**: UI + blockout minimo, così è valutabile |
+| **T3** | Tap-to-move con percorsi validi | **Chiusa.** Grafo waypoint + A* + sweep, modellato in `navigation.links` dalla Fase 0 |
+| **T4** | Grana pesante vs budget mobile | **Chiusa → D6-B.** Velo in compositing, fuori dalla pipeline WebGL |
+
+<details><summary>Analisi originale delle tensioni (conservata per tracciabilità)</summary>
 
 | # | Tensione | Impatto se non decisa ora |
 |---|----------|---------------------------|
 | T1 | "Faretti SpotLight + ombre proiettate" vs "60 fps su mobile" | Ogni SpotLight con `castShadow` costa un render pass aggiuntivo della scena. 4 spot con ombre = 5 pass. Su GPU mobile integrate questo è il singolo costo dominante. Rifarlo in Fase 6 significa riscrivere `lighting` e i materiali. |
 | T2 | Ordine Fase 1 (UI overlay) → Fase 2 (3D) | Il deliverable della Fase 1 è una UI che fluttua sul nulla: non è valutabile esteticamente né dimostra la promessa "impressionante dal primo prototipo". |
 | T3 | "Tap su pavimento" + "percorsi validati che non attraversano i collider" | Implica pathfinding, non un semplice `lerp` verso il punto toccato. Serve un grafo di waypoint navigabile con A*, e la proiezione del tap sul nodo raggiungibile più vicino. Va modellato in `storeConfig.js` dall'inizio (campo `navigation.links`), non aggiunto in Fase 3. |
-| T4 | Grana pesante (firma della reference) vs budget mobile | La grana è un passaggio a schermo intero dopo il rendering: stesso tipo di costo delle ombre. Senza grana il negozio non somiglia al brand; con grana "vera" si perde il margine su mobile. Risolta come D6 con un velo in compositing, fuori dalla pipeline WebGL. |
+| T4 | Grana pesante (firma del brand) vs budget mobile | La grana è un passaggio a schermo intero dopo il rendering: stesso tipo di costo delle ombre. Senza grana il negozio non somiglia al brand; con grana "vera" si perde il margine su mobile. |
 
-Le proposte di risoluzione sono in §7 (Decisioni aperte). T1 e T3 sono già incorporate nello schema dati
-di §3 in modo da non pregiudicare nessuna delle due opzioni.
+</details>
+
+Le decisioni che le hanno chiuse sono in §7, con le opzioni scartate e il motivo.
 
 ---
 
@@ -37,8 +49,8 @@ di §3 in modo da non pregiudicare nessuna delle due opzioni.
 | UI framework | **React 19** | Richiesto dal brief ed è il prerequisito di React Three Fiber. Il modello dichiarativo paga nella UI overlay (modali, HUD, onboarding), dove lo stato è complesso. |
 | Renderer 3D | **Three.js 0.186 via React Three Fiber 9.8** (verificate) | R3F non è un wrapper lento: è un reconciler che costruisce lo stesso scene graph di Three.js. Il vantaggio reale è che la scena diventa un albero di componenti alimentabile da `storeConfig.js` con un `.map()`, che è esattamente il requisito data-driven. Three.js puro imporrebbe un layer imperativo scritto a mano per fare la stessa cosa. |
 | Helper 3D | **@react-three/drei** (selettivo) | Si importano solo i moduli usati (`<Html>`, `<useGLTF>`, `<AdaptiveDpr>`, `<Detailed>`, `<SoftShadows>`). È tree-shakeable: nessun import globale. |
-| Styling | **Tailwind CSS 4.3** *(da confermare — vedi D1)* | L'estetica brutalist vive di spaziature rigide, bordi secchi, tipografia a scala fissa: un sistema di token a classi è più coerente e produce meno CSS runtime di styled-components, che inietta stili a ogni render. Con il canvas WebGL che compete per il main thread, zero CSS-in-JS runtime è un vantaggio misurabile. |
-| Stato globale | **Zustand 5.0** *(nuova dipendenza — vedi D2)* | Lo stato condiviso (fase app, focus mode, modale aperta, device profile, posizione player) è letto sia dentro che fuori il canvas. Con Context di React ogni cambio di stato ri-renderizza i consumer: dentro un `useFrame` a 60 Hz è inaccettabile. Zustand permette sottoscrizioni selettive e letture non reattive (`getState()`) dal render loop. |
+| Styling | **Tailwind CSS 4.3** ✅ *(D1-A, confermata)* | L'estetica brutalist vive di spaziature rigide, bordi secchi, tipografia a scala fissa: un sistema di token a classi è più coerente e produce meno CSS runtime di styled-components, che inietta stili a ogni render. Con il canvas WebGL che compete per il main thread, zero CSS-in-JS runtime è un vantaggio misurabile. |
+| Stato globale | **Zustand 5.0** ✅ *(D2-A, approvata)* | Lo stato condiviso (fase app, focus mode, modale aperta, device profile, posizione player) è letto sia dentro che fuori il canvas. Con Context di React ogni cambio di stato ri-renderizza i consumer: dentro un `useFrame` a 60 Hz è inaccettabile. Zustand permette sottoscrizioni selettive e letture non reattive (`getState()`) dal render loop. |
 | Animazioni UI | **Framer Motion 12** | Transizioni di modali/onboarding. Usato **solo** nella UI 2D; le transizioni di camera sono fatte con interpolazione manuale in `useFrame` (nessun sistema di animazione esterno dentro il render loop). |
 | Linting | ESLint 9 + plugin React Hooks | Le regole sugli hook intercettano gli errori più comuni in R3F (hook condizionali dentro componenti di scena). |
 | Deploy | **Vercel via integrazione Git** (Fase 7, ma da attivare prima — vedi §10) | Build statica, preview per branch, header di cache configurabili per i `.glb`. Netlify è equivalente: la scelta non è vincolante. |
@@ -176,8 +188,16 @@ export const storeConfig = {
 ```js
 meta: {
   schemaVersion: '1.0.0',
-  // NOME ANCORA APERTO: la reference ha fissato la direzione visiva, non il naming.
-  brand: { id: 'brand-demo', name: 'PLACEHOLDER', tagline: 'Placeholder tagline', currency: 'EUR' },
+  brand: {
+    id: 'into-industries',
+    name: 'INTO Industries',
+    wordmark: 'INTO',                    // il marchio nel logo; "industries" è il descrittore
+    origin: { city: 'Florence', country: 'Italy', coords: '43°46\'N 11°15\'E' },
+    credit: 'Curated and produced by Tommaso Inturrisi',
+    tagline: "We're just looking for somewhere",   // da confermare: micro-testo del logo
+    currency: 'EUR',
+    logo: { assetId: 'asset-logo-primary', shape: 'oval', onDark: 'invert' },
+  },
   units: 'meters',
 },
 
@@ -458,6 +478,10 @@ assets: {
                            lod: [{ distance: 0, url: '/models/mannequin_a.glb' },
                                  { distance: 12, primitive: 'capsule', args: [0.28, 1.1, 4, 8] }] },
     'asset-plinth-a':    { type: 'primitive', primitive: 'box', args: [1.2, 0.9, 1.2] },
+    // Logo fornito dal brand. In 3D va usato come decalcomania su piano, mai come mesh.
+    'asset-logo-primary': { type: 'texture', url: '/brand/logo-primary.svg',
+                            fallback: { primitive: 'plane', args: [1.6, 0.5] },
+                            tint: { onDark: '#f2f0ea', onLight: '#060606' } },
   },
   draco: false,     // valutato in Fase 6 se i .glb superano 1 MB
 },
@@ -474,7 +498,7 @@ placeholders: {
 
 copy: {
   onboarding: {
-    title: 'PLACEHOLDER STORE',
+    title: 'INTO',                    // il descrittore 'industries' ha peso tipografico minore
     desktop: { heading: 'Navigazione desktop',
                lines: ['WASD o frecce per muoverti', 'Muovi il mouse per guardarti attorno',
                        'Click su un espositore per esaminarlo', 'ESC per liberare il cursore'],
@@ -630,9 +654,29 @@ brand, questa sezione va rivista.
 4. **Tutto ha grana.** Il 3D pulito è fuori brand. La grana è anche l'alleato tecnico che maschera shadow map a bassa risoluzione e banding — vedi D3.
 5. **Il gotico non entra mai in un bottone.** Solo titoli di schermata, loader e lookbook.
 
-**Nota sul naming.** Il nome `INTO INDUSTRIES` appartiene alla reference ed è usato qui **solo** come
-riferimento stilistico: non comparirà in nessun asset, testo o configurazione. `meta.brand.name`
-resta `PLACEHOLDER` finché non fornisci il tuo.
+**Correzione alla v0.2 di questo documento.** Avevo trattato `into_industries` come una reference
+esterna da non usare. È invece **il brand del progetto**: nome e logo sono stati forniti il
+2026-10-15. Quella nota cautelativa è annullata. Assumo che tu abbia il mandato per usare marchio
+e logo; se non fosse così, dimmelo e li sostituisco con segnaposto.
+
+### 4.5 Il logo e cosa ne ricavo
+
+**Letto dal file fornito** (150×150 px, PNG — vedi nota sul formato più sotto):
+
+| Elemento | Osservazione | Uso nel progetto |
+|---|---|---|
+| **Ovale di contenimento** | Il marchio `INTO` è racchiuso in un'ellisse nera dal tratto spesso, stile targhetta industriale/automotive | **Questo è il regalo più grande del logo.** L'ellisse diventa il motivo geometrico ricorrente: la forma dell'**ombra a terra** (che D3-A ci impone comunque di disegnare), la sagoma degli **hotspot** di prossimità, il bordo dei bottoni primari. Il brand si ripete nella meccanica, non solo nei cartelli |
+| **Fondo chiaro** | Il logo vive su bianco/osso, non su nero | Conferma il sistema a due fondi di §4.4: il mondo "studio" non è un vezzo, è identità. Serve una variante invertita per il negozio scuro (`logo.onDark`) |
+| **Accento caldo dentro il marchio** | Elemento arancione/rosso all'interno dell'ovale | Conferma `accent.ember` come primario |
+| **Micro-testo denso attorno** | `WE'RE JUST LOOKING FOR … SOMEWHERE`, `FLORENCE©ITALY`, coordinate `43°46'N 11°15'E`, `CURATED AND PRODUCED BY TOMMASO INTURRISI`, `®` | Conferma la regola "densità tecnica come texture". Questi dati non sono decorazione: diventano **contenuto reale** del Lookbook / Brand Story (Fase 5) e vivono in `meta.brand`, non scritti a mano nei componenti |
+| **`( industries*)`** | Descrittore in minuscolo sotto il marchio, separato | Gerarchia: `INTO` è il marchio, `industries` è il descrittore. Nell'insegna 3D e nei titoli vanno trattati con pesi diversi, mai come una parola sola |
+
+**Problema pratico, da risolvere prima della Fase 2:** il file ricevuto è un **PNG 150×150 px su
+fondo bianco**. È sufficiente per leggere la direzione, **non** per usarlo: a quella risoluzione
+un'insegna 3D o un titolo a schermo intero risultano sgranati, e il fondo bianco opaco non si
+scontorna su scena scura. **Mi serve l'originale vettoriale (`.svg`, `.ai` o `.pdf`)**, o in
+subordine un PNG a fondo trasparente ≥ 2000 px. Fino ad allora uso un segnaposto tipografico e lo
+dichiaro: `assets.registry['asset-logo-primary'].fallback`.
 
 ---
 
@@ -693,22 +737,21 @@ fornirò l'HUD, il percorso di benchmark e il modulo di `docs/PERF.md` da compil
 ## 6. Roadmap: dipendenze, complessità, rischi
 
 ```
-F0 ──> F1 ──┐
-            ├──> F3 ──> F4 ──> F5 ──> F6 ──> F7 ──> (F8)
-F0 ──> F2 ──┘
+F0 ──> F1b ──> F2 ──> F3 ──> F4 ──> F5 ──> F6 ──> F7 ──> (F8)
 ```
-F1 (UI 2D) e F2 (3D) dipendono solo da F0 e sono indipendenti tra loro. F3 richiede entrambe.
+Con D4-B la Fase 1 assorbe un blockout minimo e diventa **F1b**: la catena torna lineare, e ogni
+consegna è valutabile per conto suo. F2 approfondisce l'ambiente che F1b ha abbozzato.
 
 | Fase | Oggetto | Complessità | Rischi principali | Definition of Done |
 |---|---|---|---|---|
 | **F0** | Piano e schema dati | **Bassa** | Schema incompleto → refactor a cascata nelle fasi 3-5. Mitigazione: invarianti I1-I14 definite ora. | `PLAN.md` approvato |
-| **F1** | Setup, design system, onboarding, HUD | **Bassa-Media** | Deliverable non valutabile senza 3D (T2). Font display: se non si usa un font a licenza aperta, fallback brutto. | Build ok, dev server ok, onboarding desktop/mobile, `<PlaceholderImage />` nei 3 ratio e 3 stati |
+| **F1b** | Setup, design system, onboarding, HUD **+ blockout minimo** (pavimento, 4 muri, 2 faretti) | **Media** *(era Bassa-Media: il blockout aggiunge ~mezza giornata)* | Font display: il blackletter del brand è probabilmente proprietario (L7) → uso un open font e lo dichiaro. Logo in bassa risoluzione (§4.5) → segnaposto tipografico finché non arriva il vettoriale | Build ok, dev server ok, onboarding desktop/mobile, `<PlaceholderImage />` nei 3 ratio e 3 stati, **e i cartelli visibili dentro un ambiente**, quindi giudicabili |
 | **F2** | Blockout + lighting | **Media** | **Il rischio estetico maggiore del progetto.** Luci e materiali decidono se l'esperienza impressiona. Secondo rischio: budget ombre (T1/D3). | Scena generata 100% da config, camera statica, 4 inquadrature screenshot, zero errori console |
 | **F3** | Navigazione ibrida | **Alta** | Pointer Lock: perdita di focus, ESC, re-entry solo su gesto esplicito (bug sottili e specifici per browser). Tap vs drag: discriminare per soglia px + tempo. A* + sweep: percorsi che tagliano gli angoli dentro i collider. | Desktop WASD+look senza penetrazione muri; mobile tap-to-move e teletrasporto; hotspot con isteresi |
 | **F4** | Modelli segnaposto + Focus Camera | **Media** | Focus Mode è una macchina a stati (free → entering → focused → exiting → free): gli input vanno congelati, le uscite devono essere sempre possibili, anche su perdita di focus. Ombre proiettate = ritorno di T1. | Focus in/out fluido su ogni display, nessuno stato bloccato, ombre entro il budget del tier |
 | **F5** | Modali prodotto + Lookbook | **Media** | Movimento sospeso e ripristinato in modo coerente (il bug classico: chiusura modale con un tasto ancora premuto → il player parte da solo). Focus trap e accessibilità da tastiera. | Modali da `storeConfig`, movimento sospeso/ripristinato correttamente, lookbook navigabile |
 | **F6** | Performance, responsive, fallback | **Media-Alta** | Disposal GPU: i leak si vedono solo dopo molti cicli di montaggio/smontaggio. Rischio dichiarativo: non poter testare su dispositivi reali da qui (§5.4). | HUD perf, cap 60 fps, disposal verificato, fallback WebGL, `docs/PERF.md` compilato con misure reali |
-| **F7** | Build e deploy | **Bassa (se sbloccata per tempo)** | **VERIFICATO: Vercel e Netlify non sono raggiungibili da questo container** (§10, L1). Non è un rischio, è un blocco certo. Va risolto con l'integrazione Git prima della Fase 3, perché senza URL pubblico non puoi provare la navigazione mobile su un telefono vero. | URL pubblico raggiungibile e verificato |
+| **F7** | Build e deploy | **Bassa** | ~~Blocco di rete~~ **risolto**: integrazione Vercel attiva, Production e Preview verificate (§10.4). Da F1b in poi ogni push produce un URL pubblico | Dominio di produzione verificato da te sul tuo browser (io non raggiungo gli URL pubblicati, L12) |
 | **F8** | E-commerce reale | **Alta** | Non eseguita. Solo su tuo comando esplicito futuro. | — |
 
 **Percorso critico:** F2 (estetica) e F3 (navigazione). Sono le due fasi dove un errore è costoso da
@@ -716,70 +759,26 @@ correggere dopo. Suggerisco di dedicare a entrambe un giro di revisione in più.
 
 ---
 
-## 7. Decisioni aperte (mi servono le tue risposte)
+## 7. Decisioni — TUTTE CHIUSE (2026-10-15)
 
-**D1 — Styling: Tailwind o styled-components?**
-Raccomando **Tailwind 4**: zero CSS-in-JS runtime (il main thread è già occupato dal canvas), e i
-token di §4.1 si mappano direttamente su `@theme`. Se preferisci styled-components, lo accetto, ma il
-costo è un re-render con ricalcolo di stile a ogni cambio di tema/stato della UI sopra il canvas.
+| # | Decisione | Scelta | Opzioni scartate e perché |
+|---|---|---|---|
+| **D1** | Styling | **A — Tailwind 4.3** | *Styled-components:* costruisce gli stili nel browser dell'utente, sullo stesso thread già occupato dal canvas 3D. Con Tailwind gli stili esistono già prima che la pagina si apra |
+| **D2** | Stato globale | **A — Zustand 5.0** | *Context di React:* a ogni cambio ri-renderizza tutti i consumer; con la posizione del player che cambia 60 volte al secondo è insostenibile. *Emitter a mano:* funziona, ma è codice mio in più senza vantaggi |
+| **D3** | Ombre | **A — ibrida** | Max 2 ombre reali su tier high/medium, **0 su low** con ombre "blob" ellittiche a terra. *Tutte reali:* il tier low scende sotto i 30 fps. *Lightmap pre-cotte:* la resa migliore, ma invalidano il principio data-driven — spostare un espositore in config lascerebbe l'ombra dov'era |
+| **D4** | Ordine fasi | **B — Fase 1b** | La Fase 1 include un blockout minimo (pavimento, 4 muri, 2 faretti), così la UI è giudicabile dentro un ambiente. *Ordine originale:* consegna cartelli nel vuoto, su cui non è possibile dare un giudizio |
+| **D5** | Brand | **Chiusa: INTO Industries** | Nome, logo, origine (Florence, Italy), coordinate e credito in `meta.brand`. Palette e direzione in §4.4, lettura del logo in §4.5 |
+| **D6** | Grana | **B — velo in compositing** | Texture di rumore sopra il canvas, `mix-blend-mode`, animata a ~12 Hz: la pipeline WebGL non la vede. *Post-processing reale:* resa perfetta ma costo a schermo intero proprio dove D3 sta risparmiando. Lo schema resta commutabile via `performance.postFx.grain.mode` |
+| **D7** | Doppio hosting | **A — solo Vercel** | Dichiarato sistemato da te. **Non verificabile da qui** (§10.4, punto 4) |
 
-**D2 — Zustand come store globale: approvi la dipendenza?**
-Non è nel tuo stack originale. Senza di essa userei Context di React, che forza un re-render di tutti
-i consumer a ogni cambio: con stato letto dentro `useFrame` è un problema di prestazioni reale,
-non teorico. Alternativa a costo zero: un event emitter scritto a mano (~40 righe) — più codice mio
-da mantenere, meno leggibile.
+### 7.1 Punti ancora aperti (non bloccanti per la Fase 1b)
 
-**D3 — Politica ombre (la decisione più importante).** Tre opzioni:
-- **(a) Ibrida — mia raccomandazione.** Max 2 faretti con ombre real-time su tier high/medium
-  (shadow map 512-1024, aggiornate solo quando serve), 0 su tier low, dove le ombre diventano
-  "blob" ellittici sotto gli oggetti (`performance.groundShadow`). Prevedibile, scala sui tier,
-  nessuna pipeline di baking.
-- **(b) Tutto real-time.** Resa migliore su desktop, ma il tier low scende sotto i 30 fps: il
-  target mobile va rinegoziato.
-- **(c) Lightmap baked.** La qualità più alta a costo runtime quasi nullo, ma introduce asset di
-  texture, un passo di baking esterno (Blender) e **rompe il principio data-driven**: spostare un
-  espositore in `storeConfig.js` invaliderebbe la lightmap. Lo sconsiglio in un prototipo
-  configurabile.
-
-**D4 — Ordine F1/F2 (T2).** Propongo di invertirle, o di consegnare F1 con dentro una scena di
-blockout minima (pavimento + 4 muri + 2 faretti), così il deliverable della Fase 1 è valutabile.
-Se preferisci l'ordine originale, lo rispetto: il deliverable della F1 sarà UI 2D su fondo scuro,
-senza 3D, e lo dichiarerò come tale.
-
-**D5 — Brand. → RISOLTA A METÀ (2026-10-15).**
-*Colori e direzione visiva:* **chiusi.** Reference `@into_industries` (screenshot). Palette riscritta
-in §4.1, direzione artistica in §4.4: nero `#060606` / osso `#f2f0ea` / ember `#ff5a1f` / crimson
-`#c21025`. Il lime della v0.1 è eliminato.
-*Nome, tagline, logo:* **ancora aperti.** `meta.brand.name` resta `PLACEHOLDER`. Il nome costa zero
-da cambiare in qualsiasi fase; il logo invece, se è un segno da mostrare in 3D (insegna all'ingresso,
-decal sui pannelli), va saputo entro la Fase 2.
-
-**D6 — NUOVA: come rendere la grana.** È la firma della reference: senza, il risultato sarà un render
-generico e non quel brand. Due strade:
-- **(a) Post-processing reale** (`EffectComposer` + effetto grana). Resa perfetta, ma è un passaggio
-  a schermo intero su render target aggiuntivo: stesso tipo di costo delle ombre di D3, proprio dove
-  il budget mobile è già stretto. Disattiva anche l'antialiasing nativo, che va riottenuto via shader.
-- **(b) Velo in compositing — mia raccomandazione.** Un `<div>` sopra il canvas con una texture di
-  rumore ripetuta (generata una volta su `<canvas>`, 256×256), `mix-blend-mode: overlay`, animata a
-  scatti via `background-position` a ~12 Hz. **La pipeline WebGL non la vede:** il costo lo paga il
-  compositore del browser, su un percorso diverso e scarico. Vignettatura con un `radial-gradient` CSS,
-  costo nullo.
-  Resa stimata ~85% di (a); su un'estetica già sporca e ad alto contrasto la differenza non è leggibile.
-
-**D7 — NUOVA: GitHub Pages e Vercel sullo stesso repository.** Entrambi sono attivi e pubblicano
-`main` (§10.4). Non si rompono a vicenda oggi, ma dalla Fase 1 il problema diventa concreto: Vercel
-costruirà il progetto Vite e servirà `dist/`, mentre GitHub Pages — se configurato sulla radice del
-branch — servirà il **sorgente non compilato**, cioè una pagina rotta. Avresti due URL pubblici, uno
-funzionante e uno guasto, e nessun modo di ricordarti quale è quale quando li mandi a qualcuno.
-→ Raccomandazione: **disattiva GitHub Pages** e tieni solo Vercel. Un URL, una verità. Se invece lo
-vuoi tenere come copia di sicurezza, serve una GitHub Action che pubblichi `dist/` — lo faccio in
-Fase 7, ma è lavoro in più per un secondo URL che non ti serve.
-
-→ Raccomandazione D6: **(b) su tutti i tier**, con (a) come opzione attivabile solo su tier high e da
-valutare con misure reali in Fase 6. Lo schema (`performance.postFx.grain.mode`) supporta entrambe:
-la scelta resta un campo di configurazione, non una riscrittura.
-
----
+| | Cosa manca | Entro quando | Se non arriva |
+|---|---|---|---|
+| **P1** | **Logo vettoriale** (`.svg` / `.ai` / `.pdf`) o PNG trasparente ≥ 2000 px. Il file ricevuto è 150×150 px su fondo bianco | **Fase 2** (prima dell'insegna 3D) | Uso un segnaposto tipografico e lo dichiaro |
+| **P2** | **Font del marchio**, se ne esiste uno proprietario con licenza | Fase 1b | Uso un open font vicino e dichiaro che non è identico (L7) |
+| **P3** | **Conferma della tagline** `We're just looking for somewhere` — l'ho letta dal micro-testo del logo a bassa risoluzione, potrebbe essere incompleta | Fase 5 (Lookbook) | La marco come da verificare nel file di configurazione |
+| **P4** | **Il logo deve comparire in 3D?** (insegna sopra l'ingresso, decal sui pannelli) o solo nella UI 2D? | **Fase 2** | Assumo insegna all'ingresso + decal sul pannello del lookbook, e te lo mostro |
 
 ## 8. Verifiche della Fase 0
 
@@ -796,19 +795,28 @@ la scelta resta un campo di configurazione, non una riscrittura.
 | Verifica UI nel browser | **Non applicabile** | Nessuna UI esistente |
 | Misurazione fps reale | **Bloccata (ambiente)** | Container senza GPU, §5.4. Richiede i tuoi dispositivi fisici |
 | Lettura della reference di brand | **Parziale** | instagram.com non raggiungibile dal container (`ENOTFOUND`): §4.4 deriva dal solo screenshot fornito |
+| Lettura del logo | **Parziale** | File a 150×150 px: sufficiente per la direzione, insufficiente per l'uso (P1) |
+| Hosting Vercel (Production + Preview) | **Eseguita** | §10.4, deployment `7098935169` e `7099073171`, entrambi `success` |
+| Disattivazione di GitHub Pages | **Bloccata (ambiente)** | API negata dal proxy. Dichiarata da te, da confermare in F1b |
+| Chiusura di tutte le decisioni | **Eseguita** | §7 |
 
 ---
 
 ## 9. Stato
 
-**Fase 0 completata. Nessuna fase successiva è autorizzata.**
+**Fase 0 completata. Tutte le decisioni sono chiuse. Nessuna fase successiva è autorizzata.**
 
-Decisioni: **D5 chiusa su colori e direzione visiva**, aperta su nome/logo.
-**L1 (hosting) risolta e verificata.** **D1, D2, D3, D4, D6, D7 ancora aperte.**
+| | |
+|---|---|
+| Decisioni | D1-A · D2-A · D3-A · D4-B · D5 (INTO Industries) · D6-B · D7-A — **tutte chiuse** |
+| Limiti | L1 risolta e verificata · L2, L3, L4, L12 permanenti e dichiarati · gli altri mitigati |
+| Hosting | Vercel attivo, Production e Preview verificate |
+| Aperti non bloccanti | P1 logo vettoriale · P2 font · P3 tagline · P4 logo in 3D (§7.1) |
 
-Per procedere servono: (1) la tua approvazione del piano, (2) le risposte alle decisioni aperte
-(o la delega esplicita a decidere secondo le mie raccomandazioni), (3) il comando esplicito
-`"Approvato, procedi alla fase 1"` (o `"fase 1b"` / `"fase 2"` a seconda di come chiudi D4).
+Il piano è esecutivo: non resta nessuna ambiguità che mi impedisca di scrivere la prima riga di
+codice. Manca solo il tuo comando esplicito:
+
+> **`Approvato, procedi alla fase 1b`**
 
 ---
 
@@ -873,18 +881,26 @@ Letto dai Deployment di GitHub (unica fonte accessibile dal container, vedi L12)
    il nome del branch. Filtrare i Deployment per `?ref=<branch>` restituisce sempre una lista vuota
    e **non** significa che le preview manchino: va letta la lista completa.
 
-4. **GitHub Pages è attivo sullo stesso repository** — e non l'avevo previsto.
-   Deployment `7098059202` · stato `success` · URL `https://yeppama.github.io/website/`, su `main`.
-   Due sistemi di hosting sullo stesso repo: vedi **D7**.
+4. **GitHub Pages: disattivato secondo quanto dichiarato — non verificabile da qui.**
+   Era attivo (deployment `7098059202`, `success`, `https://yeppama.github.io/website/` su `main`).
+   D7 è stata chiusa su "A — solo Vercel" e tu l'hai dichiarato sistemato.
+   **Non posso confermarlo:** gli endpoint `/pages` e `/environments` dell'API GitHub sono negati
+   dal proxy di questa sessione (`403 — Access to this GitHub API path is not permitted`), e il
+   Deployment storico resta comunque in elenco anche dopo la disattivazione, quindi non è una prova.
+   **Test reale, in Fase 1b:** dopo il primo push con l'applicazione, se `yeppama.github.io/website/`
+   serve ancora qualcosa, Pages è rimasto acceso. Lo verifichi tu dal browser (L12).
 
 ### 10.3 Cosa mi serve da te, e quando
 
 | Quando | Cosa | Perché |
 |---|---|---|
-| **Ora** | Decisioni D1, D2, D3, D4, D6 | Determinano come scrivo il codice dalla prima riga |
-| **Ora o in F1** | Nome del brand | Un campo, costo zero in qualsiasi momento |
-| **Entro F2** | Logo, se deve comparire in 3D (insegna, decal) | Cambia dove metto muri e faretti |
-| **Entro F2** | Collegamento Vercel ↔ GitHub (L1) | Serve da F3 per i test su telefono, non da F7 |
+| ~~Ora~~ | ~~Decisioni D1-D7~~ | **Tutte chiuse** (§7) |
+| ~~Ora o in F1~~ | ~~Nome del brand~~ | **Fatto: INTO Industries** |
+
+| ~~Entro F2~~ | ~~Collegamento Vercel ↔ GitHub~~ | **Fatto e verificato** (§10.4) |
+| **Entro F2** | **Logo vettoriale** (P1) | Il PNG 150×150 su fondo bianco non è usabile per un'insegna 3D |
+| **Entro F2** | Risposta a P4: il logo va messo in 3D o solo nella UI? | Cambia dove costruisco muri e faretti |
+| **In F1b** | Conferma visiva su `yeppama.github.io/website/` (D7, §10.4) | Io non raggiungo gli URL pubblicati |
 | **Da F2 in poi** | Il tuo giudizio estetico su screenshot | Io non posso darmelo da solo (L4) |
 | **Da F3 in poi** | Prove sul tuo telefono | L3 non è aggirabile |
 | **In F6** | Misure fps sui dispositivi di §5.1 | L2 non è aggirabile |
