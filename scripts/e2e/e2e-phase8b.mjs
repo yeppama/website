@@ -106,11 +106,24 @@ if (status !== 'ready') {
   const resp = await co.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => e)
   const code = resp?.status?.() ?? String(resp)
   await co.screenshot({ path: `${OUT}/shopify-checkout.png` }).catch(() => {})
+  // I negozi di sviluppo chiedono la password del negozio prima della cassa. Se
+  // arriva da STORE_PASSWORD (variabile d'ambiente, mai scritta in un file) la si
+  // inserisce; altrimenti la cassa resta non verificata e lo si dice.
+  if (new URL(co.url()).pathname.startsWith('/password') && process.env.STORE_PASSWORD) {
+    await co.locator('input[type="password"]').fill(process.env.STORE_PASSWORD)
+    await Promise.all([co.waitForLoadState('domcontentloaded'), co.locator('button[type="submit"], input[type="submit"]').first().click()])
+    await co.waitForTimeout(1500)
+    await co.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
+    await co.waitForTimeout(6000)
+  }
   const landed = new URL(co.url()).pathname
-  // I negozi di sviluppo chiedono la password del negozio prima della cassa: non è
-  // un difetto del sito, ma la cassa così non è verificata.
-  ok('cassa dal vivo: si apre la cassa Shopify (non la pagina di password)', typeof code === 'number' && code < 400 && !landed.startsWith('/password'),
-    landed.startsWith('/password') ? 'il negozio di sviluppo è protetto da password: la cassa si verifica a mano inserendola' : `${landed} → ${code}`)
+  const body = (await co.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ')
+  const qty = await page.evaluate(() => window.__cart.getState().cart.lines[0])
+  const sizeLabel = storeConfig.products[0].sizes.find((s) => s.id === qty.merchandise.size).label
+  await co.screenshot({ path: `${OUT}/shopify-checkout.png` }).catch(() => {})
+  ok('cassa dal vivo: si apre la cassa Shopify col capo, la taglia e il prezzo del carrello, in EUR',
+    landed.includes('/checkouts/') && body.includes(qty.merchandise.title) && body.includes(sizeLabel) && /€\s?567[.,]00|567[.,]00\s?€/.test(body),
+    landed.startsWith('/password') ? 'protetta da password: impostare STORE_PASSWORD per verificarla' : `${landed.split('/').slice(0, 3).join('/')}/… · ${qty.merchandise.title} ${sizeLabel}`)
   await co.close()
   // Pulizia: il carrello torna vuoto.
   await page.evaluate(() => window.__cart.getState().remove(window.__cart.getState().cart.lines[0].id))
