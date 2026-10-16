@@ -140,6 +140,28 @@ Dettaglio per tratto (p50 / 1% low):
   restano concentrati nel primo cammino e nel primo Focus su entrambi i dispositivi: c'è ancora lavoro
   fatto al primo uso. Indagine in corso.
 
+### Indagine sugli scatti al primo uso — 2026-10-16, commit 394c315 (container, conteggi esatti, tempi non validi)
+
+Tracciate tutte le chiamate WebGL (compilazioni, link, upload) per tratto del benchmark, tier medium,
+con e senza riscaldamento. Script: `scratchpad/stutter/gpu-trace.mjs` (fuori dal repo). Dopo il
+riscaldamento **nessuna texture** viene più caricata; quello che resta:
+
+| Causa | Tratti | Prova | Correzione proposta | Effetto visivo |
+|---|---|---|---|---|
+| La linea del percorso (`LineDashedMaterial`) nasce e muore a ogni cammino: il suo shader viene compilato al primo cammino e **ricompilato a ogni cammino successivo** | 3, 5, 7, 10 e ogni tap | 2 compile + 1 link in ciascuno; confermato da un verificatore | Una sola linea permanente, nascosta senza percorso; cambia solo la geometria | nessuno |
+| L'anello del tap è nascosto al riscaldamento: shader pronto ma primo disegno (query sincrone) al primo cammino | 3 | stesso fotogramma della causa sopra | Renderlo visibile solo per il fotogramma di riscaldamento | nessuno |
+| Gli hotspot vengono smontati quando escono dal raggio e a ogni Focus, e ricreati (8 buffer ciascuno) | 3, 5, 7 e dopo ogni Focus | 24–34 upload di buffer per tratto | Tenerli montati e nasconderli | nessuno (ripartono dallo stesso stato) |
+| Il marcatore del capo in Focus usa uno shader unico, compilato e distrutto a ogni Focus su plinto o rack | 6 | 2 compile + 1 link | Materiale `transparent` con opacità 1: riusa uno shader già pronto | nessuno atteso |
+| *Ipotesi:* entrata nel Focus — pannello con sfocatura 12 px (unica nell'app), HUD che sparisce, 5 espositori ridisegnati da React | 4, 6 | nessuna chiamata GPU nel tratto 4: non spiegato dalla traccia | Da misurare prima (interruttore diagnostico) | sfocatura 12 → 8 px, appena percettibile |
+
+Non spiegati: il calo nel tratto 2 (fermo all'ingresso, nessuna attività GPU registrata) e quanto
+pesino davvero, su D3D11 e Metal, le compilazioni contate qui. Per verificare le correzioni il benchmark
+dovrebbe riportare anche il fotogramma più lungo e il numero di fotogrammi oltre 50 ms per tratto.
+
+**Scoperta collaterale:** la nebbia configurata (`environment.fog`, 26–72 m) non è mai stata disegnata:
+in `LightingRig.jsx` è agganciata a un gruppo invece che alla scena. Correggerla cambia l'aspetto
+approvato in Fase 2: decisione dell'utente.
+
 Lettura di A: il 1% low a 16,5 fps vuol dire fotogrammi da ~60 ms, cioè scatti visibili, non solo
 una scena "lenta". Dal commit successivo a 5125abb il benchmark riporta anche il dettaglio per tratto
 (ingresso, camminata, Focus, lookbook): dice dove nascono gli scatti.
