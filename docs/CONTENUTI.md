@@ -1,6 +1,10 @@
 # CONTENUTI.md — Cosa serve per la Fase 7 (opzione B)
 
-Decisione dell'utente (2026-10-16): **prima i contenuti reali, poi la produzione.** I punti 1–4 sono stati
+**Aggiornamento 2026-10-16:** l'utente ha poi scelto di andare in produzione subito (opzione A). Il sito è pubblico
+con i segnaposto, ma escluso dai motori di ricerca. Quando arrivano i contenuti reali: inserirli, poi
+togliere `X-Robots-Tag` da `vercel.json` e il meta `robots` da `index.html`.
+
+Decisione precedente (2026-10-16): **prima i contenuti reali, poi la produzione.** I punti 1–4 sono stati
 inoltrati al cliente il 2026-10-16. La Fase 7 non
 parte finché questo elenco non è completo o finché l'utente non dichiara cosa resta segnaposto.
 
