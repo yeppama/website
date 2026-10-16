@@ -64,6 +64,8 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium · grana alpha | 1.0 | 1920×911 | 3 | 56.2 | 23.7 | 36.8 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 52.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 47844b8 | medium · grana alpha | 1.0 | 1920×911 | 3 | 57.1 | 23.5 | 39.2 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -163,6 +165,19 @@ nel container (`e2e-phase6.mjs`): dopo il riscaldamento, due cammini e un Focus 
 0 compilazioni shader e 8 upload di buffer (linea del percorso e anello del marcatore). Il benchmark
 riporta ora per tratto anche il fotogramma più lungo e quanti superano i 50 ms. Da misurare sui
 dispositivi reali.
+
+**Esito sui dispositivi reali (47844b8):**
+
+| | p50 | 1% low | Fotogramma max | Fotogrammi > 50 ms | Soglia |
+|---|---|---|---|---|---|
+| Vivobook (prima: 394c315, alpha) | 56,2 | 36,8 | non misurato | non misurato (Nuovi Arrivi: 1% low 10,1 → ~100 ms) | 58 / 45 |
+| Vivobook (dopo) | 57,1 | 39,2 | 77 ms | 3 in ~40 s | 58 / 45 → **non raggiunta di poco** |
+| iPhone (dopo) | 58,8 | 55,6 | 36 ms | 0 | 55 / 40 → **superata** |
+
+Gli scatti veri (fotogrammi da ~100 ms) sono spariti: sul Vivobook ne restano 3 oltre 50 ms nel
+peggior run, sparsi (Ingresso, Nuovi Arrivi, Lookbook), nessuno oltre 77 ms. Lo scarto residuo dalla
+soglia è carico costante della GPU integrata a 1920×911 (fotogrammi da ~25 ms nell'1% peggiore),
+non lavoro al primo uso. Le soglie di PLAN §5.1 sono stime fissate in Fase 0, non requisiti esterni.
 
 **Scoperta collaterale:** la nebbia configurata (`environment.fog`, 26–72 m) non è mai stata disegnata:
 in `LightingRig.jsx` è agganciata a un gruppo invece che alla scena. Correggerla cambia l'aspetto
