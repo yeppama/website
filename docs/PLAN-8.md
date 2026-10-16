@@ -113,3 +113,25 @@ dominio `*.myshopify.com` e token Storefront API; serve in 8b.
 5. Mandare: indirizzo `….myshopify.com` + token pubblico.
 
 Il negozio di sviluppo non accetta pagamenti reali: si prova con il gateway di test di Shopify.
+
+## Appendice B — Negozio da trasferire al cliente (8c, passaggi dati all'utente il 2026-10-16)
+
+Fonte: documentazione Shopify "Client transfer stores" (shopify.dev, letta il 2026-10-16). Il negozio di sviluppo
+`into-industries-dev` resta il banco di prova e **non** si trasferisce (i dev store non sono trasferibili).
+
+1. **Dev Dashboard → Stores → Create store → Client transfer store.** Nome definitivo approvato dal cliente
+   (diventa `….myshopify.com`, non modificabile), paese Italia, Shopify Plus no. Questionario: solo "Sell online".
+   Nessun piano, nessuna carta, nessun dato di prova generato.
+2. **Impostazioni:** valuta del negozio EUR, fuso Europe/Rome, indirizzo del cliente; Markets con Italia
+   (poi UE in EUR, D8-3); spedizione con zona Italia/UE; pagamenti **solo** gateway di prova.
+   **Mai Shopify Payments, nemmeno in modalità test**: blocca il trasferimento.
+3. **Catalogo reale** (non i prodotti di prova): handle concordati, opzioni `Taglia` e `Colore` con le
+   etichette di storeConfig, foto, giacenze. Pubblicato sul canale Headless.
+4. **Canale Headless** → Create storefront → permessi su prodotti, inventario, carrello → token **pubblico**.
+   Si passano dominio e token pubblico (mai quello privato).
+5. **Trasferimento** (dopo 8c/8d): Stores, filtro "Type is Client transfer" → ⋯ → Transfer store → email del
+   cliente. Il cliente ha 7 giorni per accettare, sceglie il piano (niente prove gratuite né promozioni dopo
+   il trasferimento), attiva Shopify Payments con i suoi dati. L'agenzia resta collaboratore.
+
+Limiti finché il negozio è dell'agenzia: niente transazioni reali (ordini di prova illimitati), pagina
+password non rimovibile, solo app gratuite o partner-friendly.
