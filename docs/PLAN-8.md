@@ -97,3 +97,19 @@ La nota "Prezzi dimostrativi" sparisce solo quando i prezzi vengono davvero da S
 8a non dipende da nessuno. Per partire: **`Approvato, procedi alla fase 8a`**.
 In parallelo, se puoi: crea un negozio di sviluppo Shopify (account Partner, gratuito) e passami
 dominio `*.myshopify.com` e token Storefront API; serve in 8b.
+
+## Appendice — Negozio di sviluppo per la 8b (passaggi dati all'utente il 2026-10-16)
+
+1. Account Shopify Partner (gratuito, a nome dell'agenzia) → **Stores → Add store → Create development store**,
+   uso "Create a store to test and build", dati vuoti. Nel Dev Dashboard il percorso è **Dev stores → Add dev store**.
+   Il nome diventa l'indirizzo `….myshopify.com` e non si può cambiare.
+2. Nel negozio: **Prodotti → Importa** `docs/shopify-prodotti-di-prova.csv` (generato da
+   `scripts/export-shopify-csv.mjs`: stessi handle del negozio 3D, varianti Taglia × Colore, taglie
+   esaurite a giacenza 0).
+3. Installare il canale **Headless** dallo Shopify App Store → **Create storefront** → copiare il
+   **token pubblico** (mai quello privato) → in Storefront API permissions abilitare la lettura di
+   prodotti, inventario e la gestione del carrello.
+4. Pubblicare i prodotti sul canale Headless (nella scheda di ogni prodotto o in blocco).
+5. Mandare: indirizzo `….myshopify.com` + token pubblico.
+
+Il negozio di sviluppo non accetta pagamenti reali: si prova con il gateway di test di Shopify.
