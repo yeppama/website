@@ -10,6 +10,10 @@ parte finché questo elenco non è completo o finché l'utente non dichiara cosa
 
 Si può mandare tutto in chat: testi incollati, file allegati. Una cartella condivisa va bene uguale.
 
+**Lingua inglese (fase 8f, dopo il lancio, decisa il 2026-10-16):** chiedere fin da ora al cliente ogni testo
+anche in inglese (descrizioni e dettagli dei capi, nomi dei colori se cambiano, lookbook, brand story, pagine
+legali). Il lancio è in italiano; i testi inglesi raccolti insieme al catalogo evitano un secondo giro col cliente.
+
 ## 1. Brand identity e logo (in arrivo dall'utente)
 
 | Cosa | Formato | Perché |

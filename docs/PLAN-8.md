@@ -80,6 +80,7 @@ La nota "Prezzi dimostrativi" sparisce solo quando i prezzi vengono davvero da S
 | **8c** | Catalogo del cliente: `commerce.handle` per ogni capo, varianti taglia × colore, foto reali al posto dei segnaposto | negozio del cliente + catalogo | Ogni capo del negozio 3D corrisponde a un prodotto Shopify, verificato da un controllo automatico |
 | **8d** | Dati del venditore e pagine legali (link alle policy di Shopify o pagine proprie), banner cookie solo se servono | testi del cliente | Pagine raggiungibili da menu e cassa; nessun cookie non tecnico senza consenso |
 | **8e** | Messa in vendita: tolto `noindex`, dominio, ordine reale di piccolo importo + rimborso | tutto quanto sopra | Un ordine vero completato e rimborsato, ricevuto nel pannello del cliente |
+| **8f** | **Lingua inglese, dopo il lancio** (deciso dall'utente il 2026-10-16): testi del sito in due lingue in `storeConfig`, selettore di lingua, prezzi formattati per lingua, `@inContext(language:)` verso Shopify; su Shopify traduzioni di capi e varianti (app "Translate & Adapt") e inglese pubblicato solo quando il sito lo supporta | testi inglesi dal cliente (capi, lookbook, brand story, pagine legali), chiesti insieme al catalogo | Sito e cassa coerenti in italiano e in inglese; nessun testo che resta in una lingua sola |
 
 ## 5. Rischi
 
@@ -94,9 +95,14 @@ La nota "Prezzi dimostrativi" sparisce solo quando i prezzi vengono davvero da S
 
 ## 6. Prossimo passo
 
-8a non dipende da nessuno. Per partire: **`Approvato, procedi alla fase 8a`**.
-In parallelo, se puoi: crea un negozio di sviluppo Shopify (account Partner, gratuito) e passami
-dominio `*.myshopify.com` e token Storefront API; serve in 8b.
+8a e 8b chiuse. Negozio da trasferire al cliente creato dall'utente (Appendice B): `into-industries-ayehghmw.myshopify.com`
+(suffisso assegnato da Shopify, permanente; sparisce dalla vista dei clienti col dominio vero), token pubblico
+`75261516e790b43df1e21a01c0000dae`. Verificato in sola lettura il 2026-10-16: valuta EUR, paese IT, mercato solo Italia,
+lingua predefinita e unica pubblicata italiano, carrello creabile in IT senza avvisi, catalogo vuoto.
+Non verificabili col token pubblico: spedizione, gateway di prova, Shopify Payments spento, imposte.
+Rete del container: l'host è stato aggiunto dall'utente agli Allowed domains.
+
+8c parte con il catalogo del cliente e il comando **`Approvato, procedi alla fase 8c`**.
 
 ## Appendice — Negozio di sviluppo per la 8b (passaggi dati all'utente il 2026-10-16)
 
