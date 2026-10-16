@@ -68,6 +68,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | c5db6fa | medium · grana alpha | 1.5 | 485×937 | 3 | 45.0 ⚠ | 22.8 | 42.7 | 31 / 42 | 12910 | sì, ma **non valida**: tetto del limitatore |
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | fa2e1e7 | medium · grana alpha | 1.5 | 485×937 | 3 | 80.0 ⚠ | 22.3 | 44.1 | 31 / 42 | 12910 | sì, ma **non valida**: 60 fps a ritmo irregolare |
+| 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | f76c0b3 | medium · grana alpha | 1.5 | 485×937 | 3 | 90.1 | 12.7 | 71.4 | 31 / 49 | 13070 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -229,4 +230,9 @@ Il limitatore a scadenze chiedeva davvero 60 fotogrammi al secondo, ma su 90 Hz 
 intervalli da 11 e 22 ms: la mediana degli intervalli cade sull'uno o sull'altro (da qui 50 o 85) e
 l'1% low misura i 22 ms. Movimento a scatti regolari, peggio dei 45 costanti. Correzione: ritmo
 regolare, un fotogramma ogni k vsync senza scendere sotto il target (90 Hz → 90). Da rimisurare.
+
+Terza misura del Pixel 7 su `f76c0b3` (ritmo regolare): **90,1 di mediana in tutti i 10 tratti**,
+1% low 71,4 (peggior tratto: ingresso nel Focus sul manichino, 60,6, max 37 ms), 0 fotogrammi > 50 ms.
+La GPU regge i 90 Hz con margine: correzione confermata su hardware reale. Il Pixel 7 resta un
+telefono di fascia medio-alta: la misura sul tier low è in corso (utente, 2026-10-16).
 
