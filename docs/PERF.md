@@ -174,6 +174,8 @@ dispositivi reali.
 | Vivobook (dopo) | 57,1 | 39,2 | 77 ms | 3 in ~40 s | 58 / 45 → **non raggiunta di poco** |
 | iPhone (dopo) | 58,8 | 55,6 | 36 ms | 0 | 55 / 40 → **superata** |
 
+**Decisione dell'utente (2026-10-16): risultato accettato, Fase 6 chiusa con lo scostamento del Vivobook dichiarato.**
+
 Gli scatti veri (fotogrammi da ~100 ms) sono spariti: sul Vivobook ne restano 3 oltre 50 ms nel
 peggior run, sparsi (Ingresso, Nuovi Arrivi, Lookbook), nessuno oltre 77 ms. Lo scarto residuo dalla
 soglia è carico costante della GPU integrata a 1920×911 (fotogrammi da ~25 ms nell'1% peggiore),

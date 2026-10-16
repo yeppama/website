@@ -1,6 +1,11 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.7 — **Fase 6 chiusa dall'utente (2026-10-16)** con scostamento dichiarato: il
+> portatile di riferimento (Iris Xe, 1920×911) misura 57,1 / 39,2 contro la soglia stimata 58 / 45.
+> iPhone (Safari 26) e Pixel superano le soglie mobile. Dopo le misure reali: tier rivisto (GPU
+> integrate e iPhone in medium), grana con fusione `alpha` (D6 rivista), riscaldamento della GPU e
+> nessuna compilazione al primo uso. Nebbia corretta ma spenta. Android di fascia media non misurato.
 > Changelog 1.6 — **Fase 6 consegnata.** Memoria GPU: cache condivise legate al ciclo di vita del
 > Canvas (`lib/gpuCaches.js`), perdite per tap eliminate (linea del percorso e anello del ping),
 > stabilità verificata dentro la sessione e su 12 rimontaggi. Perdita del contesto WebGL gestita

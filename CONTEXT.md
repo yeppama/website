@@ -1,11 +1,11 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-15 · branch `claude/cool-edison-2svzgj` · Fase 6 consegnata
+> Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` · **Fase 6 chiusa** dall'utente
 > Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.6. Registro prestazioni: `docs/PERF.md`.
 
 ## 1. Stato attuale
 
-Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence), con architettura data-driven pronta per un e-commerce reale. **Fasi 0–6 completate, verificate e pubblicate**; in attesa del comando dell'utente `Approvato, procedi alla fase 7` (verifica del deploy di produzione). Le misure di prestazioni su dispositivi reali mancano: le fa l'utente con `?bench=1` (procedura in `docs/PERF.md`).
+Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence), con architettura data-driven pronta per un e-commerce reale. **Fasi 0–6 completate, verificate e pubblicate.** Fase 6 chiusa dall'utente il 2026-10-16 con uno scostamento dichiarato (portatile Iris Xe 57,1 / 39,2 contro soglia 58 / 45). In attesa del comando `Approvato, procedi alla fase 7` (verifica del deploy di produzione).
 
 ## 2. Decisioni tecniche
 
@@ -178,8 +178,8 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 **Regole di processo (dall'utente):** una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi alla fase X`; a fine fase build, dev server, verifica nel browser, report che distingue eseguito / non eseguito / bloccato, poi stop. Fase 8 (e-commerce reale) solo su comando futuro.
 
 - ~~Fase 5~~ — consegnata: scheda prodotto, Lookbook / Brand Story, trappola del focus, I21–I22, suite `e2e-phase5.mjs`.
-- ~~Fase 6~~ — consegnata: memoria GPU stabile e rilasciata al teardown, perdita di contesto gestita, HUD `?perf=1`, benchmark `?bench=1`, `docs/PERF.md`, verifica responsive su 8 formati. **Manca la parte che solo l'utente può fare: le misure su dispositivi reali.**
-- **Fase 6, aperta su un punto:** grana decisa dall'utente il 2026-10-16: **`alpha`** (granelli scuri, fusione normale), intensità `alphaOpacity` 0,2 / 0,18 / 0,15, ora predefinita. Vivobook con alpha: 56,2 / 36,8 contro soglia 58 / 45 → ancora sotto. Gli scatti residui (1% low ~37–40 anche senza grana) sono concentrati nel primo cammino e nel primo Focus su Vivobook e iPhone anche col riscaldamento: lavoro fatto al primo uso, indagine in corso. iPhone (Safari 26): `Apple GPU` su touch → medium, 58,8 / 55,6 con overlay e 58,8 / 52,6 con alpha. `GpuWarmup` in `StoreCanvas` (`&warm=0` per confronto); gli hotspot caricano le texture alla creazione.
+- ~~Fase 6~~ — **chiusa dall'utente il 2026-10-16.** Memoria GPU stabile, perdita di contesto gestita, HUD `?perf=1`, benchmark `?bench=1` con dettaglio per tratto e scatti, `docs/PERF.md`, verifica responsive su 8 formati, tier corretto (GPU integrate → medium, iPhone → medium), grana `alpha`, riscaldamento GPU e niente lavoro al primo uso. Misure reali: Pixel 60,2 / 49,8 ✓ · iPhone 58,8 / 55,6 ✓ · Vivobook 57,1 / 39,2 ✗ di poco, **scostamento accettato dall'utente** (carico costante della GPU integrata, 3 fotogrammi > 50 ms in ~40 s). Non misurato: Android di fascia media (tier low).
+- Storia della Fase 6 (dettagli in `docs/PERF.md`): grana `alpha` scelta dall'utente (intensità 0,2 / 0,18 / 0,15); diagnosi Vivobook: overlay ~20 fps; scatti al primo uso eliminati (linea del percorso, hotspot, anello, marcatore); nebbia agganciata correttamente ma spenta per scelta dell'utente.
 - **Fase 7** — verifica del deploy di produzione su `main` (l'URL pubblico lo verifica l'utente).
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
-- **In attesa di riscontro dall'utente:** righe di `docs/PERF.md` mancanti: un computer (tier medium/high), un Android di fascia media (tier low, soglia p50 ≥ 40), un iPhone con Safari (già misurato: Pixel di punta, tier medium, superato) · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
+- **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · modello esatto dell'iPhone misurato · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
