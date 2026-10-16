@@ -150,6 +150,21 @@ async function useRound(page) {
   await ctx.close()
 }
 
+// ============================ RISCALDAMENTO GPU ============================
+{
+  const { ctx, page } = await open('warmup')
+  const warmed = await waitUntil(page, () => window.__warmedUp === true, null, 20000)
+  const m = await gpu(page)
+  ok('riscaldamento: dietro l\'onboarding shader, geometrie e texture vengono preparati prima di muoversi', warmed && m.programs > 0, fmt(m))
+  await ctx.close()
+  const off = await open('warmup-off', { query: '?debug=x&tier=low&warm=0' })
+  await off.page.waitForTimeout(3000)
+  const m0 = await gpu(off.page)
+  ok('riscaldamento: con &warm=0 non avviene (confronto sul dispositivo)', !(await off.page.evaluate(() => window.__warmedUp)) && m0.geometries < m.geometries,
+    `con: ${fmt(m)} · senza: ${fmt(m0)}`)
+  await off.ctx.close()
+}
+
 // ============================ HUD PRESTAZIONI E LIMITE FPS ============================
 {
   const { ctx, page } = await open('perf-off', { query: '?tier=low' })

@@ -57,6 +57,8 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium (grana off) | 1.0 | 1920×911 | 3 | 59.5 | 20.9 | 36.9 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | low | 1.0 | 1920×911 | 3 | 45.5 | 25.3 | 26.4 | 23 / 45 | 7766 | sì |
 | 2026-10-16 | iPhone (modello da indicare; viewport 393 px) | Apple GPU | Safari 26 | 7945fa8 | low · grana overlay | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
+| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | low · grana alpha | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
+| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | medium (forzato) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -83,6 +85,10 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
   Dettaglio per tratto: p50 fermo a 58,8 ovunque, scatti isolati al primo passaggio in zone nuove
   (Nuovi Arrivi 23,8, Ingresso 29,4): ipotesi compilazione degli shader / caricamento delle texture
   alla prima vista, da anticipare durante il caricamento.
+  Prova `tier=medium`: identica (58,8 / 55,6) con DPR 1,5 e ombre reali → l'iPhone regge medium.
+  Corretto: su touch, `Apple GPU` → medium. Scatti alla prima visita presenti in tutte e tre le prove
+  (Nuovi Arrivi 28–30, Focus plinto 30): dal commit successivo a eb4b31e la GPU viene riscaldata
+  durante il caricamento (`&warm=0` per confronto).
 
 ### Diagnosi in corso — Vivobook (3 run ciascuna, stesso URL dell'anteprima)
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { tokens } from '../../config/designTokens.js'
 import { whenFontsReady, makeHotspot } from '../../lib/canvasText.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
@@ -55,6 +55,7 @@ export default function Hotspots({ pois, style }) {
   const states = usePlayerStore((s) => s.poiStates)
   const inFocus = useAppStore((s) => s.focus.state !== 'idle')
   const [textures, setTextures] = useState(null)
+  const { gl } = useThree()
 
   useEffect(() => {
     let alive = true
@@ -64,13 +65,16 @@ export default function Hotspots({ pois, style }) {
       made = Object.fromEntries(pois.map((p) => [p.id, makeHotspot({
         label: p.label, color: style.color, textColor: tokens.color.text.primary,
       })]))
+      // Gli hotspot nascosti non sono in scena: le loro texture si caricano subito,
+      // non al primo avvicinamento (scatto misurato su telefono, docs/PERF.md).
+      for (const t of Object.values(made)) gl.initTexture(t)
       setTextures(made)
     })
     return () => {
       alive = false
       if (made) for (const t of Object.values(made)) t.dispose()
     }
-  }, [pois, style.color])
+  }, [pois, style.color, gl])
 
   if (!textures || inFocus) return null
   return pois.map((poi) => (

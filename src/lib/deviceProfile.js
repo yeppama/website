@@ -41,7 +41,13 @@ const DISCRETE_GPU = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d+
 export function pickTier({ pointer, cores, memory, renderer }) {
   const software = /swiftshader|llvmpipe|software/i.test(renderer ?? '')
   if (software) return 'low'
-  if (pointer === 'coarse') return cores >= 6 && memory >= 4 ? 'medium' : 'low'
+  if (pointer === 'coarse') {
+    // Safari su iOS non espone la memoria e dichiara meno core di quelli reali: con
+    // la regola generale ogni iPhone finiva in low, a DPR 1 su schermi a densità 3.
+    // Misurato: un iPhone con Safari 26 regge medium a 58,8 / 55,6 fps (docs/PERF.md).
+    if (/apple gpu/i.test(renderer ?? '')) return 'medium'
+    return cores >= 6 && memory >= 4 ? 'medium' : 'low'
+  }
   if (DISCRETE_GPU.test(renderer ?? '') && cores >= 8 && memory >= 8) return 'high'
   if (cores >= 4) return 'medium'
   return 'low'

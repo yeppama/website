@@ -19,6 +19,7 @@ import Displays from './displays/Displays.jsx'
 import PerfProbe from './debug/PerfProbe.jsx'
 import { useAppStore } from '../state/useAppStore.js'
 import { retainGpuCaches, releaseGpuCaches } from '../lib/gpuCaches.js'
+import { whenFontsReady } from '../lib/canvasText.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
 
@@ -130,6 +131,38 @@ function GpuLifecycle() {
     retainGpuCaches()
     return releaseGpuCaches
   }, [])
+  return null
+}
+
+/**
+ * Riscaldamento della GPU durante il caricamento (Fase 6). Senza, il motore
+ * compila gli shader e carica geometrie e texture solo quando un oggetto entra
+ * per la prima volta nell'inquadratura: misurato su iPhone e Pixel come scatti
+ * isolati alla prima visita di una zona (docs/PERF.md). Qui si fa tutto subito,
+ * dietro l'onboarding: un solo fotogramma pesante che nessuno vede.
+ * Con ?perf=1 o ?bench=1, `&warm=0` lo spegne per confrontare.
+ */
+function GpuWarmup({ enabled }) {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    if (!enabled) return
+    let alive = true
+    // Le texture tipografiche nascono dopo i font, e i loro mesh un commit dopo.
+    whenFontsReady().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!alive) return
+      const culled = []
+      scene.traverse((o) => {
+        if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o) }
+        const materials = o.material ? [].concat(o.material) : []
+        for (const m of materials) for (const v of Object.values(m)) if (v?.isTexture) gl.initTexture(v)
+      })
+      gl.compile(scene, camera)
+      gl.render(scene, camera)
+      for (const o of culled) o.frustumCulled = true
+      if (debugParams().get('debug')) window.__warmedUp = true
+    })))
+    return () => { alive = false }
+  }, [enabled, gl, scene, camera])
   return null
 }
 
@@ -257,6 +290,7 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
       <FrameLimiter targetFps={targetFps} />
       <FirstFrameSignal onStage={onStage} />
       <GpuLifecycle />
+      <GpuWarmup enabled={!((params.get('perf') || params.get('bench') || params.get('debug')) && params.get('warm') === '0')} />
       <PerfProbe monitor={config.performance.monitor} />
       <Suspense fallback={null}>
         <SceneContents config={config} tier={tier} />

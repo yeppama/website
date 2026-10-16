@@ -18,6 +18,7 @@ const cases = [
   ['GPU dedicata, poca memoria', desktop('ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 Direct3D11)', 4, 4), 'medium'],
   ['Renderer sconosciuto', desktop('sconosciuto'), 'medium'],
   ['Pixel · PowerVR (misurato: 60 fps in medium)', { pointer: 'coarse', cores: 8, memory: 8, renderer: 'ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2)' }, 'medium'],
+  ['iPhone · Safari (misurato: 58,8 fps in medium, finiva in low)', { pointer: 'coarse', cores: 4, memory: 4, renderer: 'Apple GPU' }, 'medium'],
   ['Telefono con 4 core', { pointer: 'coarse', cores: 4, memory: 4, renderer: 'Adreno (TM) 610' }, 'low'],
   ['SwiftShader', desktop('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)'), 'low'],
 ]
