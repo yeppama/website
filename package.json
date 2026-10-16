@@ -16,7 +16,8 @@
     "test:catalog": "node scripts/test-catalog.mjs",
     "catalog:template": "node scripts/catalog/make-template.mjs",
     "catalog:import": "node scripts/catalog/import.mjs",
-    "check:catalog": "node scripts/catalog/check.mjs"
+    "check:catalog": "node scripts/catalog/check.mjs",
+    "test:framing": "node scripts/test-framing.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

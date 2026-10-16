@@ -11,7 +11,8 @@ import LegalSheet from '../legal/LegalSheet.jsx'
 /**
  * Contenitore unico delle finestre della Fase 5: mostra la cima della pila
  * `dialogs`. Su telefono occupa lo schermo, da tablet in su è un pannello
- * centrato. Mentre è aperto il player è sospeso (vedi PlayerController).
+ * centrato; su uno schermo basso (telefono in orizzontale) torna a tutto schermo,
+ * con intestazione compatta. Mentre è aperto il player è sospeso (vedi PlayerController).
  *
  * ESC e "Indietro" tolgono un livello, "Chiudi" e il fondo li tolgono tutti;
  * il focus resta dentro la finestra e alla fine torna a chi l'aveva aperta.
@@ -47,7 +48,7 @@ export default function DialogHost({ device }) {
     : copy.lookbook.eyebrow
 
   return (
-    <div className="fixed inset-0 flex items-stretch justify-center md:items-center md:p-6" style={{ zIndex: 'var(--z-dialog)' }}>
+    <div className="fixed inset-0 flex items-stretch justify-center md:items-center md:p-6 short:items-stretch short:p-0" style={{ zIndex: 'var(--z-dialog)' }}>
       <button
         type="button"
         className="absolute inset-0 bg-bg-base/85 backdrop-blur-sm"
@@ -62,9 +63,9 @@ export default function DialogHost({ device }) {
         aria-modal="true"
         aria-labelledby={headingId}
         data-dialog={top.kind}
-        className="relative flex h-full w-full flex-col bg-bg-raised outline-none md:h-auto md:max-h-full md:max-w-5xl md:border md:border-line-strong"
+        className="relative flex h-full w-full flex-col bg-bg-raised outline-none md:h-auto md:max-h-full md:max-w-5xl md:border md:border-line-strong short:h-full short:max-h-none short:max-w-none short:border-0"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3 sm:px-6">
+        <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3 sm:px-6 short:py-1.5">
           <div className="flex min-w-0 items-center gap-3">
             {dialogs.length > 1 && <Button onClick={backDialog}>← {copy.dialog.back}</Button>}
             <p className="micro truncate">{eyebrow}</p>
@@ -74,7 +75,7 @@ export default function DialogHost({ device }) {
             <Button onClick={closeDialogs}>{copy.dialog.close}</Button>
           </div>
         </div>
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 md:px-8">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 md:px-8 short:py-3">
           {product && <ProductSheet key={product.id} product={product} headingId={headingId} />}
           {entry && <LookbookSheet key={entry.id} entry={entry} headingId={headingId} />}
           {top.kind === 'cart' && <CartSheet headingId={headingId} />}

@@ -2,6 +2,11 @@
 @import "./theme.generated.css";
 @import "./fonts.css";
 
+/* Schermo basso: telefono in orizzontale (≈ 320–430 px di altezza), o finestra
+   schiacciata. Conta l'altezza, non la larghezza: un telefono in orizzontale è largo
+   come un tablet ma ha un terzo della sua altezza. */
+@custom-variant short (@media (max-height: 520px));
+
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -27,6 +32,10 @@
   }
 
   ::selection { background: var(--color-accent-flame); color: var(--color-text-inverse); }
+
+  /* Altezza della cornice delle immagini nelle schede su schermo basso: lo schermo
+     meno intestazione compatta, margini e riga delle miniature. */
+  :root { --sheet-frame-h: calc(100dvh - 9.5rem); }
 }
 
 @layer components {

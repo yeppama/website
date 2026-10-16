@@ -23,6 +23,8 @@ export default function ProductSheet({ product, headingId }) {
   const [sizeId, setSizeId] = useState(null)
 
   const media = product.media.find((m) => m.id === mediaId)
+  const [mw, mh] = storeConfig.placeholders.ratios[media.ratio]
+  const [pw, ph] = storeConfig.placeholders.productFrame
   const colorway = product.colorways.find((c) => c.id === colorwayId)
   const size = product.sizes.find((s) => s.id === sizeId)
   const lookbooks = product.lookbookIds.map((id) => storeConfig.lookbook.find((l) => l.id === id))
@@ -59,36 +61,46 @@ export default function ProductSheet({ product, headingId }) {
   return (
     // Su telefono nome e prezzo vengono prima delle immagini, così stanno sopra la
     // piega; da tablet in su le immagini occupano la colonna sinistra per intero.
-    <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:gap-x-8">
-      <div className="md:col-start-2 md:row-start-1">
-        {product.badges.length > 0 && (
-          <ul className="mb-3 flex gap-2">
-            {product.badges.map((b) => (
-              <li key={b} className="micro border border-accent-flame px-2 py-0.5" style={{ color: 'var(--color-accent-flame)' }}>{b}</li>
-            ))}
-          </ul>
-        )}
-        <p className="micro">{product.category} · {product.collection} · {product.sku}</p>
+    // Su schermo basso (telefono in orizzontale) l'immagine si misura sull'altezza e
+    // resta ferma a sinistra; a destra vengono prima colori, taglie e acquisto.
+    <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:gap-x-8 short:grid-cols-[auto_minmax(0,1fr)] short:grid-rows-[auto_1fr] short:gap-x-6 short:gap-y-2">
+      <div className="md:col-start-2 md:row-start-1 short:col-start-2 short:row-start-1">
+        {/* Su schermo basso etichette e codici stanno su una riga sola. */}
+        <div className="short:flex short:flex-wrap short:items-center short:gap-x-3">
+          {product.badges.length > 0 && (
+            <ul className="mb-3 flex gap-2 short:mb-0">
+              {product.badges.map((b) => (
+                <li key={b} className="micro border border-accent-flame px-2 py-0.5" style={{ color: 'var(--color-accent-flame)' }}>{b}</li>
+              ))}
+            </ul>
+          )}
+          <p className="micro">{product.category} · {product.collection} · {product.sku}</p>
+        </div>
         <h2 id={headingId} tabIndex={-1}
-            className="mt-2 font-display font-black uppercase leading-none text-text-primary outline-none"
-            style={{ fontSize: 'clamp(var(--text-xl), 8vw, var(--text-2xl))', letterSpacing: 'var(--tracking-tight)' }}>
+            className="mt-2 font-display font-black uppercase leading-none text-text-primary outline-none short:mt-1.5"
+            style={{ fontSize: 'clamp(var(--text-xl), min(8vw, 9vh), var(--text-2xl))', letterSpacing: 'var(--tracking-tight)' }}>
           {product.name}
         </h2>
-        <p className="mt-3 font-mono text-text-primary" style={{ fontSize: 'var(--text-lg)' }} data-testid="product-price">
+        <p className="mt-3 font-mono text-text-primary short:mt-1" style={{ fontSize: 'var(--text-lg)' }} data-testid="product-price">
           {shownPrice ? formatPrice(shownPrice, meta.brand.locale) : (unavailable ? '—' : '…')}
         </p>
       </div>
 
-      <section aria-label={t.media} className="md:col-start-1 md:row-span-2 md:row-start-1">
-        <PlaceholderImage
-          ratio={media.ratio}
-          variant={media.variant}
-          label={`${media.label} · ${colorway.label}`}
-          category={product.category}
-          seed={`${product.id}-${media.id}-${colorway.id}`}
-        />
+      <section aria-label={t.media} data-testid="product-media"
+               style={{ '--frame-ratio': pw / ph }}
+               className="md:col-start-1 md:row-span-2 md:row-start-1 short:sticky short:top-0 short:col-start-1 short:row-span-2 short:row-start-1 short:w-[calc(var(--sheet-frame-h)_*_var(--frame-ratio))] short:self-start">
+        <div className="short:flex short:h-(--sheet-frame-h) short:items-center short:justify-center">
+          <PlaceholderImage
+            ratio={media.ratio}
+            variant={media.variant}
+            label={`${media.label} · ${colorway.label}`}
+            category={product.category}
+            seed={`${product.id}-${media.id}-${colorway.id}`}
+            className={mw / mh < pw / ph ? 'short:h-full' : 'short:w-full'}
+          />
+        </div>
         {product.media.length > 1 && (
-          <ul className="mt-3 grid grid-cols-4 gap-2">
+          <ul className="mt-3 grid grid-cols-4 gap-2 short:mt-2 short:grid-cols-[repeat(auto-fill,minmax(var(--touch-min),1fr))] short:gap-1">
             {product.media.map((m) => (
               <li key={m.id}>
                 <button
@@ -106,8 +118,8 @@ export default function ProductSheet({ product, headingId }) {
         )}
       </section>
 
-      <section className="flex flex-col gap-5 md:col-start-2 md:row-start-2">
-        <p className="text-text-secondary" style={{ fontSize: 'var(--text-sm)' }}>{product.description}</p>
+      <section className="flex flex-col gap-5 md:col-start-2 md:row-start-2 short:col-start-2 short:row-start-2 short:gap-2">
+        <p className="text-text-secondary short:order-1" style={{ fontSize: 'var(--text-sm)' }}>{product.description}</p>
 
         <OptionGroup
           label={`${t.colorways} · ${colorway.label}`}
@@ -158,7 +170,7 @@ export default function ProductSheet({ product, headingId }) {
           <p className="micro mt-3" style={{ opacity: 0.7 }}>{copy.legal.priceNotice}</p>
         </div>
 
-        <div>
+        <div className="short:order-2">
           <p className="micro mb-2">{t.details}</p>
           <ul className="grid gap-1 text-text-secondary" style={{ fontSize: 'var(--text-sm)' }}>
             {product.details.map((d) => <li key={d}>— {d}</li>)}
@@ -166,7 +178,7 @@ export default function ProductSheet({ product, headingId }) {
         </div>
 
         {features.lookbook.enabled && lookbooks.length > 0 && (
-          <div>
+          <div className="short:order-2">
             <p className="micro mb-2">{t.inLookbook}</p>
             <div className="flex flex-wrap gap-2">
               {lookbooks.map((l) => (

@@ -590,6 +590,10 @@ export const storeConfig = {
     // Cornice fissa della galleria del Lookbook: immagini di ratio diverso ci
     // stanno dentro senza cambiarne l'altezza, così i bottoni non saltano.
     galleryFrame: [16, 10],
+    // Cornice dell'immagine della scheda prodotto su schermo basso (telefono in
+    // orizzontale): alta quanto lo schermo permette, larga di conseguenza. 4:5 come
+    // le foto prodotto (docs/CONTENUTI.md).
+    productFrame: [4, 5],
   },
 
   copy: {

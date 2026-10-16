@@ -30,6 +30,9 @@ export const useAppStore = create((set, get) => ({
   // L'uscita è sempre possibile, anche durante l'ingresso: si parte dalla posa
   // in cui si trova la camera in quel momento, senza aspettare la fine.
   focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null },
+  // Rettangolo del pannello del Focus sullo schermo ({ left, top, right, bottom } in
+  // pixel CSS), o null: la camera inquadra il capo nella parte che il pannello lascia libera.
+  focusPanelRect: null,
 
   // Finestre di dialogo (Fase 5) — una pila: [{ kind: 'product' | 'lookbook', id }].
   // Dal Lookbook si apre un capo e "Indietro" riporta al Lookbook; "Chiudi"
@@ -69,6 +72,7 @@ export const useAppStore = create((set, get) => ({
     if (f.state === 'entering' || f.state === 'focused') set({ focus: { ...f, state: 'exiting' } })
   },
   setFocusState: (state) => set((s) => ({ focus: { ...s.focus, state } })),
+  setFocusPanelRect: (focusPanelRect) => set({ focusPanelRect }),
   finishFocusExit: () => set({ focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null } }),
   cycleProduct: (delta, count) => set((s) => ({
     focus: { ...s.focus, productIndex: (s.focus.productIndex + delta + count) % count },

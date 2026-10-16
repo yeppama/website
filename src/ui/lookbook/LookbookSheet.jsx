@@ -31,12 +31,12 @@ export default function LookbookSheet({ entry, headingId }) {
   }
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-8 short:gap-4">
       <header>
         <p className="micro">{t.eyebrow} · {entry.season} · {brand.name}</p>
         <h2 id={headingId} tabIndex={-1}
             className="mt-3 font-gothic leading-none text-text-primary outline-none"
-            style={{ fontSize: 'clamp(var(--text-2xl), 9vw, var(--text-3xl))' }}>
+            style={{ fontSize: 'clamp(var(--text-2xl), min(9vw, 14vh), var(--text-3xl))' }}>
           {entry.title}
         </h2>
         <p className="mt-2 font-display font-bold uppercase text-text-secondary"
@@ -48,8 +48,10 @@ export default function LookbookSheet({ entry, headingId }) {
       <section aria-roledescription={t.galleryRole} aria-label={t.gallery} onKeyDown={onGalleryKey}>
         {/* Il box non cambia altezza fra un'immagine e l'altra: i ratio diversi
             stanno dentro una cornice fissa, così i bottoni non saltano. */}
-        <div className="flex items-center justify-center border border-line-subtle bg-bg-base"
-             style={{ aspectRatio: `${fw} / ${fh}` }}>
+        {/* Su schermo basso la cornice si misura sull'altezza disponibile. */}
+        <div className="flex items-center justify-center border border-line-subtle bg-bg-base short:mx-auto short:w-[calc(var(--sheet-frame-h)_*_var(--frame-ratio))] short:max-w-full"
+             data-testid="lookbook-frame"
+             style={{ aspectRatio: `${fw} / ${fh}`, '--frame-ratio': fw / fh }}>
           <PlaceholderImage
             key={image.id}
             ratio={image.ratio}

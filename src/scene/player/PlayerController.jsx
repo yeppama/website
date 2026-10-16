@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { createNavigator } from '../../lib/navigator.js'
 import { moveWithCollisions } from '../../lib/collision.js'
 import { rayHitsCollider, zoneAt } from '../../lib/geometry.js'
+import { fovForAspect } from '../../lib/framing.js'
 import { useAppStore, APP_PHASE } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 
@@ -428,11 +429,10 @@ export default function PlayerController({ config, device }) {
   }, [gl, camera, device, config]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Campo visivo: in verticale lo schermo è stretto, si allarga il fov -------
+  // Durante il Focus la camera è della FocusCameraRig, che all'uscita ricalcola lo
+  // stesso fov per lo schermo di quel momento (il telefono può essere stato ruotato).
   useEffect(() => {
-    const { vertical, minHorizontal, maxVertical } = P.fov
-    const aspect = size.width / size.height
-    const fromHorizontal = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(minHorizontal) / 2) / aspect))
-    camera.fov = Math.min(maxVertical, Math.max(vertical, fromHorizontal))
+    if (useAppStore.getState().focus.state === 'idle') camera.fov = fovForAspect(P.fov, size.width / size.height)
     camera.near = config.camera.near
     camera.far = config.camera.far
     camera.updateProjectionMatrix()

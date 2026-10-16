@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` (avanti rispetto a `main`, che resta alla Fase 7) · **Fase 8b chiusa** (ordine di prova #1001 pagato su Shopify) · **preparazione 8c/8d eseguita** (modello Excel del catalogo, import, controllo dal vivo, pagine legali da Shopify) · 8c in attesa del catalogo del cliente e del comando
+> Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` (avanti rispetto a `main`, che resta alla Fase 7) · **Fase 8b chiusa** (ordine di prova #1001 pagato su Shopify) · **preparazione 8c/8d eseguita** (modello Excel del catalogo, import, controllo dal vivo, pagine legali da Shopify) · **telefono in orizzontale corretto** (Focus e schede) · 8c in attesa del catalogo del cliente e del comando
 > Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.6. Registro prestazioni: `docs/PERF.md`.
 
 ## 1. Stato attuale
@@ -51,6 +51,9 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 - Desktop: WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo.
 - Mobile: tap = vai/avvicinati; trascinamento = guarda (soglie `navigation.input`); barra "Vai a" solo verso waypoint `safeForTeleport`.
 - Focus Mode: macchina a stati `idle → entering → focused → exiting → idle`, interrompibile in ogni stato. La luce "studio" nasce dal contrasto (gli altri faretti scendono), non da più luce sul capo.
+- Inquadratura del Focus (2026-10-16): il pannello dichiara il suo rettangolo (`useAppStore.focusPanelRect`); `FocusCameraRig` inquadra il capo nella parte di schermo libera (sopra il pannello in verticale, a sinistra in orizzontale e su desktop) con `camera.setViewOffset`, senza muovere la camera. Fov e spostamento si ricalcolano a ogni fotogramma (pannello che compare, altro capo, telefono ruotato); all'uscita fov del player per lo schermo di quel momento e `clearViewOffset`. Calcoli in `lib/framing.js` (`fovForAspect`, condiviso col player), provati con la camera di three in `npm run test:framing`.
+- Schermo basso: variante Tailwind `short` = `@media (max-height: 520px)` (conta l'altezza: un telefono in orizzontale è largo come un tablet). Schede a tutto schermo con intestazione compatta; scheda prodotto con immagine misurata sull'altezza (`--sheet-frame-h`, `placeholders.productFrame`) ferma a sinistra e, a destra, prima colori, taglie e acquisto; pannello del Focus compatto.
+- `viewport-fit=cover` tolto (2026-10-16): nessun elemento usava `env(safe-area-inset-*)`, quindi in orizzontale marchio e pannelli potevano finire sotto la Dynamic Island. Safari ora tiene la pagina nell'area sicura e colora le fasce col fondo nero.
 - Schede (Fase 5): pila `dialogs` in `useAppStore`, una sola finestra visibile (`DialogHost`, z `dialog` = 45, sopra menu e Focus). Si aprono da: "Scheda completa" nel Focus, capi del menu, "Apri la Brand Story" nel menu, hotspot `poi-look-01`, pannello della parete del brand (tap o click col mirino), capi del Lookbook. ESC/Indietro tolgono un livello, Chiudi/fondo tutti; riaprire una voce già nella pila torna lì invece di accumulare.
 - Con una scheda aperta `blocked()` è vero; all'apertura tasti, velocità e percorso si azzerano e il Pointer Lock si rilascia; alla chiusura non si riprende da solo.
 - `useFocusTrap` (schede e menu): pila globale di trappole, solo l'ultima risponde; ESC catturato in fase di cattura sulla finestra con `stopPropagation`, così non chiude anche il menu o il Focus sotto. Il focus torna a chi ha aperto.
@@ -67,7 +70,7 @@ src/lib/sanitizeHtml.js   filtro dell'HTML esterno (pagine legali del venditore)
 src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js · useLegalStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
 src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · legal/ · perf/ · bench/ · primitives/ · fx/ · fallback/
-scripts/           generate-theme.js · test-navigation.mjs · test-catalog.mjs · export-shopify-csv.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs
+scripts/           generate-theme.js · test-navigation.mjs · test-framing.mjs · test-catalog.mjs · export-shopify-csv.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs · e2e/e2e-landscape.mjs
 scripts/catalog/   schema.mjs (colonne del modello) · make-template.mjs · importer.mjs · import.mjs · shopify-csv.mjs · check.mjs
 docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dal cliente) · modello-catalogo-INTO.xlsx (da compilare) · PLAN-8.md
 ```
@@ -123,6 +126,8 @@ npm run test:nav                       # logica di navigazione, 9 test
 npm run test:device                    # scelta del tier da stringhe GPU reali, 13 test
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 19 test
+npm run test:framing                   # inquadratura del Focus contro la camera di three, 8 test
+# e2e-landscape.mjs: Focus e schede su 4 formati bassi (anche Safari con le barre, 852×330), verticale e desktop; rotazione durante il Focus; 43 verifiche
 npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
 npm run catalog:import -- <file.xlsx> [uscita] [--foto <cartella>]   # resoconto.md sempre; CSV Shopify, bozza dei capi, testi EN solo senza errori
 npm run check:catalog -- [--domain x --token y] [--launch]           # DAL VIVO: storeConfig ↔ Shopify (criterio della 8c); --launch pretende le pagine legali
@@ -166,6 +171,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - Su telefono nome e prezzo vanno sopra la galleria, o un 4:5 a tutta larghezza li spinge sotto la piega.
 - Mai istruzioni per comandi che non esistono: l'utente ha creduto rotto il touch. Feature flag + I15.
 - L'onboarding deve scorrere: su un telefono in orizzontale (~390 px) "Entra" era irraggiungibile.
+- Telefono in orizzontale (segnalato dall'utente il 2026-10-16): il pannello del Focus copriva il capo e la scheda mostrava solo un'immagine più alta dello schermo. Le verifiche della Fase 6 controllavano che i bottoni fossero nello schermo, non che il capo fosse visibile: ora `e2e-landscape.mjs` proietta il capo e controlla che non cada sotto il pannello. Ruotare il telefono durante il Focus lasciava il fov del vecchio orientamento anche dopo l'uscita: corretto.
 - Telefono in orizzontale (844×390): la minimappa larga `sm:w-44` (alta 264 px) spingeva la barra "Vai a" fuori dallo schermo. Ora `[@media(max-height:520px)]:w-16`. Trovato dalla verifica responsive della Fase 6, non a occhio.
 - Un testo lungo (l'avviso di rendering software) allargava l'HUD prestazioni su mezza scena: pannelli informativi a larghezza fissa.
 - Prompt fissi in percentuale e prompt nel flusso si sovrappongono: stessa colonna, impilati.
