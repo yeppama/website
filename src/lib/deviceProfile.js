@@ -32,6 +32,11 @@ export function detectWebGL2() {
 // Iris/UHD, Radeon integrate, Apple M base) sono il riferimento del tier medium.
 const DISCRETE_GPU = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d+ (pro|max|ultra)/i
 
+// GPU dei telefoni economici: vanno in low anche con 8 core e 4+ GB. Misurato: un
+// Honor con Adreno 619 (8 core) finiva in medium e rendeva a 9,7 fps (docs/PERF.md).
+// Adreno sotto la serie 650, Mali G31/G51/G52/G57/G68 e serie T, PowerVR GE/GM.
+const BUDGET_MOBILE_GPU = /adreno\s*\(tm\)\s*([1-5]\d\d|6[0-4]\d)\b|mali-g(31|51|52|57|68)\b|mali-t\d|powervr rogue g[em]/i
+
 /**
  * Sceglie il tier. Deliberatamente prudente: su puntatore grossolano non si sale
  * mai sopra `medium`, perché un telefono potente resta un telefono che si scalda.
@@ -46,6 +51,7 @@ export function pickTier({ pointer, cores, memory, renderer }) {
     // la regola generale ogni iPhone finiva in low, a DPR 1 su schermi a densità 3.
     // Misurato: un iPhone con Safari 26 regge medium a 58,8 / 55,6 fps (docs/PERF.md).
     if (/apple gpu/i.test(renderer ?? '')) return 'medium'
+    if (BUDGET_MOBILE_GPU.test(renderer ?? '')) return 'low'
     return cores >= 6 && memory >= 4 ? 'medium' : 'low'
   }
   if (DISCRETE_GPU.test(renderer ?? '') && cores >= 8 && memory >= 8) return 'high'

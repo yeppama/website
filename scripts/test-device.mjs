@@ -19,6 +19,11 @@ const cases = [
   ['Renderer sconosciuto', desktop('sconosciuto'), 'medium'],
   ['Pixel · PowerVR (misurato: 60 fps in medium)', { pointer: 'coarse', cores: 8, memory: 8, renderer: 'ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2)' }, 'medium'],
   ['iPhone · Safari (misurato: 58,8 fps in medium, finiva in low)', { pointer: 'coarse', cores: 4, memory: 4, renderer: 'Apple GPU' }, 'medium'],
+  ['Honor · Adreno 619, 8 core (misurato: 9,7 fps in medium)', { pointer: 'coarse', cores: 8, memory: 6, renderer: 'ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2)' }, 'low'],
+  ['Mali-G57, 8 core', { pointer: 'coarse', cores: 8, memory: 4, renderer: 'ANGLE (ARM, Mali-G57 MC2, OpenGL ES 3.2)' }, 'low'],
+  ['Pixel 7 · Mali-G710 (misurato: 90 fps in medium)', { pointer: 'coarse', cores: 8, memory: 8, renderer: 'ANGLE (ARM, Mali-G710, OpenGL ES 3.2)' }, 'medium'],
+  ['Adreno 730, 8 core', { pointer: 'coarse', cores: 8, memory: 8, renderer: 'ANGLE (Qualcomm, Adreno (TM) 730, OpenGL ES 3.2)' }, 'medium'],
+  ['Adreno 650, 8 core', { pointer: 'coarse', cores: 8, memory: 6, renderer: 'ANGLE (Qualcomm, Adreno (TM) 650, OpenGL ES 3.2)' }, 'medium'],
   ['Telefono con 4 core', { pointer: 'coarse', cores: 4, memory: 4, renderer: 'Adreno (TM) 610' }, 'low'],
   ['SwiftShader', desktop('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)'), 'low'],
 ]

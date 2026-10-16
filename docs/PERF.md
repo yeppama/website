@@ -69,6 +69,8 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | c5db6fa | medium · grana alpha | 1.5 | 485×937 | 3 | 45.0 ⚠ | 22.8 | 42.7 | 31 / 42 | 12910 | sì, ma **non valida**: tetto del limitatore |
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | fa2e1e7 | medium · grana alpha | 1.5 | 485×937 | 3 | 80.0 ⚠ | 22.3 | 44.1 | 31 / 42 | 12910 | sì, ma **non valida**: 60 fps a ritmo irregolare |
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | f76c0b3 | medium · grana alpha | 1.5 | 485×937 | 3 | 90.1 | 12.7 | 71.4 | 31 / 49 | 13070 | sì |
+| 2026-10-16 | Pixel 10 | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | f76c0b3 | medium · grana alpha | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 55.2 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | c5db6fa | medium (sbagliato) · grana alpha | 1.5 | 423×856 | 3 | 9.7 | 137.6 | 6.0 | 31 / 41 | 12910 | sì · **fallita** |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -235,4 +237,11 @@ Terza misura del Pixel 7 su `f76c0b3` (ritmo regolare): **90,1 di mediana in tut
 1% low 71,4 (peggior tratto: ingresso nel Focus sul manichino, 60,6, max 37 ms), 0 fotogrammi > 50 ms.
 La GPU regge i 90 Hz con margine: correzione confermata su hardware reale. Il Pixel 7 resta un
 telefono di fascia medio-alta: la misura sul tier low è in corso (utente, 2026-10-16).
+
+Honor con Adreno 619 (prima misura su un Android di fascia bassa, 2026-10-16): **9,7 fps**, 1% low 6,0,
+381 fotogrammi > 50 ms e un blocco di 1067 ms nel Lookbook. Il tier era sbagliato: 8 core e ≥ 4 GB lo
+mandavano in `medium` (ombre vere, DPR 1,5). Dopo, GPU dei telefoni economici riconosciute nella stringa
+del renderer (`BUDGET_MOBILE_GPU` in `deviceProfile.js`, `test:device`) → `low`. Da rimisurare in low:
+se anche lì resta sotto la soglia (p50 ≥ 40), serve un tier più leggero. Pixel 10 (stessa GPU del "Pixel"
+di fase 6): 60,2 / 55,2, nessuno scatto, superata.
 
