@@ -71,6 +71,8 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | f76c0b3 | medium · grana alpha | 1.5 | 485×937 | 3 | 90.1 | 12.7 | 71.4 | 31 / 49 | 13070 | sì |
 | 2026-10-16 | Pixel 10 | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | f76c0b3 | medium · grana alpha | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 55.2 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | c5db6fa | medium (sbagliato) · grana alpha | 1.5 | 423×856 | 3 | 9.7 | 137.6 | 6.0 | 31 / 41 | 12910 | sì · **fallita** |
+| 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | 01ae63c | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 18.8 | 43.5 | 18 / 30 | 7432 | sì · superata (4 > 50 ms, max 140 ms) |
+| 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | 01ae63c | low (grana off) | 1.0 | 423×856 | 3 | 59.9 | 19.2 | 47.4 | 18 / 30 | 7432 | sì · superata (0 > 50 ms, max 43 ms) |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -244,4 +246,8 @@ mandavano in `medium` (ombre vere, DPR 1,5). Dopo, GPU dei telefoni economici ri
 del renderer (`BUDGET_MOBILE_GPU` in `deviceProfile.js`, `test:device`) → `low`. Da rimisurare in low:
 se anche lì resta sotto la soglia (p50 ≥ 40), serve un tier più leggero. Pixel 10 (stessa GPU del "Pixel"
 di fase 6): 60,2 / 55,2, nessuno scatto, superata.
+
+Honor in `low` su `01ae63c` (tier scelto da solo): **59,9 / 43,5, superata** (soglia low: p50 ≥ 40).
+Con la grana alpha però 4 fotogrammi > 50 ms (max 140 ms) e 1% low fino a 14,6 in un tratto; senza grana
+0 > 50 ms, max 43 ms, 1% low 47,4. Proposta all'utente: grana spenta solo nel tier low. In attesa di decisione.
 
