@@ -16,5 +16,5 @@ npm run test:device
 Deploy: integrazione Git di Vercel. Ogni push su un branch crea un'anteprima (protetta da login
 Vercel); `main` è la produzione. Header e cache in `vercel.json`.
 
-Documentazione: `PLAN.md` (piano, schema dati, decisioni), `CONTEXT.md` (stato e lezioni),
+Documentazione: `PLAN.md` (indice del piano, testo in `docs/plan/`), `CONTEXT.md` (stato), `docs/LEZIONI.md` (lezioni),
 `docs/PERF.md` (misure di prestazioni, `?bench=1`), `docs/CONTENUTI.md` (contenuti reali da ricevere).
