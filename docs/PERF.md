@@ -67,6 +67,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 47844b8 | medium · grana alpha | 1.0 | 1920×911 | 3 | 57.1 | 23.5 | 39.2 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | c5db6fa | medium · grana alpha | 1.5 | 485×937 | 3 | 45.0 ⚠ | 22.8 | 42.7 | 31 / 42 | 12910 | sì, ma **non valida**: tetto del limitatore |
+| 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | fa2e1e7 | medium · grana alpha | 1.5 | 485×937 | 3 | 80.0 ⚠ | 22.3 | 44.1 | 31 / 42 | 12910 | sì, ma **non valida**: 60 fps a ritmo irregolare |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -222,4 +223,10 @@ Riga del Pixel 7 su `c5db6fa`: 45,0 fps di mediana in **tutti** i 10 tratti, fot
 La misura va rifatta su `fa2e1e7` o successivo. Il Pixel 7 (Mali-G710) non è un Android di fascia
 media: la misura sul tier low resta da fare. Le misure precedenti (Pixel PowerVR, iPhone a 60/120 Hz,
 Vivobook a 60 Hz) non erano toccate dal difetto.
+
+Seconda misura del Pixel 7 su `fa2e1e7`: p50 80,0 ma per tratto fra 49 e 88, 1% low fermo a 44.
+Il limitatore a scadenze chiedeva davvero 60 fotogrammi al secondo, ma su 90 Hz li otteneva alternando
+intervalli da 11 e 22 ms: la mediana degli intervalli cade sull'uno o sull'altro (da qui 50 o 85) e
+l'1% low misura i 22 ms. Movimento a scatti regolari, peggio dei 45 costanti. Correzione: ritmo
+regolare, un fotogramma ogni k vsync senza scendere sotto il target (90 Hz → 90). Da rimisurare.
 

@@ -86,21 +86,26 @@ test('regione molto bassa: il fov non supera il massimo configurato', () => {
   assert.ok(r.fov <= F.maxVerticalFov)
 })
 
-// Limitatore di fps (lib/frameScheduler.js): su schermi a frequenze diverse si
-// devono ottenere ~60 fps, non 37/45/48 come con la regola "tempo dall'ultimo".
-test('limitatore: ~60 fps su schermi a 60, 75, 90, 120, 144, 165, 240 Hz; 30 su uno a 30 Hz', () => {
+// Limitatore di fps (lib/frameScheduler.js): ritmo regolare, mai sotto il target.
+test('limitatore: un fotogramma ogni k vsync, ritmo regolare, mai sotto 60 fps', () => {
+  const expected = { 30: 30, 60: 60, 75: 75, 90: 90, 120: 60, 144: 72, 165: 82.5, 240: 60 }
   const out = []
-  for (const hz of [30, 60, 75, 90, 120, 144, 165, 240]) {
+  for (const [hzText, want] of Object.entries(expected)) {
+    const hz = Number(hzText)
     const due = frameScheduler(60)
-    let renders = 0, seed = hz
+    let seed = hz
     const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 }
-    const seconds = 5
-    for (let i = 0; i < hz * seconds; i++) if (due(i * (1000 / hz) + (rand() - 0.5))) renders++
-    const fps = renders / seconds
-    const want = Math.min(60, hz)
-    assert.ok(Math.abs(fps - want) <= 1.5, `${hz} Hz → ${fps.toFixed(1)} fps invece di ${want}`)
+    const times = []
+    for (let i = 0; i < hz * 5; i++) { const t = i * (1000 / hz) + (rand() - 0.5) * 0.4; if (due(t)) times.push(t) }
+    const gaps = times.slice(20).map((t, i, a) => (i ? t - a[i - 1] : null)).filter(Boolean)
+    const fps = 1000 / (gaps.reduce((x, y) => x + y, 0) / gaps.length)
+    assert.ok(Math.abs(fps - want) <= 1, `${hz} Hz → ${fps.toFixed(1)} fps invece di ${want}`)
+    const spread = Math.max(...gaps) - Math.min(...gaps)
+    assert.ok(spread < 1.5, `${hz} Hz: intervalli irregolari (da ${Math.min(...gaps).toFixed(1)} a ${Math.max(...gaps).toFixed(1)} ms)`)
     out.push(`${hz}→${fps.toFixed(0)}`)
   }
+  // Dopo una pausa (scheda in background) si rende subito.
+  const due = frameScheduler(60); due(0); due(8.3); assert.equal(due(5000), true)
   return out.join(' ')
 })
 

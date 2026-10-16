@@ -100,13 +100,11 @@ function CameraRig({ camera, reducedMotion, debugPoseFor }) {
  * Limite reale del frame rate.
  *
  * Il Canvas gira in `frameloop="demand"`: non rende nulla finché qualcuno non
- * chiama `invalidate()`. Questo ciclo lo chiama al massimo `targetFps` volte al
+ * chiama `invalidate()`. Questo ciclo lo chiama vicino a `targetFps` volte al
  * secondo, quindi su uno schermo a 120 Hz si rende a 60, non a 120.
- * Si ragiona per scadenze, non per "tempo dall'ultimo fotogramma": su schermi a
- * 75, 90 o 144 Hz quella regola saltava un vsync su due e scendeva a 37, 45 o 48
- * fps. Qui si rende al primo vsync che arriva entro mezzo vsync dalla scadenza,
- * e la scadenza successiva avanza di un intervallo esatto (con recupero se si è
- * rimasti indietro): lib/frameScheduler.js, provato con `npm run test:framing`.
+ * Ritmo regolare (lib/frameScheduler.js, provato con `npm run test:framing`):
+ * un fotogramma ogni k aggiornamenti dello schermo, mai sotto il target. 120 Hz → 60,
+ * 90 Hz → 90, 144 Hz → 72. Né 45 fps (vecchia regola) né 60 irregolari a 90 Hz.
  */
 function FrameLimiter({ targetFps }) {
   const { invalidate } = useThree()
