@@ -1,6 +1,6 @@
 # PLAN-8.md — Fase 8: e-commerce reale
 
-Versione 0.2 · 2026-10-16 · Stato: **8a consegnata**; **8b provata dal vivo con l'Italia** (catalogo, carrello, cassa in EUR: 11/11); manca solo il pagamento di prova (campi carta bloccati dal proxy del container)
+Versione 0.2 · 2026-10-16 · Stato: **8a consegnata**; **8b chiusa**: dal vivo con l'Italia (catalogo, carrello, cassa in EUR: 11/11) e ordine di prova #1001 pagato col gateway di test (fatto a mano dall'utente: i campi carta sono bloccati dal proxy del container). Prossima: 8c, serve il negozio del cliente
 
 Livello di certezza: **[Certo]** verificato nel codice o deciso dall'utente · **[Probabile]** conoscenza
 consolidata, da riverificare al momento dell'implementazione · **[Ipotesi]** da confermare.
