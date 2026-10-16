@@ -53,6 +53,13 @@ export const useCartStore = create((set, get) => ({
         writeId(cart.id)
       }
       cart = await operation(provider, cart.id)
+      // Operazione eseguita solo in parte (es. merce esaurita): si mostra il
+      // carrello com'è davvero e si avvisa, senza confermare.
+      if (cart.warnings?.length) {
+        console.warn('commerce: avvisi dal fornitore', cart.warnings)
+        set({ cart, pending: false, error: storeConfig.copy.cart.stockWarning })
+        return false
+      }
       set({ cart, pending: false })
       return true
     } catch (e) {

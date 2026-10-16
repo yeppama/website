@@ -1,6 +1,6 @@
 # PLAN-8.md — Fase 8: e-commerce reale
 
-Versione 0.2 · 2026-10-16 · Stato: **8a consegnata**; **8b scritta**, prova dal vivo in sospeso (proxy del container chiuso verso Shopify; la fa l'utente sull'anteprima con `?commerce=shopify`)
+Versione 0.2 · 2026-10-16 · Stato: **8a consegnata**; **8b collegata e provata dal vivo** (carrello vero su Shopify con paese US); in attesa che il negozio di sviluppo venda in Italia/EUR e del primo ordine di prova
 
 Livello di certezza: **[Certo]** verificato nel codice o deciso dall'utente · **[Probabile]** conoscenza
 consolidata, da riverificare al momento dell'implementazione · **[Ipotesi]** da confermare.

@@ -137,7 +137,7 @@ export const storeConfig = {
     shopify: {
       domain: 'into-industries-dev.myshopify.com',
       storefrontToken: 'b01d16e3db47daf418b38cf9cef3e240',
-      apiVersion: '2026-07',
+      apiVersion: '2026-10',   // ultima stabile al 2026-10-16, supportata fino al 2027-10-16 (shopify.dev)
       // Negozio di sviluppo: solo pagamenti di prova. Lo si dice in scheda e carrello.
       testMode: true,
       // Nomi delle opzioni Shopify che corrispondono a taglia e colore.
@@ -720,6 +720,7 @@ export const storeConfig = {
       mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',
       error: 'Il carrello non ha risposto. Riprova.',
       maxReached: 'Quantità massima raggiunta',
+      stockWarning: 'Quantità non disponibile: il carrello mostra quella che è stato possibile aggiungere.',
     },
     errors: {
       contextLost: {

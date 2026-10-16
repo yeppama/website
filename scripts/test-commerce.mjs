@@ -29,6 +29,8 @@ const cartNode = (lines) => ({
   lines: { nodes: lines.map((l) => ({ id: l.id, quantity: l.quantity, merchandise: { ...l.v, product: { handle: 'heavy-hoodie', title: 'Heavy Hoodie' } } })) },
 })
 
+const IT = { availableCountries: [{ isoCode: 'US' }, { isoCode: 'IT' }] }
+
 // fetch finto: registra la richiesta e restituisce la risposta preparata.
 function fakeFetch(respond) {
   const calls = []
@@ -42,7 +44,7 @@ function fakeFetch(respond) {
 }
 
 await test('richiesta: endpoint con versione, token pubblico nell\'header, paese nel contesto', async () => {
-  const f = fakeFetch(() => ({ data: { p0: null } }))
+  const f = fakeFetch(() => ({ data: { localization: IT, p0: null } }))
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
   await p.getProducts(['heavy-hoodie'])
   const c = f.calls[0]
@@ -54,7 +56,7 @@ await test('richiesta: endpoint con versione, token pubblico nell\'header, paese
 })
 
 await test('catalogo: varianti Shopify tradotte negli id di taglia e colore di storeConfig', async () => {
-  const f = fakeFetch(() => ({ data: { p0: { handle: 'heavy-hoodie', title: 'Heavy Hoodie', variants: { nodes: [
+  const f = fakeFetch(() => ({ data: { localization: IT, p0: { handle: 'heavy-hoodie', title: 'Heavy Hoodie', variants: { nodes: [
     variant('gid://v/1', 'M', 'Black'), variant('gid://v/2', 'XS', 'Bone', false), variant('gid://v/3', 'XXL', 'Black'),
   ] } } } }))
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
@@ -65,7 +67,7 @@ await test('catalogo: varianti Shopify tradotte negli id di taglia e colore di s
 })
 
 await test('catalogo: un capo assente su Shopify non compare (resterà "non disponibile")', async () => {
-  const f = fakeFetch(() => ({ data: { p0: null, p1: { handle: 'box-tee', title: 'Box Tee', variants: { nodes: [variant('gid://v/9', 'M', 'Bone')] } } } }))
+  const f = fakeFetch(() => ({ data: { localization: IT, p0: null, p1: { handle: 'box-tee', title: 'Box Tee', variants: { nodes: [variant('gid://v/9', 'M', 'Bone')] } } } }))
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
   const list = await p.getProducts(['heavy-hoodie', 'box-tee'])
   assert.deepEqual(list.map((x) => x.handle), ['box-tee'])
@@ -93,6 +95,23 @@ await test('errori: userErrors, errori GraphQL e HTTP diventano eccezioni', asyn
     const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: fakeFetch(respond).fn })
     await assert.rejects(() => p.addLines('c', [{ variantId: 'v', quantity: 1 }]))
   }
+})
+
+await test('mercato: un negozio che non vende nel paese configurato rende il catalogo non disponibile', async () => {
+  const f = fakeFetch(() => ({ data: { localization: { availableCountries: [{ isoCode: 'US' }] }, p0: { handle: 'heavy-hoodie', title: 'Heavy Hoodie', variants: { nodes: [variant('gid://v/1', 'M', 'Black')] } } } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  await assert.rejects(() => p.getProducts(['heavy-hoodie']), /non vende in IT/)
+  return 'caso reale del negozio di sviluppo (solo US)'
+})
+
+await test('avvisi: merce esaurita aggiunta con quantità 0 → warnings consegnati col carrello', async () => {
+  const v = variant('gid://v/1', 'M', 'Black')
+  const f = fakeFetch(() => ({ data: { cartLinesAdd: { cart: cartNode([{ id: 'gid://line/1', quantity: 0, v }]), userErrors: [],
+    warnings: [{ code: 'MERCHANDISE_OUT_OF_STOCK', message: 'sold out' }] } } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  const cart = await p.addLines('c', [{ variantId: 'gid://v/1', quantity: 1 }])
+  assert.deepEqual(cart.warnings, [{ code: 'MERCHANDISE_OUT_OF_STOCK', message: 'sold out' }])
+  assert.match(f.calls[0].query, /warnings \{ code message \}/)
 })
 
 await test('carrello scaduto: getCart restituisce null', async () => {

@@ -100,12 +100,15 @@ export function createShopifyProvider({ products, shopify, country, fetchImpl = 
     }),
   })
 
-  // Le mutazioni del carrello restituiscono userErrors invece di errori GraphQL.
+  // Le mutazioni del carrello restituiscono userErrors (operazione rifiutata) e
+  // warnings (operazione eseguita solo in parte: es. merce esaurita aggiunta con
+  // quantità 0). Gli avvisi viaggiano col carrello: il chiamante non deve
+  // confermare un'aggiunta che non c'è stata (Fase 8b, verificato dal vivo).
   const mutate = async (field, query, variables) => {
     const data = await request(query, { ...variables, country })
     const result = data[field]
     if (result.userErrors?.length) throw new Error(`shopify: ${result.userErrors.map((e) => e.message).join('; ')}`)
-    return view(result.cart)
+    return { ...view(result.cart), warnings: (result.warnings ?? []).map((w) => ({ code: w.code, message: w.message })) }
   }
 
   return {
@@ -115,7 +118,17 @@ export function createShopifyProvider({ products, shopify, country, fetchImpl = 
       if (!handles.length) return []
       // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca.
       const fields = handles.map((h, i) => `p${i}: product(handle: ${JSON.stringify(h)}) { ${PRODUCT_FIELDS} }`).join('\n')
-      const data = await request(`query Products($country: CountryCode) @inContext(country: $country) { ${fields} }`, { country })
+      const data = await request(`query Products($country: CountryCode) @inContext(country: $country) {
+        localization { availableCountries { isoCode } }
+        ${fields}
+      }`, { country })
+      // Un negozio che non vende nel paese configurato risponde col contesto del
+      // suo mercato principale (prezzi in un'altra valuta) e poi dichiara la merce
+      // esaurita al carrello. Meglio dirlo subito: il capo risulta non disponibile.
+      const countries = data.localization.availableCountries.map((c) => c.isoCode)
+      if (!countries.includes(country)) {
+        throw new Error(`shopify: il negozio non vende in ${country} (mercati attivi: ${countries.join(', ')})`)
+      }
       return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => ({
         handle: p.handle,
         title: p.title,
@@ -130,7 +143,7 @@ export function createShopifyProvider({ products, shopify, country, fetchImpl = 
 
     createCart: () => mutate('cartCreate', `
       mutation CartCreate($country: CountryCode) @inContext(country: $country) {
-        cartCreate(input: { buyerIdentity: { countryCode: $country } }) { cart { ${CART_FIELDS} } userErrors { message } }
+        cartCreate(input: { buyerIdentity: { countryCode: $country } }) { cart { ${CART_FIELDS} } userErrors { message } warnings { code message } }
       }`, {}),
 
     async getCart(id) {
@@ -140,17 +153,17 @@ export function createShopifyProvider({ products, shopify, country, fetchImpl = 
 
     addLines: (cartId, lines) => mutate('cartLinesAdd', `
       mutation Add($cartId: ID!, $lines: [CartLineInput!]!, $country: CountryCode) @inContext(country: $country) {
-        cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } }
+        cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } warnings { code message } }
       }`, { cartId, lines: lines.map((l) => ({ merchandiseId: l.variantId, quantity: l.quantity })) }),
 
     updateLines: (cartId, lines) => mutate('cartLinesUpdate', `
       mutation Update($cartId: ID!, $lines: [CartLineUpdateInput!]!, $country: CountryCode) @inContext(country: $country) {
-        cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } }
+        cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } warnings { code message } }
       }`, { cartId, lines: lines.map((l) => ({ id: l.lineId, quantity: l.quantity })) }),
 
     removeLines: (cartId, lineIds) => mutate('cartLinesRemove', `
       mutation Remove($cartId: ID!, $lineIds: [ID!]!, $country: CountryCode) @inContext(country: $country) {
-        cartLinesRemove(cartId: $cartId, lineIds: $lineIds) { cart { ${CART_FIELDS} } userErrors { message } }
+        cartLinesRemove(cartId: $cartId, lineIds: $lineIds) { cart { ${CART_FIELDS} } userErrors { message } warnings { code message } }
       }`, { cartId, lineIds }),
   }
 }

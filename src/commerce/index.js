@@ -24,6 +24,12 @@ export function commerceMode() {
   return storeConfig.commerce.provider
 }
 
+/** Paese dell'acquirente. Solo in diagnosi (?debug) si può forzare con &country=XX. */
+export function commerceCountry() {
+  const forced = params.get('debug') && params.get('country')
+  return /^[A-Z]{2}$/.test(forced ?? '') ? forced : storeConfig.commerce.country
+}
+
 let provider
 export function getProvider() {
   if (provider !== undefined) return provider
@@ -43,7 +49,7 @@ export function getProvider() {
       apiVersion: env.VITE_SHOPIFY_API_VERSION || commerce.shopify.apiVersion,
     }
     provider = shopify.domain && shopify.storefrontToken
-      ? createShopifyProvider({ products, shopify, country: commerce.country })
+      ? createShopifyProvider({ products, shopify, country: commerceCountry() })
       : null
     if (!provider) console.warn('commerce: Shopify senza dominio o token, acquisti spenti')
   } else {
