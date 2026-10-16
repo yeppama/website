@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
-import { commerceMode } from '../../commerce/index.js'
+import { commerceMode, testBanner } from '../../commerce/index.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
@@ -39,7 +39,7 @@ export default function CartSheet({ headingId }) {
   return (
     <div className="mx-auto grid max-w-2xl gap-6" aria-busy={pending}>
       <header>
-        {mock && <p className="micro mb-2" style={{ color: 'var(--color-accent-flame)' }}>{t.mockBanner}</p>}
+        {testBanner() && <p className="micro mb-2" style={{ color: 'var(--color-accent-flame)' }}>{testBanner()}</p>}
         <h2 id={headingId} tabIndex={-1}
             className="font-display font-black uppercase leading-none text-text-primary outline-none"
             style={{ fontSize: 'var(--text-xl)', letterSpacing: 'var(--tracking-tight)' }}>

@@ -62,7 +62,7 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 ```
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
-src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova)
+src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova) · shopify.js (Storefront API)
 src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
 src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · perf/ · bench/ · primitives/ · fx/ · fallback/
@@ -119,6 +119,7 @@ usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
 npm run dev | build | preview          # predev/prebuild rigenerano i token
 npm run test:nav                       # logica di navigazione, 9 test
 npm run test:device                    # scelta del tier da stringhe GPU reali, 13 test
+npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 6 test
 # e2e-phase8a.mjs: carrello col negozio di prova (?commerce=mock), 32 verifiche
 npx vite preview --port 4173 &         # poi, per ogni suite:
 node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 verifiche, ~10 min (fase 5: 34)
@@ -127,7 +128,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore).
+**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
 
 ## 4. Lezioni apprese & edge case
 
@@ -186,6 +187,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - **Fase 7 — eseguita con l'opzione A (2026-10-16):** l'utente ha scelto di andare in produzione subito, con i segnaposto dichiarati, senza aspettare il materiale del cliente. `main` portato in avanti (fast-forward) allo stato del branch di lavoro; Vercel pubblica la produzione da `main`. Il sito di produzione è fuori dai motori di ricerca (`X-Robots-Tag` in `vercel.json` + meta robots in `index.html`): da togliere coi contenuti reali. `vercel.json` aggiunge anche header di sicurezza e cache lunga per `/assets`.
 - Storico: la Fase 7 era stata approvata con condizione ("se tutto ok, approvato procedi alla fase 7"), cioè parte quando arriva il materiale e risulta completo e utilizzabile. I contenuti vengono **dal cliente** dell'utente (l'utente fa da tramite). Dominio: acquistato, verrà fornito a materiale pronto. Finché il materiale non c'è, non si tocca `main` e non si pubblica in produzione.
 - Opzione B scelta dall'utente (2026-10-16): prima i contenuti reali, poi la produzione. L'utente manderà brand identity e logo; elenco completo di cosa serve in `docs/CONTENUTI.md`. La produzione è pubblica (la protezione di Vercel copre solo le anteprime): niente contenuti segnaposto non dichiarati. iPhone misurato = iPhone 16.
+- **Fase 8b — codice scritto, prova dal vivo in sospeso (2026-10-16):** `src/commerce/shopify.js` (Storefront API dal browser, token pubblico, `@inContext(country)`, carrello con `cartCreate/cartLinesAdd/Update/Remove`, varianti tradotte negli id di storeConfig confrontando le opzioni `Taglia`/`Colore` con le etichette). Negozio di sviluppo `into-industries-dev.myshopify.com`, token pubblico e `apiVersion` in `storeConfig.commerce.shopify` (sostituibili con `VITE_SHOPIFY_*`), `testMode` → avviso "negozio di sviluppo". Provider di default ancora `off`; `?commerce=shopify` per provarlo. `npm run test:commerce` (6, contratto senza rete). **Il proxy del container blocca `*.myshopify.com` e `shopify.dev` (403)**: la verifica dal vivo la fa l'utente sull'anteprima, oppure dopo che ha aggiunto il dominio agli Allowed domains dell'ambiente. Versione API `2026-07` scelta senza poter leggere la pagina ufficiale: da confermare con l'header `X-Shopify-API-Version`.
 - **Fase 8a — consegnata (2026-10-16):** carrello completo col negozio di prova. `src/commerce/` (contratto del fornitore in `index.js`, `mock.js`), `src/state/useCartStore.js`, `src/ui/cart/` (`CartSheet` come scheda `kind: 'cart'` della pila `dialogs`, `CartButton` in HUD e menu). `storeConfig.commerce` (provider `off` di default, `?commerce=mock` per provarlo, `&mockerror=1` simula il fornitore in errore), `products[].commerce.handle`. Invarianti I23 (handle valido e unico) e I24 (regole del commercio): 24 in tutto. Con commercio attivo prezzo, varianti e taglie disponibili vengono solo dal fornitore; se non risponde il capo è "non disponibile", mai col prezzo di storeConfig. Suite `e2e-phase8a.mjs` (32 verifiche). Prossimo: 8b, serve un negozio Shopify di sviluppo.
 - **Fase 8 — piano:** `docs/PLAN-8.md`. Decisioni: Shopify headless, account del cliente a suo nome, vendita UE in EUR, carrello. Sotto-fasi 8a (carrello con fornitore finto, nessuna dipendenza) → 8b (negozio Shopify di sviluppo) → 8c (catalogo del cliente) → 8d (dati e pagine legali) → 8e (messa in vendita). In attesa di `Approvato, procedi alla fase 8a`.
 - ~~Fase 7~~ — produzione su `main` (opzione A). L'URL pubblico lo verifica l'utente: dal container `*.vercel.app` non è raggiungibile.

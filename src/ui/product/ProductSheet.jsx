@@ -3,7 +3,7 @@ import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
-import { commerceActive, commerceMode } from '../../commerce/index.js'
+import { commerceActive, testBanner } from '../../commerce/index.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import Button from '../primitives/Button.jsx'
 import OptionGroup from './OptionGroup.jsx'
@@ -148,7 +148,7 @@ export default function ProductSheet({ product, headingId }) {
                   <Button onClick={() => openDialog('cart', 'cart')}>{tc.openCart} →</Button>
                 </div>
               )}
-              {commerceMode() === 'mock' && <p className="micro mt-3" style={{ color: 'var(--color-accent-flame)' }}>{tc.mockBanner}</p>}
+              {testBanner() && <p className="micro mt-3" style={{ color: 'var(--color-accent-flame)' }}>{testBanner()}</p>}
             </>
           ) : (
             <Button variant="primary" className="mt-3 w-full" disabled={!checkout.enabled}>

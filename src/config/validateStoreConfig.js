@@ -217,6 +217,12 @@ export function validateStoreConfig(config) {
   if (!['off', 'mock', 'shopify'].includes(c?.provider)) fail('I24', `commerce.provider "${c?.provider}" non previsto`)
   if (!Number.isInteger(c?.maxQuantity) || c.maxQuantity < 1) fail('I24', 'commerce.maxQuantity deve essere un intero ≥ 1')
   if (!c?.cartStorageKey) fail('I24', 'commerce.cartStorageKey mancante')
+  if (c?.provider === 'shopify' && !(c.shopify?.domain && c.shopify?.storefrontToken && c.shopify?.apiVersion)) {
+    fail('I24', 'commerce.provider "shopify" senza dominio, token pubblico o versione API')
+  }
+  if (c?.shopify && !(c.shopify.optionNames?.size?.length && c.shopify.optionNames?.color?.length)) {
+    fail('I24', 'commerce.shopify.optionNames: servono i nomi delle opzioni di taglia e colore')
+  }
 
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".

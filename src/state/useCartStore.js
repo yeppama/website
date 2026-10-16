@@ -62,7 +62,13 @@ export const useCartStore = create((set, get) => ({
     }
   },
 
-  add: (variantId, quantity = 1) => get().run((p, id) => p.addLines(id, [{ variantId, quantity }])),
+  add: (variantId, quantity = 1) => {
+    // Il massimo per riga vale per ogni fornitore, non solo per quello finto.
+    const line = get().cart?.lines.find((l) => l.variantId === variantId)
+    const room = commerce.maxQuantity - (line?.quantity ?? 0)
+    if (room <= 0) { set({ error: storeConfig.copy.cart.maxReached }); return Promise.resolve(false) }
+    return get().run((p, id) => p.addLines(id, [{ variantId, quantity: Math.min(quantity, room) }]))
+  },
   setQuantity: (lineId, quantity) => get().run((p, id) => (quantity <= 0
     ? p.removeLines(id, [lineId])
     : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }]))),

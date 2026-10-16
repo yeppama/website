@@ -1,5 +1,6 @@
 import { storeConfig } from '../config/storeConfig.js'
 import { createMockProvider } from './mock.js'
+import { createShopifyProvider } from './shopify.js'
 
 /**
  * Punto d'ingresso del commercio (Fase 8, docs/PLAN-8.md).
@@ -16,10 +17,10 @@ import { createMockProvider } from './mock.js'
  */
 const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 
-/** 'off' | 'mock' | 'shopify'. ?commerce=mock|off sovrascrive il config, per le prove. */
+/** 'off' | 'mock' | 'shopify'. ?commerce=mock|shopify|off sovrascrive il config, per le prove. */
 export function commerceMode() {
   const forced = params.get('commerce')
-  if (forced === 'mock' || forced === 'off') return forced
+  if (forced === 'mock' || forced === 'off' || forced === 'shopify') return forced
   return storeConfig.commerce.provider
 }
 
@@ -33,12 +34,30 @@ export function getProvider() {
       products, mock: commerce.mock, maxQuantity: commerce.maxQuantity,
       fail: params.get('mockerror') === '1',   // prova della gestione degli errori
     })
+  } else if (mode === 'shopify') {
+    const env = import.meta.env ?? {}
+    const shopify = {
+      ...commerce.shopify,
+      domain: env.VITE_SHOPIFY_DOMAIN || commerce.shopify.domain,
+      storefrontToken: env.VITE_SHOPIFY_STOREFRONT_TOKEN || commerce.shopify.storefrontToken,
+      apiVersion: env.VITE_SHOPIFY_API_VERSION || commerce.shopify.apiVersion,
+    }
+    provider = shopify.domain && shopify.storefrontToken
+      ? createShopifyProvider({ products, shopify, country: commerce.country })
+      : null
+    if (!provider) console.warn('commerce: Shopify senza dominio o token, acquisti spenti')
   } else {
-    // 'shopify' arriva in Fase 8b: finché non c'è, nessun acquisto.
-    if (mode === 'shopify') console.warn('commerce: fornitore Shopify non ancora disponibile (Fase 8b)')
     provider = null
   }
   return provider
 }
 
 export const commerceActive = () => getProvider() !== null
+
+/** Avviso da mostrare in scheda e carrello quando non si vende davvero, o null. */
+export function testBanner() {
+  const mode = commerceMode()
+  if (mode === 'mock') return storeConfig.copy.cart.mockBanner
+  if (mode === 'shopify' && storeConfig.commerce.shopify.testMode) return storeConfig.copy.cart.devStoreBanner
+  return null
+}

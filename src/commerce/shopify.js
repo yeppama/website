@@ -1,0 +1,156 @@
+/**
+ * Fornitore Shopify (Fase 8b): Storefront API dal browser, con il token PUBBLICO
+ * del canale Headless (pensato per stare nel codice del sito: legge il catalogo e
+ * gestisce carrelli, non ordini né clienti). Il pagamento avviene sulla cassa di
+ * Shopify (`checkoutUrl`): nessun dato di pagamento passa dal sito.
+ *
+ * Stesso contratto del fornitore finto (vedi commerce/index.js). Le varianti di
+ * Shopify si traducono negli id di taglia e colore di storeConfig confrontando i
+ * valori delle opzioni con le etichette (`sizes[].label`, `colorways[].label`).
+ * `fetchImpl` si può sostituire nei test.
+ */
+const PRODUCT_FIELDS = `
+  handle
+  title
+  variants(first: 100) {
+    nodes {
+      id
+      availableForSale
+      price { amount currencyCode }
+      selectedOptions { name value }
+    }
+  }`
+
+const CART_FIELDS = `
+  id
+  checkoutUrl
+  totalQuantity
+  cost { subtotalAmount { amount currencyCode } }
+  lines(first: 100) {
+    nodes {
+      id
+      quantity
+      merchandise {
+        ... on ProductVariant {
+          id
+          price { amount currencyCode }
+          selectedOptions { name value }
+          product { handle title }
+        }
+      }
+    }
+  }`
+
+const money = (m) => ({ amount: Number(m.amount), currency: m.currencyCode })
+
+export function createShopifyProvider({ products, shopify, country, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+  const endpoint = `https://${shopify.domain}/api/${shopify.apiVersion}/graphql.json`
+  const byHandle = new Map(products.filter((p) => p.commerce?.handle).map((p) => [p.commerce.handle, p]))
+  const names = shopify.optionNames
+  const match = (list, value) => list.some((n) => n.toLowerCase() === String(value).toLowerCase())
+
+  // Taglia e colore di una variante Shopify, negli id di storeConfig.
+  const optionsOf = (handle, selectedOptions) => {
+    const product = byHandle.get(handle)
+    const pick = (accepted) => selectedOptions.find((o) => match(accepted, o.name))?.value
+    const sizeLabel = pick(names.size)
+    const colorLabel = pick(names.color)
+    const size = product?.sizes.find((s) => match([s.label], sizeLabel))?.id ?? null
+    const color = product?.colorways.find((c) => match([c.label], colorLabel))?.id
+      ?? (product?.colorways.length === 1 && colorLabel === undefined ? product.colorways[0].id : null)
+    return { size, color }
+  }
+
+  async function request(query, variables = {}) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const res = await fetchImpl(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': shopify.storefrontToken,
+        },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      })
+      if (!res.ok) throw new Error(`shopify: HTTP ${res.status}`)
+      const json = await res.json()
+      if (json.errors?.length) throw new Error(`shopify: ${json.errors.map((e) => e.message).join('; ')}`)
+      return json.data
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  const view = (cart) => ({
+    id: cart.id,
+    checkoutUrl: cart.checkoutUrl,
+    totalQuantity: cart.totalQuantity,
+    subtotal: money(cart.cost.subtotalAmount),
+    lines: cart.lines.nodes.map((l) => {
+      const handle = l.merchandise.product.handle
+      const { size, color } = optionsOf(handle, l.merchandise.selectedOptions)
+      return {
+        id: l.id,
+        variantId: l.merchandise.id,
+        quantity: l.quantity,
+        merchandise: { productHandle: handle, title: l.merchandise.product.title, size, color, price: money(l.merchandise.price) },
+      }
+    }),
+  })
+
+  // Le mutazioni del carrello restituiscono userErrors invece di errori GraphQL.
+  const mutate = async (field, query, variables) => {
+    const data = await request(query, { ...variables, country })
+    const result = data[field]
+    if (result.userErrors?.length) throw new Error(`shopify: ${result.userErrors.map((e) => e.message).join('; ')}`)
+    return view(result.cart)
+  }
+
+  return {
+    name: 'shopify',
+
+    async getProducts(handles) {
+      if (!handles.length) return []
+      // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca.
+      const fields = handles.map((h, i) => `p${i}: product(handle: ${JSON.stringify(h)}) { ${PRODUCT_FIELDS} }`).join('\n')
+      const data = await request(`query Products($country: CountryCode) @inContext(country: $country) { ${fields} }`, { country })
+      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => ({
+        handle: p.handle,
+        title: p.title,
+        variants: p.variants.nodes.map((v) => ({
+          id: v.id,
+          ...optionsOf(p.handle, v.selectedOptions),
+          price: money(v.price),
+          available: v.availableForSale,
+        })).filter((v) => v.size && v.color),
+      }))
+    },
+
+    createCart: () => mutate('cartCreate', `
+      mutation CartCreate($country: CountryCode) @inContext(country: $country) {
+        cartCreate(input: { buyerIdentity: { countryCode: $country } }) { cart { ${CART_FIELDS} } userErrors { message } }
+      }`, {}),
+
+    async getCart(id) {
+      const data = await request(`query Cart($id: ID!, $country: CountryCode) @inContext(country: $country) { cart(id: $id) { ${CART_FIELDS} } }`, { id, country })
+      return data.cart ? view(data.cart) : null
+    },
+
+    addLines: (cartId, lines) => mutate('cartLinesAdd', `
+      mutation Add($cartId: ID!, $lines: [CartLineInput!]!, $country: CountryCode) @inContext(country: $country) {
+        cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } }
+      }`, { cartId, lines: lines.map((l) => ({ merchandiseId: l.variantId, quantity: l.quantity })) }),
+
+    updateLines: (cartId, lines) => mutate('cartLinesUpdate', `
+      mutation Update($cartId: ID!, $lines: [CartLineUpdateInput!]!, $country: CountryCode) @inContext(country: $country) {
+        cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } }
+      }`, { cartId, lines: lines.map((l) => ({ id: l.lineId, quantity: l.quantity })) }),
+
+    removeLines: (cartId, lineIds) => mutate('cartLinesRemove', `
+      mutation Remove($cartId: ID!, $lineIds: [ID!]!, $country: CountryCode) @inContext(country: $country) {
+        cartLinesRemove(cartId: $cartId, lineIds: $lineIds) { cart { ${CART_FIELDS} } userErrors { message } }
+      }`, { cartId, lineIds }),
+  }
+}

@@ -149,6 +149,27 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   await ctx.close()
 }
 
+// ============================ SHOPIFY IRRAGGIUNGIBILE ============================
+// Il fornitore Shopify vero, senza rete verso Shopify (come in questo container):
+// nessun prezzo inventato, avviso, acquisto spento, avviso "negozio di sviluppo".
+{
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
+  const page = await ctx.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto(BASE + '?debug=x&tier=low&commerce=shopify', { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
+  await page.waitForFunction(() => window.__stores && window.__cart, null, { timeout: 20000 })
+  const settled = await waitUntil(page, () => window.__cart.getState().catalogStatus === 'error', null, 30000)
+  await openProduct(page, 'prod-001')
+  ok('Shopify irraggiungibile: catalogo in errore, prezzo "—", avviso, acquisto spento, nessuna eccezione',
+    settled && (await page.getByTestId('product-price').textContent()).trim() === '—' &&
+    await dialog(page).getByText(T.unavailable).isVisible() && await page.getByTestId('add-to-cart').isDisabled() && errors.length === 0,
+    errors.join(' | '))
+  ok('negozio di sviluppo: la scheda lo dichiara', await dialog(page).getByText(T.devStoreBanner).isVisible())
+  await ctx.close()
+}
+
 // ============================ MOBILE ============================
 {
   const { ctx, page } = await open('mobile', { mobile: true })

@@ -130,6 +130,19 @@ export const storeConfig = {
     maxQuantity: 10,
     cartStorageKey: 'into-cart-id',
     mock: { latencyMs: 250, storageKey: 'into-mock-carts', checkoutUrl: '#checkout-di-prova' },
+    // Fase 8b: negozio di SVILUPPO dell'agenzia (nessun pagamento reale). Il token è
+    // quello PUBBLICO del canale Headless, fatto per stare nel codice del sito; il
+    // token privato non va mai qui. In 8c dominio e token diventano quelli del
+    // cliente. Le variabili d'ambiente VITE_SHOPIFY_* li sostituiscono senza commit.
+    shopify: {
+      domain: 'into-industries-dev.myshopify.com',
+      storefrontToken: 'b01d16e3db47daf418b38cf9cef3e240',
+      apiVersion: '2026-07',
+      // Negozio di sviluppo: solo pagamenti di prova. Lo si dice in scheda e carrello.
+      testMode: true,
+      // Nomi delle opzioni Shopify che corrispondono a taglia e colore.
+      optionNames: { size: ['Taglia', 'Size'], color: ['Colore', 'Color'] },
+    },
   },
 
   // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
@@ -703,6 +716,7 @@ export const storeConfig = {
       taxNote: 'IVA inclusa. Spedizione calcolata al pagamento.',
       checkout: 'Vai al pagamento',
       mockBanner: 'Negozio di prova: nessun pagamento reale',
+      devStoreBanner: 'Negozio Shopify di sviluppo: solo pagamenti di prova',
       mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',
       error: 'Il carrello non ha risposto. Riprova.',
       maxReached: 'Quantità massima raggiunta',
