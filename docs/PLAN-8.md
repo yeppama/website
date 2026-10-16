@@ -1,6 +1,6 @@
 # PLAN-8.md — Fase 8: e-commerce reale
 
-Versione 0.1 · 2026-10-16 · Stato: **piano, nessun codice scritto**
+Versione 0.2 · 2026-10-16 · Stato: **8a consegnata** (carrello col negozio di prova); 8b in attesa del negozio Shopify di sviluppo
 
 Livello di certezza: **[Certo]** verificato nel codice o deciso dall'utente · **[Probabile]** conoscenza
 consolidata, da riverificare al momento dell'implementazione · **[Ipotesi]** da confermare.

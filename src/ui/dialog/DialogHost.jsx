@@ -5,6 +5,7 @@ import { useFocusTrap } from '../primitives/useFocusTrap.js'
 import Button from '../primitives/Button.jsx'
 import ProductSheet from '../product/ProductSheet.jsx'
 import LookbookSheet from '../lookbook/LookbookSheet.jsx'
+import CartSheet from '../cart/CartSheet.jsx'
 
 /**
  * Contenitore unico delle finestre della Fase 5: mostra la cima della pila
@@ -39,7 +40,7 @@ export default function DialogHost({ device }) {
   const copy = storeConfig.copy
   const product = top.kind === 'product' ? storeConfig.products.find((p) => p.id === top.id) : null
   const entry = top.kind === 'lookbook' ? storeConfig.lookbook.find((l) => l.id === top.id) : null
-  const eyebrow = product ? copy.product.eyebrow : copy.lookbook.eyebrow
+  const eyebrow = product ? copy.product.eyebrow : top.kind === 'cart' ? copy.cart.title : copy.lookbook.eyebrow
 
   return (
     <div className="fixed inset-0 flex items-stretch justify-center md:items-center md:p-6" style={{ zIndex: 'var(--z-dialog)' }}>
@@ -72,6 +73,7 @@ export default function DialogHost({ device }) {
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 md:px-8">
           {product && <ProductSheet key={product.id} product={product} headingId={headingId} />}
           {entry && <LookbookSheet key={entry.id} entry={entry} headingId={headingId} />}
+          {top.kind === 'cart' && <CartSheet headingId={headingId} />}
         </div>
       </div>
     </div>

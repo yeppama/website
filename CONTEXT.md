@@ -16,7 +16,7 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 
 **Architettura data-driven**
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 22 invarianti (I1–I22), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 24 invarianti (I1–I24), errore bloccante solo in DEV, rimosso dal bundle di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
 - `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
 - Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
@@ -62,10 +62,11 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 ```
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
-src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js
+src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova)
+src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
-src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · perf/ · bench/ · primitives/ · fx/ · fallback/
-scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4,5,6}.mjs
+src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · perf/ · bench/ · primitives/ · fx/ · fallback/
+scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a}.mjs
 docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dall'utente per la Fase 7)
 ```
 
@@ -117,7 +118,8 @@ usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
 ```bash
 npm run dev | build | preview          # predev/prebuild rigenerano i token
 npm run test:nav                       # logica di navigazione, 9 test
-npm run test:device                    # scelta del tier da stringhe GPU reali, 12 test
+npm run test:device                    # scelta del tier da stringhe GPU reali, 13 test
+# e2e-phase8a.mjs: carrello col negozio di prova (?commerce=mock), 32 verifiche
 npx vite preview --port 4173 &         # poi, per ogni suite:
 node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 verifiche, ~10 min (fase 5: 34)
 # `pkill -f "vite preview"` dentro un comando che contiene quella stringa uccide la shell stessa: usare `setsid` all'avvio e `pkill -f "port 4173"` a parte
@@ -125,7 +127,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia.
+**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore).
 
 ## 4. Lezioni apprese & edge case
 
@@ -163,6 +165,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - Tasti premuti all'apertura del menu o alla perdita di focus: azzerarli, o il player cammina da solo.
 
 **Test e processo**
+- Script Python che riscrivono file: `open(p,'w')` svuota il file prima di `write()`. Una virgola in coda ha reso il contenuto una tupla, `write()` è fallito e `storeConfig.js` è rimasto vuoto (ripristinato da git). Controllare la dimensione del file dopo ogni riscrittura.
 - Un comando interrotto o rifiutato dall'utente può aver già applicato una parte delle modifiche: prima di ogni commit leggere `git diff`, non fidarsi di `git add -A`. In Fase 6 una riduzione d'intensità fermata dall'utente è finita nel commit `7945fa8` senza che venisse dichiarata.
 - In questo container il desktop rende a 1–2 fps: i test aspettano **condizioni**, mai millisecondi fissi; dopo uno spostamento forzato aspettano che la camera abbia raggiunto il player.
 - Il sistema di luci del Focus riporta le intensità al config ogni fotogramma: modificarle a mano dal test non ha effetto.
@@ -183,7 +186,8 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - **Fase 7 — eseguita con l'opzione A (2026-10-16):** l'utente ha scelto di andare in produzione subito, con i segnaposto dichiarati, senza aspettare il materiale del cliente. `main` portato in avanti (fast-forward) allo stato del branch di lavoro; Vercel pubblica la produzione da `main`. Il sito di produzione è fuori dai motori di ricerca (`X-Robots-Tag` in `vercel.json` + meta robots in `index.html`): da togliere coi contenuti reali. `vercel.json` aggiunge anche header di sicurezza e cache lunga per `/assets`.
 - Storico: la Fase 7 era stata approvata con condizione ("se tutto ok, approvato procedi alla fase 7"), cioè parte quando arriva il materiale e risulta completo e utilizzabile. I contenuti vengono **dal cliente** dell'utente (l'utente fa da tramite). Dominio: acquistato, verrà fornito a materiale pronto. Finché il materiale non c'è, non si tocca `main` e non si pubblica in produzione.
 - Opzione B scelta dall'utente (2026-10-16): prima i contenuti reali, poi la produzione. L'utente manderà brand identity e logo; elenco completo di cosa serve in `docs/CONTENUTI.md`. La produzione è pubblica (la protezione di Vercel copre solo le anteprime): niente contenuti segnaposto non dichiarati. iPhone misurato = iPhone 16.
-- **Fase 8 — avviata dall'utente (2026-10-16), solo piano:** `docs/PLAN-8.md`. Decisioni: Shopify headless, account del cliente a suo nome, vendita UE in EUR, carrello. Sotto-fasi 8a (carrello con fornitore finto, nessuna dipendenza) → 8b (negozio Shopify di sviluppo) → 8c (catalogo del cliente) → 8d (dati e pagine legali) → 8e (messa in vendita). In attesa di `Approvato, procedi alla fase 8a`.
+- **Fase 8a — consegnata (2026-10-16):** carrello completo col negozio di prova. `src/commerce/` (contratto del fornitore in `index.js`, `mock.js`), `src/state/useCartStore.js`, `src/ui/cart/` (`CartSheet` come scheda `kind: 'cart'` della pila `dialogs`, `CartButton` in HUD e menu). `storeConfig.commerce` (provider `off` di default, `?commerce=mock` per provarlo, `&mockerror=1` simula il fornitore in errore), `products[].commerce.handle`. Invarianti I23 (handle valido e unico) e I24 (regole del commercio): 24 in tutto. Con commercio attivo prezzo, varianti e taglie disponibili vengono solo dal fornitore; se non risponde il capo è "non disponibile", mai col prezzo di storeConfig. Suite `e2e-phase8a.mjs` (32 verifiche). Prossimo: 8b, serve un negozio Shopify di sviluppo.
+- **Fase 8 — piano:** `docs/PLAN-8.md`. Decisioni: Shopify headless, account del cliente a suo nome, vendita UE in EUR, carrello. Sotto-fasi 8a (carrello con fornitore finto, nessuna dipendenza) → 8b (negozio Shopify di sviluppo) → 8c (catalogo del cliente) → 8d (dati e pagine legali) → 8e (messa in vendita). In attesa di `Approvato, procedi alla fase 8a`.
 - ~~Fase 7~~ — produzione su `main` (opzione A). L'URL pubblico lo verifica l'utente: dal container `*.vercel.app` non è raggiungibile.
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).

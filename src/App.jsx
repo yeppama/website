@@ -4,6 +4,7 @@ import { assertStoreConfig } from './config/validateStoreConfig.js'
 import { getDeviceProfile } from './lib/deviceProfile.js'
 import { useAppStore, APP_PHASE } from './state/useAppStore.js'
 import { usePlayerStore } from './state/usePlayerStore.js'
+import { useCartStore } from './state/useCartStore.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
 // appare subito e la barra di progresso misura passaggi reali.
@@ -70,6 +71,12 @@ export default function App() {
   useEffect(() => {
     if (params.get('debug')) window.__remountScene = remountScene
   }, [remountScene])
+
+  // Catalogo commerciale e carrello salvato (Fase 8): solo se un fornitore è attivo.
+  useEffect(() => {
+    useCartStore.getState().init()
+    if (params.get('debug')) window.__cart = useCartStore
+  }, [])
 
   useEffect(() => {
     // Le invarianti del config sono controllate una volta all'avvio, in sviluppo.

@@ -1,6 +1,9 @@
 # PLAN.md — Store Streetwear Immersivo 3D
 **Fase 0 — Pianificazione, Architettura Dati e Stime**
 Versione documento: **1.0** · Data: 2026-10-15 · Stato: **decisioni chiuse — in attesa del comando di avanzamento**
+> Changelog 1.10 — **Fase 8a consegnata (2026-10-16):** contratto del fornitore, negozio di prova,
+> carrello come scheda della pila, invarianti I23–I24, suite `e2e-phase8a` (32). Commercio spento di
+> default: la produzione non cambia. Provare con `?commerce=mock`.
 > Changelog 1.9 — **Fase 8 avviata (2026-10-16): piano in `docs/PLAN-8.md`.** Shopify headless,
 > account del cliente, UE, carrello; cinque sotto-fasi 8a–8e, solo 8a eseguibile senza terzi.
 > Changelog 1.8 — **Fase 7 eseguita (2026-10-16), opzione A scelta dall'utente:** produzione su

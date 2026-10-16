@@ -120,6 +120,18 @@ export const storeConfig = {
     ],
   },
 
+  // Commercio (Fase 8, docs/PLAN-8.md). Shopify è la fonte di verità di prezzi,
+  // varianti e giacenze; qui solo il collegamento (products[].commerce.handle) e le
+  // regole del carrello. provider: 'off' (nessun acquisto) | 'mock' (negozio di
+  // prova, nessun pagamento) | 'shopify' (Fase 8b). ?commerce=mock lo forza per le prove.
+  commerce: {
+    provider: 'off',
+    country: 'IT',
+    maxQuantity: 10,
+    cartStorageKey: 'into-cart-id',
+    mock: { latencyMs: 250, storageKey: 'into-mock-carts', checkoutUrl: '#checkout-di-prova' },
+  },
+
   // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
   // stadio: non misura byte, misura passaggi che avvengono davvero.
   loading: {
@@ -445,6 +457,7 @@ export const storeConfig = {
       media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' },
               { id: 'm2', ratio: '4:5', label: 'Back', variant: 'product' },
               { id: 'm3', ratio: '16:9', label: 'Detail', variant: 'editorial' }],
+      commerce: { handle: 'heavy-hoodie' },
       displayId: 'disp-mannequin-01', lookbookIds: ['lb-001'], badges: ['NEW'] },
     { id: 'prod-002', sku: 'INT-002', name: 'Cargo Pant', category: 'Pants', collection: 'DROP 01',
       price: { amount: 229, currency: 'EUR' },
@@ -455,6 +468,7 @@ export const storeConfig = {
       colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
       media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' },
               { id: 'm2', ratio: '1:1', label: 'Detail', variant: 'editorial' }],
+      commerce: { handle: 'cargo-pant' },
       displayId: 'disp-plinth-01', lookbookIds: ['lb-001'], badges: [] },
     { id: 'prod-003', sku: 'INT-003', name: 'Box Tee', category: 'T-Shirt', collection: 'ARCHIVE',
       price: { amount: 89, currency: 'EUR' },
@@ -463,6 +477,7 @@ export const storeConfig = {
       sizes: [{ id: 'm', label: 'M', available: true }, { id: 'l', label: 'L', available: true }],
       colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }],
       media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
+      commerce: { handle: 'box-tee' },
       displayId: 'disp-plinth-01', lookbookIds: [], badges: ['ARCHIVE'] },
     { id: 'prod-004', sku: 'INT-004', name: 'Work Jacket', category: 'Jacket', collection: 'DROP 01',
       price: { amount: 269, currency: 'EUR' },
@@ -472,6 +487,7 @@ export const storeConfig = {
               { id: 'l', label: 'L', available: true }],
       colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }, { id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
       media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' }],
+      commerce: { handle: 'work-jacket' },
       displayId: 'disp-mannequin-02', lookbookIds: ['lb-001'], badges: ['NEW'] },
     { id: 'prod-005', sku: 'INT-005', name: 'Logo Tee', category: 'T-Shirt', collection: 'DROP 01',
       price: { amount: 79, currency: 'EUR' },
@@ -481,6 +497,7 @@ export const storeConfig = {
               { id: 'l', label: 'L', available: true }],
       colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
       media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
+      commerce: { handle: 'logo-tee' },
       displayId: 'disp-rack-01', lookbookIds: [], badges: [] },
     { id: 'prod-006', sku: 'INT-006', name: 'Longsleeve', category: 'T-Shirt', collection: 'DROP 01',
       price: { amount: 99, currency: 'EUR' },
@@ -489,6 +506,7 @@ export const storeConfig = {
       sizes: [{ id: 'm', label: 'M', available: true }, { id: 'l', label: 'L', available: false }],
       colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }],
       media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
+      commerce: { handle: 'longsleeve' },
       displayId: 'disp-rack-01', lookbookIds: [], badges: [] },
     { id: 'prod-007', sku: 'INT-007', name: 'Track Pant', category: 'Pants', collection: 'ARCHIVE',
       price: { amount: 189, currency: 'EUR' },
@@ -497,6 +515,7 @@ export const storeConfig = {
       sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true }],
       colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
       media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' }],
+      commerce: { handle: 'track-pant' },
       displayId: 'disp-wall-01', lookbookIds: [], badges: ['ARCHIVE'] },
   ],
 
@@ -663,6 +682,30 @@ export const storeConfig = {
       fill: 'da compilare',
       realYes: 'da confermare',
       realNo: 'NO · rendering software',
+    },
+    cart: {
+      title: 'Carrello',
+      open: 'Carrello',
+      empty: 'Il carrello è vuoto.',
+      continue: 'Continua a esplorare',
+      add: 'Aggiungi al carrello',
+      adding: 'Aggiunta in corso',
+      added: 'Aggiunto al carrello',
+      openCart: 'Apri il carrello',
+      chooseSize: 'Scegli una taglia',
+      soldOut: 'Esaurito',
+      unavailable: 'Prezzo e disponibilità non raggiungibili. Riprova più tardi.',
+      quantity: 'Quantità',
+      decrease: 'Diminuisci',
+      increase: 'Aumenta',
+      remove: 'Rimuovi',
+      subtotal: 'Subtotale',
+      taxNote: 'IVA inclusa. Spedizione calcolata al pagamento.',
+      checkout: 'Vai al pagamento',
+      mockBanner: 'Negozio di prova: nessun pagamento reale',
+      mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',
+      error: 'Il carrello non ha risposto. Riprova.',
+      maxReached: 'Quantità massima raggiunta',
     },
     errors: {
       contextLost: {
