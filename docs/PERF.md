@@ -66,6 +66,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 52.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 47844b8 | medium · grana alpha | 1.0 | 1920×911 | 3 | 57.1 | 23.5 | 39.2 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | Pixel 7 (schermo 90 Hz) | ANGLE (ARM, Mali-G710, OpenGL ES 3.2) | Chrome 155 | c5db6fa | medium · grana alpha | 1.5 | 485×937 | 3 | 45.0 ⚠ | 22.8 | 42.7 | 31 / 42 | 12910 | sì, ma **non valida**: tetto del limitatore |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -210,3 +211,15 @@ Queste verifiche non dipendono dalla velocità della GPU, quindi valgono anche i
   del primo, un solo contesto WebGL vivo alla fine. Memoria JS fra il 3° e il 12° rimontaggio:
   9,3 → 11,5 MB (~0,25 MB a rimontaggio, sotto la soglia di 3 MB; un rimontaggio avviene solo dopo
   una perdita di contesto, quindi è un evento raro).
+
+## Pixel 7 a 45 fps: era il limitatore, non la GPU (2026-10-16)
+
+Riga del Pixel 7 su `c5db6fa`: 45,0 fps di mediana in **tutti** i 10 tratti, fotogramma massimo 23–39 ms,
+0 scatti. Una GPU al limite non dà un valore così piatto: è il tetto del vecchio `FrameLimiter`
+("tempo dall'ultimo fotogramma ≥ 90% di 16,7 ms"), che su uno schermo a 90 Hz rende un vsync su due
+= 45 fps (a 75 Hz 37,5, a 144 Hz 48). Trovato dal controllo completo del sito e corretto in `fa2e1e7`
+(`lib/frameScheduler.js`, a scadenze: 60 fps da 30 a 240 Hz, provato in `test:framing`).
+La misura va rifatta su `fa2e1e7` o successivo. Il Pixel 7 (Mali-G710) non è un Android di fascia
+media: la misura sul tier low resta da fare. Le misure precedenti (Pixel PowerVR, iPhone a 60/120 Hz,
+Vivobook a 60 Hz) non erano toccate dal difetto.
+
