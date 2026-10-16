@@ -28,6 +28,7 @@ export default function GrainOverlay({ tier, reducedMotion }) {
   const levels = overlay ? fx.grain.opacity : fx.grain.alphaOpacity
   const opacity = levels[tier] ?? levels.medium
   if (fxDisabled) return null
+  const grainOn = opacity > 0   // tier low: niente grana, la vignettatura resta
   // Un granello = un pixel fisico. Senza questa correzione, a DPR 3 ogni granello
   // occupa 3×3 pixel e su telefono la grana appare tre volte più grossa.
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
@@ -36,8 +37,9 @@ export default function GrainOverlay({ tier, reducedMotion }) {
 
   return (
     <div className="pointer-events-none fixed inset-0" style={{ zIndex: 'var(--z-hud)' }} aria-hidden="true">
-      <div
+      {grainOn && <div
         className="absolute"
+        data-testid="grain"
         style={{
           // Più grande del viewport: traslando, i bordi non si scoprono mai.
           inset: '-10%',
@@ -50,7 +52,7 @@ export default function GrainOverlay({ tier, reducedMotion }) {
           animation: reducedMotion ? 'none' : `grain-shift ${stepMs}ms steps(1, end) infinite`,
           willChange: 'transform',
         }}
-      />
+      />}
       {fx.vignette.enabled && (
         <div
           className="absolute inset-0"

@@ -80,8 +80,10 @@ export const storeConfig = {
       // normale. L'overlay costava da solo ~20 fps su un portatile Iris Xe a 1920×911
       // (39,5 contro 56,2 con 'alpha', docs/PERF.md) e alzava il nero. 'overlay' resta
       // disponibile qui e, per confronto, con ?perf=1&grain=overlay.
-      grain: { mode: 'overlay', blend: 'alpha', opacity: { high: 0.14, medium: 0.12, low: 0.1 },
-               alphaOpacity: { high: 0.2, medium: 0.18, low: 0.15 }, tileSize: 256, animateHz: 12 },
+      // Tier low senza grana (scelta dell'utente, 2026-10-16): sull'Honor con Adreno 619
+      // la grana dava 4 fotogrammi oltre 50 ms (max 140 ms), senza nessuno (docs/PERF.md).
+      grain: { mode: 'overlay', blend: 'alpha', opacity: { high: 0.14, medium: 0.12, low: 0 },
+               alphaOpacity: { high: 0.2, medium: 0.18, low: 0 }, tileSize: 256, animateHz: 12 },
       vignette: { enabled: true, strength: 0.38 },
     },
   },

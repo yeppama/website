@@ -249,5 +249,5 @@ di fase 6): 60,2 / 55,2, nessuno scatto, superata.
 
 Honor in `low` su `01ae63c` (tier scelto da solo): **59,9 / 43,5, superata** (soglia low: p50 ≥ 40).
 Con la grana alpha però 4 fotogrammi > 50 ms (max 140 ms) e 1% low fino a 14,6 in un tratto; senza grana
-0 > 50 ms, max 43 ms, 1% low 47,4. Proposta all'utente: grana spenta solo nel tier low. In attesa di decisione.
+0 > 50 ms, max 43 ms, 1% low 47,4. Decisione dell'utente: grana spenta solo nel tier low (applicata il 2026-10-16).
 
