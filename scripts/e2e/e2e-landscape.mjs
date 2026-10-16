@@ -28,6 +28,7 @@ const FORMATS = [
   { name: 'iPhone 16 orizzontale', vp: { width: 852, height: 393 }, mobile: true, rotateTo: { width: 393, height: 852 } },
   { name: 'iPhone 16 Safari con barre', vp: { width: 852, height: 330 }, mobile: true },
   { name: 'iPhone SE orizzontale', vp: { width: 667, height: 375 }, mobile: true },
+  { name: 'telefono stretto orizzontale', vp: { width: 568, height: 320 }, mobile: true },
   { name: 'Android orizzontale', vp: { width: 800, height: 360 }, mobile: true },
   { name: 'iPhone 16 verticale', vp: { width: 393, height: 852 }, mobile: true, rotateTo: { width: 852, height: 393 } },
   { name: 'desktop', vp: { width: 1280, height: 720 }, mobile: false },

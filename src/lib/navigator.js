@@ -63,8 +63,29 @@ export function createNavigator(config) {
     return out
   }
 
-  /** @returns {{ok: true, points: number[][]} | {ok: false, reason: 'blocked'|'unreachable'}} */
+  /**
+   * Percorso da `from` a `to`. Se il player è appoggiato a un collider (il box
+   * allargato del pianificatore ha angoli vivi, la fisica angoli arrotondati) ogni
+   * segmento che parte da lì risulta bloccato: si riprova da un punto libero a pochi
+   * centimetri, che il player raggiunge con il primo passo.
+   * @returns {{ok: true, points: number[][]} | {ok: false, reason: 'blocked'|'unreachable'}}
+   */
   function plan(from, to) {
+    const direct = planFrom(from, to)
+    if (direct.ok || direct.reason === 'blocked' || isWalkable(from)) return direct
+    for (const step of [0.1, 0.2, 0.35]) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2
+        const p = [from[0] + Math.cos(a) * step, from[1] + Math.sin(a) * step]
+        if (!isWalkable(p)) continue
+        const res = planFrom(p, to)
+        if (res.ok) return { ok: true, points: [p, ...res.points] }
+      }
+    }
+    return direct
+  }
+
+  function planFrom(from, to) {
     if (!isWalkable(to)) return { ok: false, reason: 'blocked' }
     if (clear(from, to)) return { ok: true, points: [to] }
 

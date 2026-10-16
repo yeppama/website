@@ -56,7 +56,7 @@ export default function FocusPanel({ device }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 flex justify-center p-4 sm:justify-end sm:p-6 short:p-3"
+      className="pointer-events-none fixed inset-x-0 bottom-0 flex justify-center p-4 sm:justify-end sm:p-6 short:justify-end short:p-3"
       style={{ zIndex: 'var(--z-modal)' }}
     >
       <section
@@ -81,9 +81,9 @@ export default function FocusPanel({ device }) {
           <p className="font-mono text-text-primary" style={{ fontSize: 'var(--text-lg)' }}>
             {formatPrice(product.price, storeConfig.meta.brand.locale)}
           </p>
-          <ul className="flex gap-2" aria-label="Varianti colore">
+          <ul className="flex gap-2" aria-label={copy.colorways}>
             {product.colorways.map((cw) => (
-              <li key={cw.id} title={cw.label}
+              <li key={cw.id} title={cw.label} role="img" aria-label={cw.label}
                   className="h-4 w-4 border border-line-strong" style={{ background: cw.swatch }} />
             ))}
           </ul>

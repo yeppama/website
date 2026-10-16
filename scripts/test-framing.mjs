@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 import * as THREE from 'three'
 import { storeConfig } from '../src/config/storeConfig.js'
 import { fovForAspect, freeRegion, focusFraming } from '../src/lib/framing.js'
+import { frameScheduler } from '../src/lib/frameScheduler.js'
 
 const results = []
 const test = (name, fn) => { try { const n = fn(); results.push(['ok', name, n ?? '']) } catch (e) { results.push(['FAIL', name, e.message]) } }
@@ -83,6 +84,24 @@ test('senza pannello: nessuno spostamento, fov della posa (come prima)', () => {
 test('regione molto bassa: il fov non supera il massimo configurato', () => {
   const r = focusFraming({ width: 400, height: 900, region: { x: 0, y: 0, w: 400, h: 120 }, fov: 40, minHorizontal: F.minHorizontalFov, maxVertical: F.maxVerticalFov })
   assert.ok(r.fov <= F.maxVerticalFov)
+})
+
+// Limitatore di fps (lib/frameScheduler.js): su schermi a frequenze diverse si
+// devono ottenere ~60 fps, non 37/45/48 come con la regola "tempo dall'ultimo".
+test('limitatore: ~60 fps su schermi a 60, 75, 90, 120, 144, 165, 240 Hz; 30 su uno a 30 Hz', () => {
+  const out = []
+  for (const hz of [30, 60, 75, 90, 120, 144, 165, 240]) {
+    const due = frameScheduler(60)
+    let renders = 0, seed = hz
+    const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 }
+    const seconds = 5
+    for (let i = 0; i < hz * seconds; i++) if (due(i * (1000 / hz) + (rand() - 0.5))) renders++
+    const fps = renders / seconds
+    const want = Math.min(60, hz)
+    assert.ok(Math.abs(fps - want) <= 1.5, `${hz} Hz → ${fps.toFixed(1)} fps invece di ${want}`)
+    out.push(`${hz}→${fps.toFixed(0)}`)
+  }
+  return out.join(' ')
 })
 
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)

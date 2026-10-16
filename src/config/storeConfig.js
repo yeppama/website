@@ -621,6 +621,7 @@ export const storeConfig = {
         cta: 'Entra',
       },
       loading: 'Caricamento ambiente',
+      ready: 'pronto',
       comingSoon: 'in arrivo · fase',
       phaseNotice: 'Prototipo in costruzione. I comandi segnati "in arrivo" non sono ancora attivi.',
     },
@@ -630,6 +631,7 @@ export const storeConfig = {
       previous: 'Precedente',
       next: 'Successivo',
       details: 'Scheda completa',
+      colorways: 'Varianti colore',
       of: 'di',
     },
     // Finestre di dialogo della Fase 5: scheda prodotto e Lookbook.
@@ -662,6 +664,7 @@ export const storeConfig = {
       lockPrompt: 'Click per guardarti attorno',
       lockPromptSub: 'WASD per muoverti · ESC per liberare il cursore',
       quickTravel: 'Vai a',
+      minimap: 'pianta',
     },
     hints: {
       navigationLocked: 'La navigazione arriva nella Fase 3',
@@ -673,6 +676,7 @@ export const storeConfig = {
     },
     menu: {
       title: 'Indice',
+      closeLabel: 'Chiudi menu',
       sections: [
         { id: 'sec-travel', label: 'Vai a' },
         { id: 'sec-products', label: 'Capi' },
@@ -731,6 +735,7 @@ export const storeConfig = {
       chooseSize: 'Scegli una taglia',
       soldOut: 'Esaurito',
       unavailable: 'Prezzo e disponibilità non raggiungibili. Riprova più tardi.',
+      retry: 'Riprova',
       quantity: 'Quantità',
       decrease: 'Diminuisci',
       increase: 'Aumenta',

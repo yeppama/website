@@ -130,6 +130,29 @@ test('teletrasporto: ogni destinazione rapida è calpestabile', () => {
   }
 })
 
+test('appoggiato a un ostacolo: il tocco porta comunque a destinazione', () => {
+  // Si spinge il player contro ogni collider da 16 direzioni con la fisica vera,
+  // poi si pianifica verso il centro del negozio da dove si è fermato.
+  const nav = createNavigator(storeConfig)
+  const { player, walkableAreas } = storeConfig.navigation
+  const opts = { radius: player.radius, colliders: storeConfig.colliders, walkableAreas, maxStep: player.radius * 0.5 }
+  const target = [0, 0]
+  let tried = 0; const failures = []
+  for (const c of storeConfig.colliders) {
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2
+      const pos = { x: c.center[0] + Math.cos(a) * 3, z: c.center[2] + Math.sin(a) * 3 }
+      if (!nav.isWalkable([pos.x, pos.z])) continue
+      for (let t = 0; t < 120; t++) moveWithCollisions(pos, -Math.cos(a) * 0.05, -Math.sin(a) * 0.05, opts)
+      tried++
+      const res = nav.plan([pos.x, pos.z], target)
+      if (!res.ok) failures.push(`${c.id}@${k}: ${res.reason}`)
+    }
+  }
+  assert.equal(failures.length, 0, failures.slice(0, 5).join('; '))
+  return `${tried} posizioni a contatto, tutte con un percorso`
+})
+
 const failed = results.filter(([s]) => s === 'FAIL')
 for (const [s, name, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${name}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.length - failed.length}/${results.length} test superati`)

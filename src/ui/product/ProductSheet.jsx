@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
@@ -38,6 +38,14 @@ export default function ProductSheet({ product, headingId }) {
   const pending = useCartStore((s) => s.pending)
   const cartError = useCartStore((s) => s.error)
   const add = useCartStore((s) => s.add)
+  const loadCatalog = useCartStore((s) => s.loadCatalog)
+  // Aprendo la scheda: niente errori rimasti da un altro capo, e un catalogo
+  // andato in errore si riprova invece di restare spento per tutta la visita.
+  useEffect(() => {
+    if (!active) return
+    useCartStore.getState().clearError()
+    if (useCartStore.getState().catalogStatus === 'error') loadCatalog()
+  }, [active, loadCatalog])
   const [added, setAdded] = useState(false)
   const unavailable = active && (catalogStatus === 'error' || (catalogStatus === 'ready' && !entry))
   const inStock = (sid, cid) => (entry ? entry.variants.some((v) => v.size === sid && v.color === cid && v.available) : false)
@@ -152,7 +160,12 @@ export default function ProductSheet({ product, headingId }) {
                       disabled={unavailable || pending || !variant?.available} data-testid="add-to-cart">
                 {pending ? tc.adding : !sizeId ? tc.chooseSize : variant && !variant.available ? tc.soldOut : tc.add}
               </Button>
-              {unavailable && <p className="micro mt-3" role="alert" style={{ color: 'var(--color-state-danger)' }}>{tc.unavailable}</p>}
+              {unavailable && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <p className="micro" role="alert" style={{ color: 'var(--color-state-danger)' }}>{tc.unavailable}</p>
+                  {catalogStatus === 'error' && <Button onClick={loadCatalog}>{tc.retry}</Button>}
+                </div>
+              )}
               {cartError && !unavailable && <p className="micro mt-3" role="alert" style={{ color: 'var(--color-state-danger)' }}>{cartError}</p>}
               {added && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

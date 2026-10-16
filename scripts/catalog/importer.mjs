@@ -19,7 +19,18 @@ export function cellText(value) {
   if (Array.isArray(value.richText)) return value.richText.map((r) => r.text).join('').replace(/\r\n?/g, '\n').trim()
   if ('result' in value) return cellText(value.result)
   if ('text' in value) return cellText(value.text)
-  return String(value).trim()
+  // Errori di formula (#N/A…) o formule senza valore calcolato: mai "[object Object]".
+  return ''
+}
+
+/** Il problema di una cella che non ha un valore leggibile, o null. */
+function cellProblem(value) {
+  if (value == null || typeof value !== 'object' || value instanceof Date || Array.isArray(value.richText)) return null
+  if (value.error) return `la cella contiene l'errore ${value.error}`
+  if ('result' in value && value.result && typeof value.result === 'object' && value.result.error) return `la formula dà ${value.result.error}`
+  if ('formula' in value || 'sharedFormula' in value) return 'result' in value ? null : 'formula senza valore calcolato (riaprire e salvare il file in Excel)'
+  if (!('text' in value)) return 'valore non leggibile'
+  return null
 }
 
 const splitList = (s) => s.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean)
@@ -37,26 +48,43 @@ function parseMoney(raw) {
 }
 
 /** Righe di un foglio tabellare come oggetti { _row, key: testo }, esempi e righe vuote esclusi. */
-function readTable(wb, sheet, errors) {
+function readTable(wb, sheet, errors, warnings) {
   const ws = wb.getWorksheet(sheet.name)
   if (!ws) { errors.push(`Manca il foglio "${sheet.name}".`); return [] }
   const header = ws.getRow(1)
-  const colOf = new Map()
-  sheet.columns.forEach((c, i) => {
+  const found = new Map()
+  for (const c of sheet.columns) {
     // Le colonne si cercano per intestazione: se il cliente ne sposta una, si trova lo stesso.
     let at = null
     header.eachCell((cell, n) => { if (at == null && same(cellText(cell.value), c.header)) at = n })
-    colOf.set(c.key, at ?? i + 1)
-    if (at == null && c.required) errors.push(`${sheet.name}: manca la colonna "${c.header}".`)
-  })
+    if (at != null) found.set(c.key, at)
+  }
+  // Solo se il foglio non ha nessuna intestazione riconoscibile si va per posizione;
+  // altrimenti una colonna che manca è assente, mai letta da quella accanto.
+  const positional = found.size === 0
+  const colOf = new Map(sheet.columns.map((c, i) => [c.key, positional ? i + 1 : found.get(c.key) ?? null]))
+  if (positional) warnings.push(`${sheet.name}: intestazioni non riconosciute, colonne lette nell'ordine del modello.`)
+  for (const c of sheet.columns) {
+    if (colOf.get(c.key) != null) continue
+    if (c.required) errors.push(`${sheet.name}: manca la colonna "${c.header}".`)
+    else warnings.push(`${sheet.name}: colonna "${c.header}" non trovata, considerata vuota.`)
+  }
   const rows = []
   for (let r = FIRST_DATA_ROW; r <= ws.rowCount; r++) {
     const row = ws.getRow(r)
     const obj = { _row: r }
-    for (const c of sheet.columns) obj[c.key] = cellText(row.getCell(colOf.get(c.key)).value)
+    for (const c of sheet.columns) {
+      const at = colOf.get(c.key)
+      if (at == null) { obj[c.key] = ''; continue }
+      const value = row.getCell(at).value
+      obj[c.key] = cellText(value)
+      const problem = cellProblem(value)
+      if (problem) (obj._problems ??= []).push(`${sheet.name}, riga ${r}, "${c.header}": ${problem}.`)
+    }
     const values = sheet.columns.map((c) => obj[c.key]).filter(Boolean)
     if (!values.length) continue
     if (isExample(obj[sheet.columns[0].key])) continue
+    if (obj._problems) errors.push(...obj._problems)
     rows.push(obj)
   }
   return rows
@@ -90,9 +118,13 @@ export function importCatalog(wb, { vendor, photoFiles = null }) {
   const S_COL = SHEETS.colors
   const C = colByKey(S_COL)
   const colors = []
-  for (const r of readTable(wb, S_COL, errors)) {
+  for (const r of readTable(wb, S_COL, errors, warnings)) {
     if (!r.name) { errors.push(`${at(S_COL, r._row, C.name)}: nome mancante.`); continue }
     if (colors.some((c) => same(c.name, r.name))) errors.push(`${at(S_COL, r._row, C.name)}: il colore "${r.name}" è già elencato.`)
+    else {
+      const twin = colors.find((c) => slug(c.name) === slug(r.name))
+      if (twin) errors.push(`${at(S_COL, r._row, C.name)}: "${r.name}" e "${twin.name}" diventano lo stesso codice colore ("cw-${slug(r.name)}"). Usate nomi che differiscono per lettere, non per punteggiatura o accenti.`)
+    }
     let hex = null
     if (r.hex) {
       const m = r.hex.match(/^#?([0-9a-f]{6})$/i)
@@ -108,7 +140,7 @@ export function importCatalog(wb, { vendor, photoFiles = null }) {
   const S_LB = SHEETS.lookbook
   const L = colByKey(S_LB)
   const lookbooks = []
-  for (const r of readTable(wb, S_LB, errors)) {
+  for (const r of readTable(wb, S_LB, errors, warnings)) {
     if (!r.title) { errors.push(`${at(S_LB, r._row, L.title)}: titolo mancante.`); continue }
     if (lookbooks.some((l) => same(l.title, r.title))) errors.push(`${at(S_LB, r._row, L.title)}: "${r.title}" è già elencato.`)
     if (!r.body) errors.push(`${at(S_LB, r._row, L.body)}: testo mancante.`)
@@ -121,7 +153,7 @@ export function importCatalog(wb, { vendor, photoFiles = null }) {
   const S_PR = SHEETS.products
   const P = colByKey(S_PR)
   const items = []
-  for (const r of readTable(wb, S_PR, errors)) {
+  for (const r of readTable(wb, S_PR, errors, warnings)) {
     const where = (key) => at(S_PR, r._row, P[key])
     for (const c of S_PR.columns) if (c.required && !r[c.key]) errors.push(`${where(c.key)}: campo obbligatorio vuoto.`)
     if (!r.name) continue

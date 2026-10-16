@@ -81,7 +81,9 @@ export default function PlayerController({ config, device }) {
   }
   // Durante il benchmark la simulazione gira (i percorsi avanzano) ma l'input
   // dell'utente no: un tocco cambierebbe la traiettoria e falserebbe la misura.
-  const inputLocked = () => blocked() || useAppStore.getState().benchRunning
+  // Lo stesso durante la dissolvenza del teletrasporto: un percorso pianificato
+  // dalla posizione vecchia, o un Focus aperto a schermo nero, non hanno senso.
+  const inputLocked = () => blocked() || useAppStore.getState().benchRunning || Boolean(rt.current.teleport)
 
   const notify = (text) => useAppStore.getState().showNotice(text)
 
@@ -540,6 +542,8 @@ export default function PlayerController({ config, device }) {
       r.pos.z = w.position[2]
       if (w.lookAt) r.yaw = yawToward(r.pos.x, r.pos.z, w.lookAt[0], w.lookAt[2])
       r.pitch = 0
+      r.faceYaw = null
+      cancelRoute()
       r.teleport = null
       usePlayerStore.setState({ fading: false })
     }

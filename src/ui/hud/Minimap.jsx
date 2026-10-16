@@ -30,7 +30,7 @@ export default function Minimap() {
     // lo schermo è largo: alta 1,5 volte la larghezza, spingerebbe la barra "Vai a"
     // fuori dallo schermo.
     <div className="w-20 sm:w-44 [@media(max-height:520px)]:w-16">
-      <p className="micro mb-2 hidden sm:block [@media(max-height:520px)]:hidden">pianta</p>
+      <p className="micro mb-2 hidden sm:block [@media(max-height:520px)]:hidden">{storeConfig.copy.hud.minimap}</p>
       <div
         className="relative border border-line-subtle bg-surface-1"
         style={{ aspectRatio: `${w} / ${d}` }}

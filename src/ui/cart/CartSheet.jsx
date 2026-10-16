@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { commerceMode, testBanner } from '../../commerce/index.js'
@@ -15,6 +15,8 @@ const productByHandle = new Map(storeConfig.products.filter((p) => p.commerce).m
  * fornitore; da storeConfig solo nomi leggibili di taglia e colore e l'immagine.
  */
 export default function CartSheet({ headingId }) {
+  // Un errore rimasto da una scheda prodotto non riguarda il carrello.
+  useEffect(() => { useCartStore.getState().clearError() }, [])
   const t = storeConfig.copy.cart
   const { locale } = storeConfig.meta.brand
   const { maxQuantity } = storeConfig.commerce

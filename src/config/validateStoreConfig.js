@@ -167,6 +167,12 @@ export function validateStoreConfig(config) {
   for (const prod of config.products) {
     if (!config.garments.shapeByCategory[prod.category]) fail('I20', `prodotto ${prod.id}: nessuna forma per la categoria "${prod.category}"`)
     if (!prod.colorways?.length) fail('I20', `prodotto ${prod.id}: nessuna variante colore`)
+    // Id ripetuti farebbero vendere la variante sbagliata (taglia o colore confusi).
+    for (const [what, list] of [['colore', prod.colorways ?? []], ['taglia', prod.sizes ?? []]]) {
+      const ids = list.map((x) => x.id)
+      const dup = ids.find((id, i) => ids.indexOf(id) !== i)
+      if (dup) fail('I20', `prodotto ${prod.id}: id di ${what} "${dup}" ripetuto`)
+    }
   }
 
   // I21 — Lookbook e catalogo si citano a vicenda: un capo che dice di stare in un

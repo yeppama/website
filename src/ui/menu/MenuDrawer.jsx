@@ -43,7 +43,7 @@ export default function MenuDrawer() {
       <button
         className="absolute inset-0 bg-bg-base/80 backdrop-blur-sm"
         onClick={close}
-        aria-label="Chiudi menu"
+        aria-label={menu.closeLabel}
         tabIndex={-1}
       />
       <aside
@@ -91,7 +91,7 @@ export default function MenuDrawer() {
                         {qt.label}
                       </span>
                     </span>
-                    <span className="micro">{here ? '● sei qui' : qt.waypointId}</span>
+                    <span className="micro">{here ? `● ${storeConfig.copy.hud.youAreHere}` : qt.waypointId}</span>
                   </button>
                 </li>
               )

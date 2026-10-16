@@ -18,9 +18,16 @@ export const useCartStore = create((set, get) => ({
   pending: false,
   error: null,              // ultima operazione fallita (testo dal config)
 
+  // Avvio: catalogo e carrello salvato. Il catalogo si può ricaricare dopo un
+  // errore (loadCatalog), il carrello si ripristina una volta sola.
   init: async () => {
+    if (!getProvider()) return
+    await Promise.all([get().loadCatalog(), get().restoreCart()])
+  },
+
+  loadCatalog: async () => {
     const provider = getProvider()
-    if (!provider || get().catalogStatus !== 'idle') return
+    if (!provider || get().catalogStatus === 'loading' || get().catalogStatus === 'ready') return
     set({ catalogStatus: 'loading' })
     try {
       const handles = storeConfig.products.map((p) => p.commerce?.handle).filter(Boolean)
@@ -30,29 +37,56 @@ export const useCartStore = create((set, get) => ({
       console.warn('commerce: catalogo non disponibile', e)
       set({ catalogStatus: 'error' })
     }
+  },
+
+  restoreCart: async () => {
+    const provider = getProvider()
     const id = readId()
-    if (!id) return
+    if (!provider || !id) return
     try {
       const cart = await provider.getCart(id)
-      if (!cart) writeId(null)   // scaduto: se ne crea uno nuovo al primo acquisto
+      // Nel frattempo l'utente può aver già aggiunto un capo (nuovo carrello):
+      // vale il suo, non quello ripristinato.
+      if (get().cart || readId() !== id) return
+      if (!cart) writeId(null)   // scaduto o già pagato: se ne crea uno nuovo al primo acquisto
       set({ cart })
     } catch (e) {
       console.warn('commerce: carrello non ripristinato', e)
     }
   },
 
+  // L'errore riguarda l'ultima operazione: aprendo un'altra scheda non si trascina.
+  clearError: () => { if (get().error) set({ error: null }) },
+
   // Esegue un'operazione sul carrello, creandolo se serve. Una alla volta.
-  run: async (operation) => {
+  // Se il carrello salvato non esiste più (scaduto, o pagato in un'altra scheda),
+  // lo si dimentica e, per le aggiunte, si riprova una volta su un carrello nuovo.
+  run: async (operation, { retryOnNewCart = false } = {}) => {
     const provider = getProvider()
     if (!provider || get().pending) return false
     set({ pending: true, error: null })
-    try {
+    const attempt = async () => {
       let cart = get().cart
       if (!cart) {
         cart = await provider.createCart()
         writeId(cart.id)
+        set({ cart })
       }
-      cart = await operation(provider, cart.id)
+      return operation(provider, cart.id)
+    }
+    try {
+      let cart
+      try {
+        cart = await attempt()
+      } catch (e) {
+        const old = get().cart
+        const gone = old && await provider.getCart(old.id).then((c) => !c, () => false)
+        if (!gone) throw e
+        writeId(null)
+        set({ cart: null })
+        if (!retryOnNewCart) throw e
+        cart = await attempt()
+      }
       // Operazione eseguita solo in parte (es. merce esaurita): si mostra il
       // carrello com'è davvero e si avvisa, senza confermare.
       if (cart.warnings?.length) {
@@ -74,7 +108,7 @@ export const useCartStore = create((set, get) => ({
     const line = get().cart?.lines.find((l) => l.variantId === variantId)
     const room = commerce.maxQuantity - (line?.quantity ?? 0)
     if (room <= 0) { set({ error: storeConfig.copy.cart.maxReached }); return Promise.resolve(false) }
-    return get().run((p, id) => p.addLines(id, [{ variantId, quantity: Math.min(quantity, room) }]))
+    return get().run((p, id) => p.addLines(id, [{ variantId, quantity: Math.min(quantity, room) }]), { retryOnNewCart: true })
   },
   setQuantity: (lineId, quantity) => get().run((p, id) => (quantity <= 0
     ? p.removeLines(id, [lineId])

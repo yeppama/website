@@ -143,9 +143,12 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   const { ctx, page } = await open('error', { query: '?debug=x&tier=low&commerce=mock&mockerror=1' })
   await waitUntil(page, () => window.__cart.getState().catalogStatus === 'error')
   await openProduct(page, 'prod-001')
-  ok('fornitore in errore: nessun prezzo inventato, avviso e acquisto spento',
+  // Aprendo la scheda il catalogo in errore si riprova: si aspetta che il nuovo tentativo finisca.
+  await waitUntil(page, () => window.__cart.getState().catalogStatus === 'error')
+  ok('fornitore in errore: nessun prezzo inventato, avviso, "Riprova" e acquisto spento',
     (await page.getByTestId('product-price').textContent()).trim() === '—' &&
-    await dialog(page).getByText(T.unavailable).isVisible() && await page.getByTestId('add-to-cart').isDisabled())
+    await dialog(page).getByText(T.unavailable).isVisible() && await page.getByTestId('add-to-cart').isDisabled() &&
+    await dialog(page).getByRole('button', { name: T.retry }).isVisible())
   await ctx.close()
 }
 

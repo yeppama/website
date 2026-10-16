@@ -1,5 +1,6 @@
 import { Suspense, useRef, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { frameScheduler } from '../lib/frameScheduler.js'
 import * as THREE from 'three'
 
 import Floor from './environment/Floor.jsx'
@@ -101,19 +102,18 @@ function CameraRig({ camera, reducedMotion, debugPoseFor }) {
  * Il Canvas gira in `frameloop="demand"`: non rende nulla finché qualcuno non
  * chiama `invalidate()`. Questo ciclo lo chiama al massimo `targetFps` volte al
  * secondo, quindi su uno schermo a 120 Hz si rende a 60, non a 120.
- * La soglia al 90% dell'intervallo assorbe il jitter di requestAnimationFrame:
- * con una soglia esatta, su uno schermo a 60 Hz si salterebbe un frame su due.
+ * Si ragiona per scadenze, non per "tempo dall'ultimo fotogramma": su schermi a
+ * 75, 90 o 144 Hz quella regola saltava un vsync su due e scendeva a 37, 45 o 48
+ * fps. Qui si rende al primo vsync che arriva entro mezzo vsync dalla scadenza,
+ * e la scadenza successiva avanza di un intervallo esatto (con recupero se si è
+ * rimasti indietro): lib/frameScheduler.js, provato con `npm run test:framing`.
  */
 function FrameLimiter({ targetFps }) {
   const { invalidate } = useThree()
   useEffect(() => {
-    const interval = (1000 / targetFps) * 0.9
-    let last = 0
+    const due = frameScheduler(targetFps)
     let raf = requestAnimationFrame(function loop(now) {
-      if (now - last >= interval) {
-        last = now
-        invalidate()
-      }
+      if (due(now)) invalidate()
       raf = requestAnimationFrame(loop)
     })
     return () => cancelAnimationFrame(raf)

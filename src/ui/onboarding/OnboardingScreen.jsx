@@ -103,7 +103,7 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
               />
             </div>
             <p className="micro mt-2">
-              {ready ? 'pronto' : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
+              {ready ? copy.ready : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
             </p>
           </div>
         </div>

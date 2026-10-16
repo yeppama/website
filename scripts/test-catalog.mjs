@@ -163,6 +163,29 @@ await test('testo HTML protetto nel CSV', async () => {
   assert.ok(r.csv.includes('Cotone &lt;b&gt;pesante&lt;/b&gt; &amp; ""morbido""'))
 })
 
+await test('colonna facoltativa cancellata: considerata vuota, mai letta da quella accanto', async () => {
+  const wb = await demoWorkbook()
+  const ws = wb.getWorksheet(SHEETS.products.name)
+  const col = SHEETS.products.columns.findIndex((c) => c.key === 'sku') + 1
+  ws.spliceColumns(col, 1)   // il cliente toglie la colonna "Codice (SKU)"
+  const r = importCatalog(wb, { vendor })
+  assert.equal(r.ok, true, r.errors.join(' | '))
+  assert.equal(r.products[0].category, storeConfig.products[0].category, 'la categoria letta dalla colonna giusta')
+  assert.equal(r.products[0].sku, null)
+  assert.ok(r.warnings.some((w) => /colonna "Codice \(SKU\)" non trovata/.test(w)))
+})
+await test('formula con errore o senza valore: errore con la cella, mai "[object Object]"', async () => {
+  for (const [value, pattern] of [[{ formula: 'A1/0', result: { error: '#DIV/0!' } }, /la formula dà #DIV\/0!/], [{ formula: 'B2*2' }, /formula senza valore calcolato/], [{ error: '#N/A' }, /errore #N\/A/]]) {
+    const r = await withProduct({ description: value })
+    assert.equal(r.ok, false)
+    assert.ok(r.errors.some((e) => /riga 3, "Descrizione IT \*"/.test(e) && pattern.test(e)), r.errors.join(' | '))
+    assert.ok(!r.errors.join(' ').includes('[object Object]'))
+  }
+})
+await test('due colori che diventano lo stesso codice: errore', () =>
+  expectError({ colors: 'Black, Off-White' }, /"Off White" e "Off-White" diventano lo stesso codice colore/,
+    { colors: [{ name: 'Off-White', hex: '#EEEEEE' }, { name: 'Off White', hex: '#EEEEEE' }] }))
+
 const failed = results.filter((r) => r[0] !== 'ok')
 for (const [status, name, note] of results) console.log(`  ${status === 'ok' ? '✓' : '✗'} ${name}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.length - failed.length}/${results.length} test superati`)
