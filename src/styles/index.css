@@ -5,7 +5,7 @@
 /* Schermo basso: telefono in orizzontale (≈ 320–430 px di altezza), o finestra
    schiacciata. Conta l'altezza, non la larghezza: un telefono in orizzontale è largo
    come un tablet ma ha un terzo della sua altezza. */
-@custom-variant short (@media (max-height: 520px));
+@custom-variant short (@media (max-height: 520px) and (orientation: landscape));
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }

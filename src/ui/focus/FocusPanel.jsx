@@ -64,7 +64,7 @@ export default function FocusPanel({ device }) {
         aria-label={product.name}
         aria-live="polite"
         data-testid="focus-panel"
-        className="pointer-events-auto w-full max-w-sm border border-line-strong bg-bg-base/85 p-5 backdrop-blur-md short:max-w-xs short:p-4"
+        className="pointer-events-auto w-full max-w-sm border border-line-strong bg-bg-base/85 p-5 backdrop-blur-md short:max-w-xs short:max-h-[calc(100dvh-1.5rem)] short:overflow-y-auto short:p-4"
       >
         <div className="flex items-start justify-between gap-3">
           <p className="micro">{display.label}</p>

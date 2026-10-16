@@ -96,7 +96,7 @@ const dialogOverflow = (page) => page.evaluate((min) => {
 
 for (const f of FORMATS) {
   const tag = f.name
-  const short = f.vp.height <= SHORT
+  const short = f.vp.height <= SHORT && f.vp.width > f.vp.height
   const ctx = await browser.newContext({ viewport: f.vp, isMobile: f.mobile, hasTouch: f.mobile, deviceScaleFactor: f.mobile ? 2 : 1 })
   const page = await ctx.newPage()
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(`[${tag}] ${m.text()}`) })
