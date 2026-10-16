@@ -56,16 +56,16 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium | 1.0 | 1920×911 | 3 | 37.2 | 33.6 | 16.5 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium (grana off) | 1.0 | 1920×911 | 3 | 59.5 | 20.9 | 36.9 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | low | 1.0 | 1920×911 | 3 | 45.5 | 25.3 | 26.4 | 23 / 45 | 7766 | sì |
-| 2026-10-16 | iPhone (modello da indicare; viewport 393 px) | Apple GPU | Safari 26 | 7945fa8 | low · grana overlay | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
-| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | low · grana alpha | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
-| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | medium (forzato) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 7945fa8 | low · grana overlay | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 7945fa8 | low · grana alpha | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 7945fa8 | medium (forzato) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium · grana overlay | 1.0 | 1920×911 | 3 | 39.5 | 31.9 | 23.2 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium (grana off) | 1.0 | 1920×911 | 3 | 59.9 | 18.6 | 39.7 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium · grana alpha | 1.0 | 1920×911 | 3 | 56.2 | 23.7 | 36.8 | 34 / 52 | 13240 | sì |
-| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
-| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 52.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 52.6 | 31 / 42 | 12910 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 47844b8 | medium · grana alpha | 1.0 | 1920×911 | 3 | 57.1 | 23.5 | 39.2 | 34 / 52 | 13240 | sì |
-| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | iPhone 16 | Apple GPU | Safari 26 | 47844b8 | medium · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -85,7 +85,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
      nove faretti calcolati per ogni pixel di 1920×911 con antialias; le due ombre reali; la grana in
      `mix-blend-mode` sopra il canvas. Le misure diagnostiche sotto separano le tre.
 
-- **iPhone (Safari 26), 2026-10-16** — fluido (58,8 / 55,6) ma **nel tier sbagliato**: `low`, cioè
+- **iPhone 16 (Safari 26), 2026-10-16** — fluido (58,8 / 55,6) ma **nel tier sbagliato**: `low`, cioè
   DPR 1 su uno schermo a densità 3, niente ombre reali, niente antialias. Safari non espone la memoria
   e dichiara meno core di quelli reali, quindi la regola mobile (≥ 6 core e ≥ 4 GB → medium) lo
   declassa. Il piano lo vuole in `medium`. Manca la prova `?bench=1&tier=medium` sullo stesso iPhone.

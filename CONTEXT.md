@@ -66,7 +66,7 @@ src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
 src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · perf/ · bench/ · primitives/ · fx/ · fallback/
 scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4,5,6}.mjs
-docs/              PERF.md (registro delle misure, da compilare dall'utente)
+docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dall'utente per la Fase 7)
 ```
 
 **Geometria (`src/lib/geometry.js`) — convenzione di three, verificata contro le sue matrici**
@@ -180,6 +180,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - ~~Fase 5~~ — consegnata: scheda prodotto, Lookbook / Brand Story, trappola del focus, I21–I22, suite `e2e-phase5.mjs`.
 - ~~Fase 6~~ — **chiusa dall'utente il 2026-10-16.** Memoria GPU stabile, perdita di contesto gestita, HUD `?perf=1`, benchmark `?bench=1` con dettaglio per tratto e scatti, `docs/PERF.md`, verifica responsive su 8 formati, tier corretto (GPU integrate → medium, iPhone → medium), grana `alpha`, riscaldamento GPU e niente lavoro al primo uso. Misure reali: Pixel 60,2 / 49,8 ✓ · iPhone 58,8 / 55,6 ✓ · Vivobook 57,1 / 39,2 ✗ di poco, **scostamento accettato dall'utente** (carico costante della GPU integrata, 3 fotogrammi > 50 ms in ~40 s). Non misurato: Android di fascia media (tier low).
 - Storia della Fase 6 (dettagli in `docs/PERF.md`): grana `alpha` scelta dall'utente (intensità 0,2 / 0,18 / 0,15); diagnosi Vivobook: overlay ~20 fps; scatti al primo uso eliminati (linea del percorso, hotspot, anello, marcatore); nebbia agganciata correttamente ma spenta per scelta dell'utente.
+- **Fase 7 — opzione B scelta dall'utente (2026-10-16): prima i contenuti reali, poi la produzione.** L'utente manderà brand identity e logo; elenco completo di cosa serve in `docs/CONTENUTI.md`. La produzione è pubblica (la protezione di Vercel copre solo le anteprime): niente contenuti segnaposto non dichiarati. iPhone misurato = iPhone 16.
 - **Fase 7** — verifica del deploy di produzione su `main` (l'URL pubblico lo verifica l'utente).
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
-- **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · modello esatto dell'iPhone misurato · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
+- **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
