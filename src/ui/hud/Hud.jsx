@@ -5,6 +5,8 @@ import { usePlayerStore } from '../../state/usePlayerStore.js'
 import Minimap from './Minimap.jsx'
 import QuickTravelBar from './QuickTravelBar.jsx'
 import Button from '../primitives/Button.jsx'
+import CartButton from '../cart/CartButton.jsx'
+import { commerceActive } from '../../commerce/index.js'
 
 /**
  * Interfaccia sovrapposta alla scena. `pointer-events-none` sul contenitore e
@@ -84,7 +86,8 @@ export default function Hud({ device }) {
             </p>
             <p className="micro mt-1" data-testid="zone-label">{zone ? zone.label : copy.noZone}</p>
           </div>
-          <div className={`pointer-events-auto ${inFocus ? 'invisible' : ''}`}>
+          <div className={`pointer-events-auto flex gap-2 ${inFocus ? 'invisible' : ''}`}>
+            {commerceActive() && <CartButton />}
             <Button onClick={toggleMenu} aria-expanded={menuOpen} aria-controls="menu-drawer">
               {menuOpen ? copy.close : copy.menu}
             </Button>

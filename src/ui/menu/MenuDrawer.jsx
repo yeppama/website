@@ -4,6 +4,8 @@ import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { useFocusTrap } from '../primitives/useFocusTrap.js'
+import CartButton from '../cart/CartButton.jsx'
+import { commerceActive } from '../../commerce/index.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import Button from '../primitives/Button.jsx'
 
@@ -53,7 +55,10 @@ export default function MenuDrawer() {
           <p className="micro">{menu.title}</p>
           {/* Il bottone del HUD resta sotto il pannello: senza questo, l'unico
               modo di chiudere sarebbe Esc o il fondo, non evidenti su touch. */}
-          <Button onClick={close}>{storeConfig.copy.hud.close}</Button>
+          <div className="flex gap-2">
+            {commerceActive() && <CartButton />}
+            <Button onClick={close}>{storeConfig.copy.hud.close}</Button>
+          </div>
         </div>
 
         <section className="mt-8">

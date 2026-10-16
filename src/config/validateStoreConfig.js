@@ -201,6 +201,23 @@ export function validateStoreConfig(config) {
     }
   }
 
+  // I23 — ogni capo è collegato al commercio con un handle valido e unico: è la
+  // chiave con cui il fornitore (Shopify) restituisce prezzo, varianti e giacenze.
+  const handles = new Set()
+  for (const prod of config.products) {
+    const h = prod.commerce?.handle
+    if (!h) { fail('I23', `prodotto ${prod.id}: commerce.handle mancante`); continue }
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(h)) fail('I23', `prodotto ${prod.id}: handle "${h}" non valido (minuscole, cifre, trattini)`)
+    if (handles.has(h)) fail('I23', `prodotto ${prod.id}: handle "${h}" duplicato`)
+    handles.add(h)
+  }
+
+  // I24 — regole del commercio coerenti.
+  const c = config.commerce
+  if (!['off', 'mock', 'shopify'].includes(c?.provider)) fail('I24', `commerce.provider "${c?.provider}" non previsto`)
+  if (!Number.isInteger(c?.maxQuantity) || c.maxQuantity < 1) fail('I24', 'commerce.maxQuantity deve essere un intero ≥ 1')
+  if (!c?.cartStorageKey) fail('I24', 'commerce.cartStorageKey mancante')
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
@@ -223,5 +240,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 22 invarianti verificate, nessun errore')
+  console.info('storeConfig: 24 invarianti verificate, nessun errore')
 }

@@ -13,7 +13,15 @@ Piano completo, schema dati e limiti dell'ambiente: `PLAN.md` (indice, testo in 
 - Collisioni solo sui box di `colliders`, mai sulle mesh.
 - Prima di ogni commit: `npm run build`, `npm run test:nav` e le suite `scripts/e2e/` interessate, **leggendo l'esito**.
 - Report di fine fase: eseguito / non eseguito / bloccato, mai una verifica impossibile presentata come superata.
-- Branch di lavoro: `claude/cool-edison-2svzgj` (dalla Fase 5; allineato a `claude/determined-thompson-yfnsdc`, che resta com'era a fine Fase 4).
+- Branch: ogni sessione lavora sul branch che le è assegnato, creato a partire dal branch più avanzato, **non da `main`**. Il più avanzato al 2026-10-16 è `claude/adoring-brown-08ebsm` (Fasi 0–8a + documenti ristrutturati). `main` = produzione, ferma alla Fase 7. `claude/cool-edison-2svzgj` (fino alla 8a) e `claude/determined-thompson-yfnsdc` (fine Fase 4) sono storici: non ci si lavora più.
+
+## Avvio di una nuova sessione
+
+1. `CLAUDE.md` e `CONTEXT.md` sono già in contesto: non rileggerli.
+2. Verificare di partire dalla base giusta: `git log --oneline -3` deve contenere il commit di ristrutturazione dei documenti e la Fase 8a; `git log --oneline origin/main..HEAD` mostra cosa non è ancora in produzione. Se manca qualcosa, fermarsi e dirlo all'utente.
+3. Il container è nuovo: `npm ci` prima di build e test (senza, `npm run build` esce con 127).
+4. Per il compito: leggere solo la sezione pertinente di `docs/plan/`, `docs/PLAN-8.md` e `docs/LEZIONI.md`.
+5. A fine lavoro aggiornare `CONTEXT.md` (solo stato vigente, sotto ~8 KB) e spostare i dettagli conclusi in `docs/STORIA.md`.
 
 ## Uso del contesto
 
