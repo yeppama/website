@@ -49,12 +49,14 @@ export function FlatGarment({ product, garments, materials, position, rotation }
 /**
  * Indicatore del capo selezionato in Focus Mode: l'ellisse del marchio, piccola.
  * Vive fuori dall'unione delle geometrie perché si sposta col prodotto attivo.
+ * `transparent` con opacità 1: stesso aspetto, ma riusa lo shader già pronto
+ * dell'anello del tap invece di compilarne uno suo a ogni Focus (docs/PERF.md).
  */
 export function ActiveMarker({ position, color, ratio = 2.2 }) {
   return (
     <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} scale={[ratio, 1, 1]}>
       <ringGeometry args={[0.055, 0.068, 40]} />
-      <meshBasicMaterial color={color} toneMapped={false} />
+      <meshBasicMaterial color={color} transparent toneMapped={false} />
     </mesh>
   )
 }

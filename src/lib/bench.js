@@ -106,8 +106,20 @@ export function segmentSummary(runs) {
   if (!runs.length) return ''
   return runs[0].segments.map((s, i) => {
     const seg = runs.map((r) => r.segments[i]).filter(Boolean)
-    return `${i + 1} ${s.label} ${f1(median(seg.map((x) => x.fpsP50)))}/${f1(Math.min(...seg.map((x) => x.fps1Low)))}`
+    const worst = Math.max(...seg.map((x) => x.frameMsMax))
+    const over = Math.max(...seg.map((x) => x.over50))
+    return `${i + 1} ${s.label} ${f1(median(seg.map((x) => x.fpsP50)))}/${f1(Math.min(...seg.map((x) => x.fps1Low)))} max ${f0(worst)}ms ${over}>50`
   }).join(' ; ')
+}
+
+/** Scatti sull'intero percorso, peggior run: fotogramma più lungo, oltre 50 ms, blocchi > 250 ms. */
+export function stutterSummary(runs) {
+  if (!runs.length) return ''
+  return {
+    frameMsMax: Math.max(...runs.map((r) => r.frameMsMax)),
+    over50: Math.max(...runs.map((r) => r.over50)),
+    stalls: Math.max(...runs.map((r) => r.stalls)),
+  }
 }
 
 /** Nome e versione del browser dallo user agent, quanto basta per il registro. */

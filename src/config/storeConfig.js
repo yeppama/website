@@ -245,7 +245,9 @@ export const storeConfig = {
       sign:  { assetId: 'asset-logo-primary', center: [0, 2.95, -17.86], width: 5.4, color: '#f98e30' },
       panel: { lookbookId: 'lb-001', center: [0, 1.15, -17.86], size: [4.8, 1.5], materialId: 'mat-sign-panel' },
     },
-    fog: { enabled: true, color: '#060606', near: 26, far: 72 },
+    // Spenta per scelta dell'utente (2026-10-16): le Fasi 2–6 sono state approvate
+    // senza, perché fino alla Fase 6 non veniva disegnata. Anteprima con ?fog=1.
+    fog: { enabled: false, color: '#060606', near: 26, far: 72 },
   },
 
   lighting: {
@@ -639,7 +641,8 @@ export const storeConfig = {
       seconds: 's',
       fxOff: '(grana off)',
       grain: 'grana',
-      segments: 'Tratti (p50 / 1% low)',
+      segments: 'Tratti (p50 / 1% low · fotogramma max · n oltre 50 ms)',
+      stutter: 'Scatti (peggior run)',
       warmup: 'Avvio fra poco · non toccare lo schermo',
       running: 'In corso · non toccare lo schermo',
       step: 'Passo',

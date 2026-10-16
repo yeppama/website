@@ -38,8 +38,9 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 - HUD prestazioni `?perf=1` (anche in produzione) e benchmark `?bench=1` (percorso in `storeConfig.benchmark`, ~40 s, run ripetibili, riga pronta per `docs/PERF.md`). Campionatore in `lib/perf.js` alimentato da `PerfProbe` dentro il Canvas: fps = render reali, intervalli > 250 ms scartati. Durante il benchmark `benchRunning` blocca l'input (non la simulazione) e un velo copre la scena. Commit della build in `__BUILD_COMMIT__` (vite `define`, da `VERCEL_GIT_COMMIT_SHA` o git).
 - Tier (Fase 6, dopo la prima misura reale): `high` solo con GPU dedicata riconosciuta nella stringa del renderer (`DISCRETE_GPU` in `deviceProfile.js`); le integrate vanno in `medium`. Verificato da `npm run test:device` con le stringhe dei dispositivi misurati.
 - Misure reali (docs/PERF.md): Pixel (PowerVR, medium) 60,2 / 49,8 → **superata**; Vivobook (Iris Xe) in high per errore 31,6 / 14,9, in medium corretto 37,2 / 16,5 → **fallita**. Il benchmark riporta anche il dettaglio per tratto. Diagnosi chiusa: il costo principale era la grana overlay (vedi Fase 6 sotto). Parametri di confronto `&fx=0`, `&grain=overlay|alpha`, `&warm=0`, `&tier=`.
-- Scatti al primo uso (indagine 2026-10-16, `docs/PERF.md`): linea del percorso ricompilata a ogni cammino, anello del tap mai disegnato al riscaldamento, hotspot smontati e ricreati, marcatore del Focus con shader unico. Correzioni proposte, tutte invisibili, **in attesa del via dell'utente**.
-- **Nebbia mai disegnata:** `<fog attach="fog">` in `LightingRig.jsx` sta dentro un `<group>`, quindi `scene.fog` resta null. Le Fasi 2–6 sono state approvate senza nebbia: correggerla è una decisione estetica dell'utente.
+- Scatti al primo uso (indagine 2026-10-16, `docs/PERF.md`), corretti col via dell'utente: linea del percorso unica e permanente (cambia solo la geometria), anello del tap e hotspot disegnati nel riscaldamento (`userData.warmup`: `GpuWarmup` li rende visibili per quel solo fotogramma), hotspot sempre montati e nascosti (anche in Focus), marcatore del Focus `transparent` (riusa lo shader dell'anello). Verificato: dopo il riscaldamento 2 cammini + Focus col marcatore = 0 compilazioni shader, 8 upload di buffer.
+- Benchmark: per tratto anche fotogramma max e n oltre 50 ms; riga "Scatti" (max, > 50 ms, > 250 ms a pagina visibile, nel peggior run).
+- **Nebbia:** fino alla Fase 6 non era mai disegnata (agganciata a un gruppo). Ora `LightingRig` la mette su `scene.fog`, ma `environment.fog.enabled` è `false` per scelta dell'utente (2026-10-16). Anteprima con `?fog=1` (anche in produzione).
 - Nero dei capi: su telefono reale "un pelo grigio", **accettato dall'utente per ora** (2026-10-15).
 - Luce: **faretti dei prodotti bianco caldo; il colore d'atmosfera solo su pareti (wall-wash) e accenti.** Esposizione in config (`performance.toneMappingExposure: 0.85`).
 
@@ -123,7 +124,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=` forza il tier e `&fx=0` toglie grana e vignettatura.
+**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia.
 
 ## 4. Lezioni apprese & edge case
 

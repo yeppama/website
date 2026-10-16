@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useAppStore } from '../../state/useAppStore.js'
 
@@ -54,6 +54,14 @@ function Spot({ spot, castShadow, shadowMapSize, registry }) {
  */
 export default function LightingRig({ lighting, tier, fog, displays, focusConfig }) {
   const registry = useRef(new Map())
+  const { scene } = useThree()
+  // La nebbia va sulla scena. Fino alla Fase 6 era un <fog attach="fog"> dentro un
+  // <group>: si agganciava al gruppo e non veniva mai disegnata.
+  useEffect(() => {
+    if (!fog.enabled) return
+    scene.fog = new THREE.Fog(fog.color, fog.near, fog.far)
+    return () => { scene.fog = null }
+  }, [scene, fog.enabled, fog.color, fog.near, fog.far])
   const ambient = useRef()
   const hemi = useRef()
   const studio = useMemo(() => new THREE.Color(focusConfig.lighting.studioColor), [focusConfig])
@@ -94,7 +102,6 @@ export default function LightingRig({ lighting, tier, fog, displays, focusConfig
 
   return (
     <group>
-      {fog.enabled && <fog attach="fog" args={[fog.color, fog.near, fog.far]} />}
       <ambientLight ref={ambient} intensity={lighting.ambient.intensity} color={lighting.ambient.color} />
       <hemisphereLight
         ref={hemi}

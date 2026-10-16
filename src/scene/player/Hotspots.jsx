@@ -16,10 +16,19 @@ import { useAppStore } from '../../state/useAppStore.js'
 function Hotspot({ poi, texture, state, style }) {
   const group = useRef()
   const material = useRef()
+  const wasHidden = useRef(true)
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
+  const hidden = state === 'hidden'
 
   useFrame(({ camera, clock }) => {
     if (!group.current) return
+    if (hidden) { wasHidden.current = true; return }
+    // Riapparendo riparte da com'era quando veniva rimontato: semitrasparente, scala 1.
+    if (wasHidden.current) {
+      wasHidden.current = false
+      group.current.scale.setScalar(1)
+      if (material.current) material.current.opacity = 0.55
+    }
     group.current.quaternion.copy(camera.quaternion)
     const t = (clock.elapsedTime / style.bobPeriodSeconds) * Math.PI * 2 + phase
     group.current.position.y = Math.sin(t) * style.bob
@@ -32,11 +41,12 @@ function Hotspot({ poi, texture, state, style }) {
     }
   })
 
-  if (state === 'hidden') return null
   const [x, y, z] = poi.anchor
 
+  // Sempre montato, nascosto quando fuori raggio: smontarlo e rimontarlo ricreava
+  // geometrie e materiali a ogni avvicinamento e dopo ogni Focus (docs/PERF.md).
   return (
-    <group position={[x, y, z]}>
+    <group position={[x, y, z]} visible={!hidden} userData={{ warmup: true }}>
       <mesh position={[0, -y / 2, 0]}>
         <cylinderGeometry args={[0.006, 0.006, y, 4]} />
         <meshBasicMaterial color={style.pinColor} transparent opacity={0.35} toneMapped={false} />
@@ -76,8 +86,13 @@ export default function Hotspots({ pois, style }) {
     }
   }, [pois, style.color, gl])
 
-  if (!textures || inFocus) return null
-  return pois.map((poi) => (
-    <Hotspot key={poi.id} poi={poi} texture={textures[poi.id]} state={states[poi.id] ?? 'hidden'} style={style} />
-  ))
+  if (!textures) return null
+  // In Focus gli hotspot si nascondono, non si smontano.
+  return (
+    <group visible={!inFocus}>
+      {pois.map((poi) => (
+        <Hotspot key={poi.id} poi={poi} texture={textures[poi.id]} state={states[poi.id] ?? 'hidden'} style={style} />
+      ))}
+    </group>
+  )
 }

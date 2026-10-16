@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
-import { runBenchmark, aggregateRuns, perfRow, browserLabel, segmentSummary } from '../../lib/bench.js'
+import { runBenchmark, aggregateRuns, perfRow, browserLabel, segmentSummary, stutterSummary } from '../../lib/bench.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { usePerfStore } from '../../state/usePerfStore.js'
@@ -89,7 +89,8 @@ export default function BenchPanel({ device, ready }) {
     real: software ? t.realNo : `(${t.realYes})`,
   })
   // La riga per il registro e, sotto, dove il percorso rallenta: si copiano insieme.
-  const report = row && `${row}\n${t.segments}: ${segmentSummary(runs)}`
+  const st = stutterSummary(runs)
+  const report = row && `${row}\n${t.segments}: ${segmentSummary(runs)}\n${t.stutter}: max ${Math.round(st.frameMsMax)} ms · ${st.over50} > 50 ms · ${st.stalls} > 250 ms`
 
   const copy = async () => {
     try {
@@ -158,7 +159,7 @@ export default function BenchPanel({ device, ready }) {
               {t.median}: {f1(agg.fpsP50Median)} · {t.worst}: {f1(agg.fps1LowWorst)}
             </p>
             <p className="micro mt-1">{t.runsHint}</p>
-            <textarea readOnly value={report} rows={5} data-testid="bench-row"
+            <textarea readOnly value={report} rows={6} data-testid="bench-row"
                       onFocus={(e) => e.target.select()}
                       className="micro mt-3 w-full resize-none border border-line-subtle bg-bg-base p-2 text-text-primary" />
           </div>

@@ -20,14 +20,24 @@ const percentile = (sorted, p) => {
   return sorted[i]
 }
 
-/** Statistiche da una lista di campioni { t, dt, calls, tris }. */
-export function summarize(samples) {
+/**
+ * Statistiche da una lista di campioni { t, dt, calls, tris, stall? }.
+ * Il 1% low da solo nasconde i singoli scatti nei tratti lunghi (è il k-esimo
+ * intervallo peggiore): per questo si riportano anche il fotogramma più lungo e
+ * quanti superano i 50 ms. Gli `stall` (> maxGapMs a pagina visibile) contano
+ * solo lì, non nelle percentuali.
+ */
+export function summarize(all) {
+  const samples = all.filter((s) => !s.stall)
   const dts = samples.map((s) => s.dt).sort((a, b) => a - b)
   const calls = samples.map((s) => s.calls)
   const tris = samples.map((s) => s.tris)
   const sum = (a) => a.reduce((x, y) => x + y, 0)
   return {
     frames: samples.length,
+    frameMsMax: all.length ? Math.max(...all.map((s) => s.dt)) : NaN,
+    over50: all.filter((s) => s.dt > 50).length,
+    stalls: all.length - samples.length,
     fpsP50: 1000 / percentile(dts, 50),
     frameMsP95: percentile(dts, 95),
     fps1Low: 1000 / percentile(dts, 99),
@@ -45,6 +55,12 @@ export function createSampler({ maxGapMs = 250, keepMs = 10000 } = {}) {
   let last = null
   let live = []          // finestra scorrevole per l'HUD
   let recording = null   // campioni di una registrazione (benchmark)
+  // Un intervallo lunghissimo è una pausa se nel frattempo la pagina era nascosta,
+  // uno scatto vero (compilazione, blocco del thread) se era visibile.
+  let hiddenSinceLast = false
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenSinceLast = true })
+  }
 
   return {
     frame(now, calls, tris) {
@@ -54,8 +70,11 @@ export function createSampler({ maxGapMs = 250, keepMs = 10000 } = {}) {
           const s = { t: now, dt, calls, tris }
           live.push(s)
           recording?.push(s)
+        } else if (dt > maxGapMs && !hiddenSinceLast) {
+          recording?.push({ t: now, dt, calls, tris, stall: true })
         }
       }
+      hiddenSinceLast = false
       last = now
       // Taglio della finestra solo ogni tanto: shift() a ogni frame costa.
       if (live.length > 2048) live = live.filter((s) => now - s.t <= keepMs)

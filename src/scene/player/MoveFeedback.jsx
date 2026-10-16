@@ -25,7 +25,10 @@ function Ping({ ping, durationMs }) {
     mesh.current.visible = Boolean(ping) && t < 1
   })
   return (
-    <mesh ref={mesh} position={[ping?.x ?? 0, 0.02, ping?.z ?? 0]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+    // userData.warmup: GpuWarmup lo disegna una volta durante il caricamento, così il
+    // primo tap non paga il primo uso del suo shader (docs/PERF.md, indagine primo uso).
+    <mesh ref={mesh} position={[ping?.x ?? 0, 0.02, ping?.z ?? 0]} rotation={[-Math.PI / 2, 0, 0]} visible={false}
+          userData={{ warmup: true }}>
       <ringGeometry args={[0.82, 1, 48]} />
       <meshBasicMaterial color={ping?.ok === false ? tokens.color.text.muted : tokens.color.accent.flame}
         transparent toneMapped={false} depthWrite={false} />
@@ -33,17 +36,37 @@ function Ping({ ping, durationMs }) {
   )
 }
 
+const toPoints = (points) => points.map(([x, z]) => new THREE.Vector3(x, 0.025, z))
+
+/**
+ * Una sola linea per tutta la visita: a ogni percorso cambia solo la geometria.
+ * Creare e distruggere linea e materiale a ogni percorso faceva ricompilare lo
+ * shader a ogni cammino (misurato: 2 compilazioni + 1 link per cammino).
+ * Senza percorso la linea è nascosta, non smontata.
+ */
 function RouteLine({ route, color }) {
   const line = useMemo(() => {
-    const pts = route.points.map(([x, z]) => new THREE.Vector3(x, 0.025, z))
-    const geometry = new THREE.BufferGeometry().setFromPoints(pts)
     const material = new THREE.LineDashedMaterial({ color, dashSize: 0.25, gapSize: 0.18, transparent: true, opacity: 0.8, toneMapped: false })
-    const l = new THREE.Line(geometry, material)
+    // Due punti coincidenti: una geometria valida da disegnare durante il riscaldamento.
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(toPoints([[0, 0], [0, 0]])), material)
     l.computeLineDistances()
+    l.visible = false
+    l.frustumCulled = false
+    l.userData.warmup = true
     return l
-  }, [route, color])
-  // `primitive` non viene liberato da React Three Fiber: senza questo, ogni tap
-  // lasciava sulla GPU una geometria e un materiale (Fase 6, misurato).
+  }, [color])
+
+  useEffect(() => {
+    if (!route) { line.visible = false; return }
+    const previous = line.geometry
+    line.geometry = new THREE.BufferGeometry().setFromPoints(toPoints(route.points))
+    line.computeLineDistances()
+    previous.dispose()
+    line.visible = true
+  }, [route, line])
+
+  // `primitive` non viene liberato da React Three Fiber: geometria e materiale
+  // si liberano qui, allo smontaggio della scena.
   useEffect(() => () => { line.geometry.dispose(); line.material.dispose() }, [line])
   return <primitive object={line} />
 }
@@ -54,7 +77,7 @@ export default function MoveFeedback({ feedback }) {
   return (
     <group>
       <Ping ping={ping} durationMs={feedback.pingMs} />
-      {route && <RouteLine key={route.id} route={route} color={feedback.pathColor} />}
+      <RouteLine route={route} color={feedback.pathColor} />
     </group>
   )
 }

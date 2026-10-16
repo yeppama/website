@@ -165,6 +165,48 @@ async function useRound(page) {
   await off.ctx.close()
 }
 
+// ============================ NIENTE LAVORO AL PRIMO USO ============================
+// Dopo il riscaldamento: cammini, un Focus col marcatore e l'uscita non devono
+// compilare shader. Gli upload ammessi sono la geometria della linea del
+// percorso (2 buffer a cammino) e l'anello del marcatore (4 buffer a Focus).
+{
+  const countGl = () => {
+    window.__glCalls = { compileShader: 0, bufferData: 0 }
+    for (const proto of [WebGL2RenderingContext.prototype, WebGLRenderingContext.prototype]) {
+      for (const fn of ['compileShader', 'bufferData']) {
+        const orig = proto[fn]
+        proto[fn] = function (...a) { window.__glCalls[fn]++; return orig.apply(this, a) }
+      }
+    }
+  }
+  const { ctx, page } = await open('first-use', { query: '?debug=x&tier=medium', init: countGl, viewport: { width: 640, height: 400 } })
+  await waitUntil(page, () => window.__warmedUp === true, null, 20000)
+  await page.waitForTimeout(800)
+  await page.evaluate(() => { window.__glCalls.compileShader = 0; window.__glCalls.bufferData = 0 })
+  const walk = async (point) => {
+    await page.evaluate((point) => window.__stores.player.getState().issue({ type: 'goto', point }), point)
+    await waitUntil(page, () => !!window.__stores.player.getState().route, null, 10000)
+    await waitUntil(page, () => !window.__stores.player.getState().route, null, 60000)
+  }
+  await walk([-6.5, 9])
+  await walk([6.5, 9])
+  await page.evaluate(() => window.__stores.player.getState().issue({ type: 'focus', displayId: 'disp-plinth-01' }))
+  await waitUntil(page, () => window.__stores.app.getState().focus.state === 'focused', null, 30000)
+  await page.waitForTimeout(500)
+  await page.evaluate(() => window.__stores.app.getState().exitFocus())
+  await waitUntil(page, () => window.__stores.app.getState().focus.state === 'idle', null, 30000)
+  await page.waitForTimeout(800)
+  const calls = await page.evaluate(() => window.__glCalls)
+  ok('primo uso: dopo il riscaldamento, due cammini e un Focus col marcatore non compilano nessuno shader', calls.compileShader === 0, `${calls.compileShader} compilazioni`)
+  ok('primo uso: hotspot non ricreati, solo linea del percorso e marcatore caricano dati (≤ 8 buffer)', calls.bufferData <= 8, `${calls.bufferData} upload di buffer`)
+  ok('nebbia: spenta di base (scelta dell\'utente)', await page.evaluate(() => window.__scene.fog === null))
+  await ctx.close()
+  const fogOn = await open('fog-on', { query: '?debug=x&tier=low&fog=1', viewport: { width: 640, height: 400 } })
+  const fogInfo = await fogOn.page.evaluate(() => window.__scene.fog && { near: window.__scene.fog.near, far: window.__scene.fog.far })
+  ok('nebbia: con ?fog=1 è agganciata alla scena coi valori del config', !!fogInfo && fogInfo.near === storeConfig.environment.fog.near && fogInfo.far === storeConfig.environment.fog.far, JSON.stringify(fogInfo))
+  await fogOn.ctx.close()
+}
+
 // ============================ HUD PRESTAZIONI E LIMITE FPS ============================
 {
   const { ctx, page } = await open('perf-off', { query: '?tier=low' })
@@ -217,6 +259,8 @@ async function useRound(page) {
   const cols = row.split('|').slice(1, -1)
   ok('benchmark: riga pronta per PERF.md, 15 colonne, rendering software dichiarato', cols.length === 15 && row.includes(C.bench.realNo), row)
   const segLine = row.split('\n').find((l) => l.startsWith(C.bench.segments)) ?? ''
+  const stutterLine = row.split('\n').find((l) => l.startsWith(C.bench.stutter)) ?? ''
+  ok('benchmark: riga degli scatti (fotogramma max, oltre 50 ms, blocchi)', /max \d+ ms · \d+ > 50 ms · \d+ > 250 ms/.test(stutterLine), stutterLine)
   ok('benchmark: sotto la riga, il dettaglio per tratto del percorso', (segLine.match(/(?:: | ; )\d+ /g) ?? []).length === storeConfig.benchmark.steps.length, segLine)
   ok('benchmark: a misura finita l\'input torna all\'utente', await page.evaluate(() => !window.__stores.app.getState().benchRunning && !document.querySelector('[data-testid="bench-veil"]')))
   await page.screenshot({ path: `${OUT}/bench-results.png` })

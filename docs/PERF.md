@@ -158,9 +158,15 @@ Non spiegati: il calo nel tratto 2 (fermo all'ingresso, nessuna attività GPU re
 pesino davvero, su D3D11 e Metal, le compilazioni contate qui. Per verificare le correzioni il benchmark
 dovrebbe riportare anche il fotogramma più lungo e il numero di fotogrammi oltre 50 ms per tratto.
 
+**Correzioni applicate (dopo d293e68, via dell'utente):** le prime quattro righe della tabella. Verifica
+nel container (`e2e-phase6.mjs`): dopo il riscaldamento, due cammini e un Focus col marcatore danno
+0 compilazioni shader e 8 upload di buffer (linea del percorso e anello del marcatore). Il benchmark
+riporta ora per tratto anche il fotogramma più lungo e quanti superano i 50 ms. Da misurare sui
+dispositivi reali.
+
 **Scoperta collaterale:** la nebbia configurata (`environment.fog`, 26–72 m) non è mai stata disegnata:
 in `LightingRig.jsx` è agganciata a un gruppo invece che alla scena. Correggerla cambia l'aspetto
-approvato in Fase 2: decisione dell'utente.
+approvato in Fase 2: l'utente l'ha lasciata spenta; agganciata correttamente, anteprima con `?fog=1`.
 
 Lettura di A: il 1% low a 16,5 fps vuol dire fotogrammi da ~60 ms, cioè scatti visibili, non solo
 una scena "lenta". Dal commit successivo a 5125abb il benchmark riporta anche il dettaglio per tratto

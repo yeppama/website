@@ -151,14 +151,19 @@ function GpuWarmup({ enabled }) {
     whenFontsReady().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
       if (!alive) return
       const culled = []
+      const shown = []
       scene.traverse((o) => {
         if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o) }
+        // Solo gli oggetti marcati (anello del tap, linea del percorso, hotspot):
+        // gli altri nascosti, come le sorgenti di MergeByMaterial, restano tali.
+        if (o.userData.warmup && !o.visible) { o.visible = true; shown.push(o) }
         const materials = o.material ? [].concat(o.material) : []
         for (const m of materials) for (const v of Object.values(m)) if (v?.isTexture) gl.initTexture(v)
       })
       gl.compile(scene, camera)
       gl.render(scene, camera)
       for (const o of culled) o.frustumCulled = true
+      for (const o of shown) o.visible = false
       if (debugParams().get('debug')) window.__warmedUp = true
     })))
     return () => { alive = false }
@@ -184,6 +189,9 @@ function FirstFrameSignal({ onStage }) {
 function SceneContents({ config, tier }) {
   const { environment, lighting } = config
   const showColliders = debugParams().get('debug') && debugParams().get('colliders') === '1'
+  // ?fog=1 / ?fog=0: anteprima della nebbia senza cambiare il config.
+  const fogParam = debugParams().get('fog')
+  const fog = { ...environment.fog, enabled: fogParam === '1' ? true : fogParam === '0' ? false : environment.fog.enabled }
 
   // Niente disposal qui: in StrictMode questo componente si smonta e rimonta, e
   // liberare le cache a quel punto lasciava materiali vivi senza texture (Fase 2).
@@ -220,7 +228,7 @@ function SceneContents({ config, tier }) {
         groundShadow={config.performance.groundShadow}
         enabled={tier.maxShadowCasters === 0}
       />
-      <LightingRig lighting={lighting} tier={tier} fog={environment.fog} displays={config.displays} focusConfig={config.focus} />
+      <LightingRig lighting={lighting} tier={tier} fog={fog} displays={config.displays} focusConfig={config.focus} />
       <LightFixtures
         spots={lighting.spots}
         architecture={environment.architecture}
