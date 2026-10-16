@@ -59,6 +59,11 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | iPhone (modello da indicare; viewport 393 px) | Apple GPU | Safari 26 | 7945fa8 | low · grana overlay | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
 | 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | low · grana alpha | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
 | 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 7945fa8 | medium (forzato) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium · grana overlay | 1.0 | 1920×911 | 3 | 39.5 | 31.9 | 23.2 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium (grana off) | 1.0 | 1920×911 | 3 | 59.9 | 18.6 | 39.7 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 394c315 | medium · grana alpha | 1.0 | 1920×911 | 3 | 56.2 | 23.7 | 36.8 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana overlay | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 31 / 42 | 12910 | sì |
+| 2026-10-16 | iPhone (modello da indicare) | Apple GPU | Safari 26 | 394c315 | medium (automatico) · grana alpha | 1.5 | 393×695 | 3 | 58.8 | 17.0 | 52.6 | 31 / 42 | 12910 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -111,6 +116,29 @@ Decisione aperta (dell'utente): grana `alpha` (solo granelli scuri, fusione norm
 `&grain=alpha`), grana spenta sulle GPU integrate, o grana attuale sotto soglia. In ambiente software
 la grana overlay alza anche le zone scure (luminanza media 20,4 → 23,7): possibile concausa del
 "nero un pelo grigio" segnalato sul telefono.
+
+### Riscaldamento e scelta della grana — commit 394c315
+
+Dettaglio per tratto (p50 / 1% low):
+
+| Tratto | Vivobook overlay | Vivobook senza grana | Vivobook alpha | iPhone overlay | iPhone alpha |
+|---|---|---|---|---|---|
+| 1 Ingresso (posa) | — | 61,0 / 51,0 | 52,4 / 42,2 | 58,8 / 55,6 | 58,8 / 30,3 |
+| 2 Ingresso (fermo) | — | 60,2 / 31,3 | 55,9 / 37,9 | 58,8 / 58,8 | 58,8 / 40,0 |
+| 3 Nuovi Arrivi (primo cammino) | 36,4 / 20,8 | 59,9 / 21,7 | 52,9 / **10,1** | 58,8 / 29,4 | 58,8 / 30,3 |
+| 4 Focus manichino (primo Focus) | 39,7 / 30,0 | 59,9 / 33,6 | 55,9 / 40,3 | 58,8 / 30,3 | 58,8 / 32,3 |
+| 5 Archivio | 38,9 / 17,6 | 59,9 / 39,2 | 56,2 / 40,3 | 58,8 / 55,6 | 58,8 / 29,4 |
+| 6 Focus plinto | 38,8 / 24,4 | 59,9 / 40,7 | 54,1 / 30,1 | 58,8 / 47,6 | 58,8 / 55,6 |
+| 7–10 Lookbook, ritorno | 40,2–40,3 / 18,6–31,3 | 59,9 / 53,5–56,5 | 56,5–58,1 / 34,7–39,7 | 58,8 / 55,6–58,8 | 58,8 / 55,6–58,8 |
+
+- **Grana:** sul Vivobook l'overlay costa ~20 fps (39,5), l'alpha ~4 (56,2 contro 59,9 senza grana).
+  Sull'iPhone nessuna differenza misurabile. **Scelta dell'utente: alpha**, intensità `alphaOpacity`
+  0,2 / 0,18 / 0,15 (high / medium / low), giudicata a vista sul Vivobook.
+- **Soglia desktop medium (p50 ≥ 58, 1% low ≥ 45):** con alpha il Vivobook è a 56,2 / 36,8, cioè
+  ancora sotto su entrambi. Gli scatti non dipendono dalla grana: anche senza grana il 1% low è 39,7.
+- **Riscaldamento:** il 1% low migliora (overlay 16,5 → 23,2; senza grana 36,9 → 39,7) ma gli scatti
+  restano concentrati nel primo cammino e nel primo Focus su entrambi i dispositivi: c'è ancora lavoro
+  fatto al primo uso. Indagine in corso.
 
 Lettura di A: il 1% low a 16,5 fps vuol dire fotogrammi da ~60 ms, cioè scatti visibili, non solo
 una scena "lenta". Dal commit successivo a 5125abb il benchmark riporta anche il dettaglio per tratto
