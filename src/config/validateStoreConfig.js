@@ -224,6 +224,18 @@ export function validateStoreConfig(config) {
     fail('I24', 'commerce.shopify.optionNames: servono i nomi delle opzioni di taglia e colore')
   }
 
+  // I25 — pagine legali: ogni voce legge un campo che la Storefront API espone davvero
+  // (verificato sul negozio di sviluppo il 2026-10-16), ha un'etichetta nel menu e un id unico.
+  const POLICY_FIELDS = ['termsOfSale', 'termsOfService', 'refundPolicy', 'shippingPolicy', 'privacyPolicy', 'legalNotice', 'contactInformation']
+  const policyIds = new Set()
+  for (const p of c?.policies ?? []) {
+    if (!POLICY_FIELDS.includes(p.field)) fail('I25', `commerce.policies: campo Shopify "${p.field}" non previsto`)
+    if (policyIds.has(p.id)) fail('I25', `commerce.policies: id "${p.id}" duplicato`)
+    if (!config.copy.legal?.policies?.[p.id]) fail('I25', `commerce.policies: "${p.id}" senza etichetta in copy.legal.policies`)
+    policyIds.add(p.id)
+  }
+  if (!config.copy.menu.sections.some((sec) => sec.id === 'sec-legal')) fail('I25', 'copy.menu.sections: manca la sezione "sec-legal"')
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
@@ -246,5 +258,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 24 invarianti verificate, nessun errore')
+  console.info('storeConfig: 25 invarianti verificate, nessun errore')
 }

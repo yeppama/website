@@ -12,6 +12,7 @@ import { createShopifyProvider } from './shopify.js'
  *   addLines(id, [{ variantId, quantity }])     → cart
  *   updateLines(id, [{ lineId, quantity }])     → cart   (quantità 0 = rimuovi)
  *   removeLines(id, [lineId])                   → cart
+ *   getPolicies(commerce.policies) → [{ id, title, body (HTML del venditore, da ripulire) }], solo quelle pubblicate
  * cart = { id, lines: [{ id, variantId, quantity, merchandise: { productHandle, title, size, color, price } }],
  *          totalQuantity, subtotal: { amount, currency }, checkoutUrl }
  */
@@ -30,6 +31,9 @@ export function commerceCountry() {
   return /^[A-Z]{2}$/.test(forced ?? '') ? forced : storeConfig.commerce.country
 }
 
+/** Lingua dei testi chiesti al fornitore (pagine legali), dalla lingua del sito: it-IT → IT. */
+export const commerceLanguage = () => storeConfig.meta.brand.locale.slice(0, 2).toUpperCase()
+
 let provider
 export function getProvider() {
   if (provider !== undefined) return provider
@@ -37,7 +41,7 @@ export function getProvider() {
   const { commerce, products } = storeConfig
   if (mode === 'mock') {
     provider = createMockProvider({
-      products, mock: commerce.mock, maxQuantity: commerce.maxQuantity,
+      products, mock: commerce.mock, maxQuantity: commerce.maxQuantity, policyTitles: storeConfig.copy.legal.policies,
       fail: params.get('mockerror') === '1',   // prova della gestione degli errori
     })
   } else if (mode === 'shopify') {
@@ -49,7 +53,7 @@ export function getProvider() {
       apiVersion: env.VITE_SHOPIFY_API_VERSION || commerce.shopify.apiVersion,
     }
     provider = shopify.domain && shopify.storefrontToken
-      ? createShopifyProvider({ products, shopify, country: commerceCountry() })
+      ? createShopifyProvider({ products, shopify, country: commerceCountry(), language: commerceLanguage() })
       : null
     if (!provider) console.warn('commerce: Shopify senza dominio o token, acquisti spenti')
   } else {

@@ -129,7 +129,25 @@ export const storeConfig = {
     country: 'IT',
     maxQuantity: 10,
     cartStorageKey: 'into-cart-id',
-    mock: { latencyMs: 250, storageKey: 'into-mock-carts', checkoutUrl: '#checkout-di-prova' },
+    mock: { latencyMs: 250, storageKey: 'into-mock-carts', checkoutUrl: '#checkout-di-prova',
+            // Pagine legali del negozio di prova: segnaposto dichiarato, con la formattazione
+            // che le policy di Shopify usano davvero (titoletti, elenchi, link).
+            policyHtml: '<p>Testo segnaposto. Nel negozio vero questa pagina arriva da Shopify, dove la scrive il venditore.</p>' +
+              '<h2>Sezione</h2><ul><li>Primo punto</li><li>Secondo punto</li></ul>' +
+              '<p>Contatti: <a href="mailto:info@example.com">info@example.com</a></p>' },
+    // Pagine legali (preparazione della Fase 8d): i testi stanno su Shopify (Impostazioni →
+    // Informative), li scrive il venditore e il sito li legge con la Storefront API.
+    // Nessun testo legale nel codice. Il menu mostra solo quelle pubblicate; il controllo
+    // `npm run check:catalog -- --launch` le pretende tutte prima della vendita.
+    policies: [
+      { id: 'terms-of-sale',    field: 'termsOfSale' },
+      { id: 'refund',           field: 'refundPolicy' },
+      { id: 'shipping',         field: 'shippingPolicy' },
+      { id: 'privacy',          field: 'privacyPolicy' },
+      { id: 'terms-of-service', field: 'termsOfService' },
+      { id: 'legal-notice',     field: 'legalNotice' },
+      { id: 'contact',          field: 'contactInformation' },
+    ],
     // Fase 8b: negozio di SVILUPPO dell'agenzia (nessun pagamento reale). Il token è
     // quello PUBBLICO del canale Headless, fatto per stare nel codice del sito; il
     // token privato non va mai qui. In 8c dominio e token diventano quelli del
@@ -655,6 +673,7 @@ export const storeConfig = {
         { id: 'sec-travel', label: 'Vai a' },
         { id: 'sec-products', label: 'Capi' },
         { id: 'sec-brand', label: 'Brand' },
+        { id: 'sec-legal', label: 'Informazioni legali' },
       ],
     },
     perf: {
@@ -734,7 +753,25 @@ export const storeConfig = {
         hint: 'Prova con Chrome, Edge, Firefox o Safari aggiornati, con accelerazione hardware attiva.',
       },
     },
-    legal: { priceNotice: 'Prezzi e disponibilità sono dati dimostrativi. Nessun acquisto è possibile.' },
+    legal: {
+      priceNotice: 'Prezzi e disponibilità sono dati dimostrativi. Nessun acquisto è possibile.',
+      eyebrow: 'Informazioni legali',
+      policies: {
+        'terms-of-sale': 'Condizioni di vendita',
+        refund: 'Recesso, resi e rimborsi',
+        shipping: 'Spedizioni',
+        privacy: 'Privacy',
+        'terms-of-service': 'Termini del servizio',
+        'legal-notice': 'Note legali',
+        contact: 'Contatti',
+      },
+      loading: 'Caricamento',
+      unavailable: 'Testi legali non raggiungibili. Riprova più tardi.',
+      retry: 'Riprova',
+      none: 'Testi legali non ancora pubblicati dal venditore.',
+      missing: 'Questo testo non è ancora stato pubblicato dal venditore.',
+      mockNotice: 'Negozio di prova: testo segnaposto, non valido come documento legale.',
+    },
   },
 }
 

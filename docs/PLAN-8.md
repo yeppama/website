@@ -102,6 +102,14 @@ lingua predefinita e unica pubblicata italiano, carrello creabile in IT senza av
 Non verificabili col token pubblico: spedizione, gateway di prova, Shopify Payments spento, imposte.
 Rete del container: l'host è stato aggiunto dall'utente agli Allowed domains.
 
+**Preparazione eseguita il 2026-10-16** (approvata come "passo 1 e 2"):
+- 8c: modello `docs/modello-catalogo-INTO.xlsx` da far compilare al cliente; `npm run catalog:import` lo trasforma
+  in CSV per Shopify, bozza dei capi per storeConfig e testi inglesi; `npm run check:catalog` è il controllo
+  automatico della Definition of Done (oggi: negozio di sviluppo allineato, negozio del cliente vuoto).
+- 8d: pagine legali lette da Shopify (sette campi della Storefront API, I25), menu e scheda, HTML del venditore
+  ripulito. Il venditore le scrive su Shopify → Impostazioni → Informative; oggi c'è solo la privacy generata
+  da Shopify, in inglese. `check:catalog -- --launch` le pretende tutte prima della vendita.
+
 8c parte con il catalogo del cliente e il comando **`Approvato, procedi alla fase 8c`**.
 
 ## Appendice — Negozio di sviluppo per la 8b (passaggi dati all'utente il 2026-10-16)

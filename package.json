@@ -12,7 +12,11 @@
     "preview": "vite preview",
     "test:nav": "node scripts/test-navigation.mjs",
     "test:device": "node scripts/test-device.mjs",
-    "test:commerce": "node scripts/test-commerce.mjs"
+    "test:commerce": "node scripts/test-commerce.mjs",
+    "test:catalog": "node scripts/test-catalog.mjs",
+    "catalog:template": "node scripts/catalog/make-template.mjs",
+    "catalog:import": "node scripts/catalog/import.mjs",
+    "check:catalog": "node scripts/catalog/check.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -25,6 +29,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.2",
+    "exceljs": "^4.4.0",
     "playwright-core": "^1.57.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.4"

@@ -6,7 +6,7 @@
  */
 const cents = (amount) => Math.round(amount * 100)
 
-export function createMockProvider({ products, mock, maxQuantity, fail = false }) {
+export function createMockProvider({ products, mock, maxQuantity, policyTitles = {}, fail = false }) {
   const catalog = new Map()
   const variants = new Map()
   for (const p of products) {
@@ -78,6 +78,12 @@ export function createMockProvider({ products, mock, maxQuantity, fail = false }
       await delay()
       guard()
       return handles.filter((h) => catalog.has(h)).map((h) => catalog.get(h))
+    },
+    // Tutte le pagine legali configurate, con lo stesso testo segnaposto dichiarato.
+    async getPolicies(policies) {
+      await delay()
+      guard()
+      return policies.map((p) => ({ id: p.id, title: policyTitles[p.id] ?? p.id, body: mock.policyHtml }))
     },
     async createCart() {
       await delay()

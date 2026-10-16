@@ -43,7 +43,7 @@ const CART_FIELDS = `
 
 const money = (m) => ({ amount: Number(m.amount), currency: m.currencyCode })
 
-export function createShopifyProvider({ products, shopify, country, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+export function createShopifyProvider({ products, shopify, country, language = null, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
   const endpoint = `https://${shopify.domain}/api/${shopify.apiVersion}/graphql.json`
   const byHandle = new Map(products.filter((p) => p.commerce?.handle).map((p) => [p.commerce.handle, p]))
   const names = shopify.optionNames
@@ -160,6 +160,20 @@ export function createShopifyProvider({ products, shopify, country, fetchImpl = 
       mutation Update($cartId: ID!, $lines: [CartLineUpdateInput!]!, $country: CountryCode) @inContext(country: $country) {
         cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message } warnings { code message } }
       }`, { cartId, lines: lines.map((l) => ({ id: l.lineId, quantity: l.quantity })) }),
+
+    // Pagine legali (preparazione della 8d): le scrive il venditore su Shopify. Si
+    // chiedono nella lingua del sito; se il negozio non l'ha pubblicata, Shopify
+    // risponde nella sua lingua predefinita (verificato dal vivo). Solo quelle con testo.
+    async getPolicies(policies) {
+      const fields = policies.map((p) => `${p.field} { title body }`).join(' ')
+      const data = await request(`query Policies($country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {
+        shop { ${fields} }
+      }`, { country, language })
+      return policies
+        .map((p) => ({ id: p.id, ...data.shop[p.field] }))
+        .filter((p) => p.body?.trim())
+        .map(({ id, title, body }) => ({ id, title, body }))
+    },
 
     removeLines: (cartId, lineIds) => mutate('cartLinesRemove', `
       mutation Remove($cartId: ID!, $lineIds: [ID!]!, $country: CountryCode) @inContext(country: $country) {

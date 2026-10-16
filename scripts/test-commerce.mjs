@@ -119,6 +119,28 @@ await test('carrello scaduto: getCart restituisce null', async () => {
   assert.equal(await p.getCart('gid://shopify/Cart/old'), null)
 })
 
+await test('pagine legali: campi di storeConfig, paese e lingua nel contesto, solo quelle con testo, in ordine', async () => {
+  const f = fakeFetch(() => ({ data: { shop: {
+    termsOfSale: null,
+    refundPolicy: { title: 'Rimborsi', body: '<p>14 giorni</p>' },
+    privacyPolicy: { title: 'Privacy', body: '<p>Dati</p>' },
+    shippingPolicy: { title: 'Spedizioni', body: '   ' },
+  } } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', language: 'IT', fetchImpl: f.fn })
+  const list = await p.getPolicies(storeConfig.commerce.policies)
+  const c = f.calls[0]
+  assert.deepEqual(c.variables, { country: 'IT', language: 'IT' })
+  assert.match(c.query, /@inContext\(country: \$country, language: \$language\)/)
+  for (const { field } of storeConfig.commerce.policies) assert.match(c.query, new RegExp(`${field} \\{ title body \\}`))
+  assert.deepEqual(list, [{ id: 'refund', title: 'Rimborsi', body: '<p>14 giorni</p>' }, { id: 'privacy', title: 'Privacy', body: '<p>Dati</p>' }])
+  return 'le pagine vuote o assenti non compaiono'
+})
+
+await test('pagine legali: un errore del negozio diventa un\'eccezione (il menu dice "non raggiungibili")', async () => {
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: fakeFetch(() => ({ status: 503, json: {} })).fn })
+  await assert.rejects(() => p.getPolicies(storeConfig.commerce.policies), /HTTP 503/)
+})
+
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 const failed = results.filter((r) => r[0] === 'FAIL').length
 console.log(`\n${results.length - failed}/${results.length} test superati (contratto, senza rete: non è una prova dal vivo)`)

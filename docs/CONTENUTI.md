@@ -8,6 +8,10 @@ Decisione precedente (2026-10-16): **prima i contenuti reali, poi la produzione.
 inoltrati al cliente il 2026-10-16. La Fase 7 non
 parte finché questo elenco non è completo o finché l'utente non dichiara cosa resta segnaposto.
 
+**Dal 2026-10-16 il modo consigliato è il modello Excel `docs/modello-catalogo-INTO.xlsx`**: contiene tutte le
+sezioni di questo elenco (capi, colori, lookbook, brand, domande aperte) con menu a tendina e istruzioni. Il
+cliente lo compila e lo rimanda con la cartella "foto"; `npm run catalog:import` lo controlla e lo trasforma.
+
 Si può mandare tutto in chat: testi incollati, file allegati. Una cartella condivisa va bene uguale.
 
 **Lingua inglese (fase 8f, dopo il lancio, decisa il 2026-10-16):** chiedere fin da ora al cliente ogni testo

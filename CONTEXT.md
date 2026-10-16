@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` (avanti rispetto a `main`, che resta alla Fase 7) · **Fase 8b chiusa** (ordine di prova #1001 pagato su Shopify) · 8c in attesa del negozio del cliente e del comando
+> Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` (avanti rispetto a `main`, che resta alla Fase 7) · **Fase 8b chiusa** (ordine di prova #1001 pagato su Shopify) · **preparazione 8c/8d eseguita** (modello Excel del catalogo, import, controllo dal vivo, pagine legali da Shopify) · 8c in attesa del catalogo del cliente e del comando
 > Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.6. Registro prestazioni: `docs/PERF.md`.
 
 ## 1. Stato attuale
@@ -16,7 +16,7 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 
 **Architettura data-driven**
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 24 invarianti (I1–I24), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 25 invarianti (I1–I25), errore bloccante solo in DEV, rimosso dal bundle di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
 - `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
 - Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
@@ -63,11 +63,13 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
 src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova) · shopify.js (Storefront API)
-src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js
+src/lib/sanitizeHtml.js   filtro dell'HTML esterno (pagine legali del venditore)
+src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js · useLegalStore.js
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ · displays/ · player/ · debug/
-src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · perf/ · bench/ · primitives/ · fx/ · fallback/
-scripts/           generate-theme.js · test-navigation.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs
-docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dall'utente per la Fase 7)
+src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · legal/ · perf/ · bench/ · primitives/ · fx/ · fallback/
+scripts/           generate-theme.js · test-navigation.mjs · test-catalog.mjs · export-shopify-csv.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs
+scripts/catalog/   schema.mjs (colonne del modello) · make-template.mjs · importer.mjs · import.mjs · shopify-csv.mjs · check.mjs
+docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dal cliente) · modello-catalogo-INTO.xlsx (da compilare) · PLAN-8.md
 ```
 
 **Geometria (`src/lib/geometry.js`) — convenzione di three, verificata contro le sue matrici**
@@ -119,9 +121,13 @@ usePlayerStore.getState().issue({ type: 'goto', point: [x, z], faceAt? })
 npm run dev | build | preview          # predev/prebuild rigenerano i token
 npm run test:nav                       # logica di navigazione, 9 test
 npm run test:device                    # scelta del tier da stringhe GPU reali, 13 test
-npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 8 test
-# e2e-phase8b.mjs <base> <out> [PAESE]: prova DAL VIVO sul negozio di sviluppo (serve rete verso *.myshopify.com)
-# e2e-phase8a.mjs: carrello col negozio di prova (?commerce=mock), 32 verifiche
+npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
+npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 19 test
+npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
+npm run catalog:import -- <file.xlsx> [uscita] [--foto <cartella>]   # resoconto.md sempre; CSV Shopify, bozza dei capi, testi EN solo senza errori
+npm run check:catalog -- [--domain x --token y] [--launch]           # DAL VIVO: storeConfig ↔ Shopify (criterio della 8c); --launch pretende le pagine legali
+# e2e-phase8b.mjs <base> <out> [PAESE]: prova DAL VIVO sul negozio di sviluppo (serve rete verso *.myshopify.com), 12 verifiche con STORE_PASSWORD
+# e2e-phase8a.mjs: carrello col negozio di prova (?commerce=mock) e pagine legali (filtro HTML attaccato apposta), 45 verifiche
 npx vite preview --port 4173 &         # poi, per ogni suite:
 node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 verifiche, ~10 min (fase 5: 34)
 # `pkill -f "vite preview"` dentro un comando che contiene quella stringa uccide la shell stessa: usare `setsid` all'avvio e `pkill -f "port 4173"` a parte
@@ -178,6 +184,10 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - Heredoc bash non quotati espandono i `${…}` dei template JS: usare `<<'EOF'`.
 - **Committare solo dopo aver letto l'esito**: una catena `… | tail && git commit` committa anche con test rossi.
 - Il Pointer Lock funziona nel Chromium headless di questo ambiente.
+- Il `fetch` di Node ignora `HTTPS_PROXY`: senza `NODE_USE_ENV_PROXY=1` nel container fallisce (ENOTFOUND). `check.mjs` si rilancia da solo con la variabile se trova un proxy.
+- Da quando il container raggiunge il negozio di sviluppo, il test "Shopify irraggiungibile" taglia la rete da sé (`page.route(...).abort`): un test che dipende dalla rete chiusa smette di provare qualcosa quando la rete si apre.
+- Shopify con `@inContext(language: IT)` su un negozio senza italiano risponde nella lingua predefinita, senza errore (verificato).
+- `pkill -f "port 4173"` nella stessa riga di altri comandi uccide anche la shell (exit 144): sempre in un comando da solo.
 - Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch).
 
 ## 5. Prossimi passi
@@ -194,6 +204,13 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
   - Dal vivo (`e2e-phase8b.mjs`, argomento paese opzionale): con `US` catalogo, varianti, carrello, quantità, subtotale, persistenza e rimozione funzionano su Shopify. **Il negozio vende solo in US/USD**: per IT Shopify segna la merce esaurita (`MERCHANDISE_OUT_OF_STOCK`) e la aggiunge con quantità 0. **La cassa porta a `/password`** (protezione dei negozi di sviluppo).
   - Correzioni nate dalla prova dal vivo: i `warnings` delle mutazioni del carrello arrivano con il carrello e il negozio non conferma l'aggiunta (`copy.cart.stockWarning`); `getProducts` legge `localization.availableCountries` e, se il paese non c'è, il catalogo va in errore ("non disponibile") invece di mostrare prezzi in un'altra valuta.
   - Negozio configurato dall'utente (IT/EUR, spedizione, gateway di prova). `STORE_PASSWORD=… node scripts/e2e/e2e-phase8b.mjs <base> <out>`: **11/11 dal vivo con l'Italia**, cassa compresa (capo, taglia, 567,00 € in EUR). La password del negozio si passa solo come variabile d'ambiente: mai in un file.
+- **Preparazione 8c/8d — eseguita (2026-10-16, "approvato passo 1 e 2"):**
+  - **Modello del catalogo** `docs/modello-catalogo-INTO.xlsx` (fogli Leggimi, Capi, Colori, Lookbook, Brand, Domande; menu a tendina, aiuti sulle intestazioni, riga d'esempio ignorata, colonne EN per la 8f). Generato da `scripts/catalog/schema.mjs`, che usa anche l'importatore.
+  - **Import** (`npm run catalog:import`): errori con foglio/riga/colonna in italiano; uscite solo senza errori: `shopify-catalogo.csv`, `catalogo.bozza.js` (forma di storeConfig, `displayId` null: la posizione 3D la decide una persona), `traduzioni.en.json`, `resoconto.md` con le risposte di Brand e Domande. Cartella `catalogo-importato/` fuori da git. Giro completo verificato: i 7 capi dimostrativi danno lo stesso CSV dell'esportatore della 8b.
+  - **Controllo dal vivo** (`npm run check:catalog`): negozio di sviluppo allineato (0 errori); negozio del cliente: 7 errori attesi (vuoto), IT/EUR e lingua IT ok.
+  - **Pagine legali da Shopify** (`commerce.policies`, I25): 7 campi della Storefront API (condizioni di vendita, recesso, spedizioni, privacy, termini, note legali, contatti), chiesti nella lingua del sito; il menu mostra solo quelle pubblicate, la scheda `kind: 'legal'` mostra l'HTML del venditore ripulito da `sanitizeHtml`. Dal vivo sul negozio di sviluppo: la privacy generata da Shopify (16 276 caratteri) si apre e si legge. Entrambi i negozi oggi hanno solo quella, **in inglese**.
+  - Difetto trovato e non corretto (fuori dal compito): con il commercio attivo il menu mostra ancora i prezzi di storeConfig e la nota "Nessun acquisto è possibile" (anche nella scheda prodotto). Da sistemare in 8c.
+- **Negozio del cliente (da trasferire):** `into-industries-ayehghmw.myshopify.com`, token pubblico in `docs/PLAN-8.md` §6. Verificato in sola lettura: EUR, IT, lingua italiana predefinita, catalogo vuoto. Rete del container aperta verso questo host.
   - **Pagamento di prova fatto dall'utente a mano** (dal container no: i campi carta vengono da `checkout.pci.shopifyinc.com`, bloccato dal proxy insieme a `cdn.shopify.com` e ai domini `*.shopifysvc.com`). Anteprima `bb6b5b3` con `?commerce=shopify` → ordine **#1001**: Heavy Hoodie M / Black, 189,00 € in EUR, spedizione Standard gratuita in Italia, carta di prova `1`, "Pagato", canale "Into Industries Dev Headless". Verificato dagli screenshot dell'utente (conferma e pannello ordini), non dal container: il token pubblico non legge gli ordini.
   - Non verificato: carrello vuoto al ritorno sul sito dopo l'ordine ([Probabile] `cart(id)` di un carrello completato è `null` → `useCartStore.init` cancella l'id). Rimandati alla 8e: tariffe di spedizione reali (ora gratuita), foto dei capi su Shopify (la cassa mostra un segnaposto), ritorno dalla cassa al sito ("Ordine ricevuto", piano §3) e dove porta "continua gli acquisti" di Shopify.
 - **Fase 8a — consegnata (2026-10-16):** carrello completo col negozio di prova. `src/commerce/` (contratto del fornitore in `index.js`, `mock.js`), `src/state/useCartStore.js`, `src/ui/cart/` (`CartSheet` come scheda `kind: 'cart'` della pila `dialogs`, `CartButton` in HUD e menu). `storeConfig.commerce` (provider `off` di default, `?commerce=mock` per provarlo, `&mockerror=1` simula il fornitore in errore), `products[].commerce.handle`. Invarianti I23 (handle valido e unico) e I24 (regole del commercio): 24 in tutto. Con commercio attivo prezzo, varianti e taglie disponibili vengono solo dal fornitore; se non risponde il capo è "non disponibile", mai col prezzo di storeConfig. Suite `e2e-phase8a.mjs` (32 verifiche). Prossimo: 8b, serve un negozio Shopify di sviluppo.

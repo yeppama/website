@@ -40,6 +40,34 @@
   }
 
   .rule { height: 1px; background: var(--color-line-subtle); }
+
+  /* Testi lunghi che arrivano da fuori (pagine legali del venditore, già ripulite
+     da sanitizeHtml): solo i tag che il filtro lascia passare. */
+  .legal-prose {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  .legal-prose > * + * { margin-top: 0.9em; }
+  .legal-prose h3, .legal-prose h4 {
+    margin-top: 1.8em;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+  .legal-prose h3 { font-size: var(--text-base); }
+  .legal-prose h4 { font-size: var(--text-sm); }
+  .legal-prose ul { list-style: disc; padding-left: 1.25em; }
+  .legal-prose ol { list-style: decimal; padding-left: 1.25em; }
+  .legal-prose li + li { margin-top: 0.35em; }
+  .legal-prose strong, .legal-prose b { color: var(--color-text-primary); }
+  .legal-prose a { color: var(--color-accent-flame); text-decoration: underline; text-underline-offset: 2px; }
+  .legal-prose blockquote { border-left: 2px solid var(--color-line-strong); padding-left: 1em; }
+  .legal-prose hr { border: 0; height: 1px; background: var(--color-line-subtle); }
+  .legal-prose table { width: 100%; border-collapse: collapse; font-size: var(--text-xs); }
+  .legal-prose th, .legal-prose td { border: 1px solid var(--color-line-subtle); padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
 }
 
 @keyframes shimmer {

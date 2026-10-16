@@ -130,6 +130,32 @@ if (status !== 'ready') {
   ok('carrello dal vivo: rimozione su Shopify', await waitUntil(() => window.__cart.getState().cart?.totalQuantity === 0))
 }
 
+// Pagine legali dal vivo (preparazione 8d): il menu elenca quelle pubblicate sul negozio
+// e la prima si apre col testo del venditore, ripulito.
+{
+  await page.evaluate(() => window.__stores.app.getState().closeDialogs())   // il carrello delle prove sopra resta aperto
+  await page.getByRole('button', { name: storeConfig.copy.hud.menu, exact: true }).click()
+  const legal = page.getByTestId('menu-legal')
+  const settled = await waitUntil((loading) => {
+    const s = document.querySelector('[data-testid="menu-legal"]')
+    return Boolean(s) && !s.textContent.includes(loading)
+  }, storeConfig.copy.legal.loading)
+  const items = await legal.locator('li button').allTextContents()
+  if (!items.length) {
+    ok('pagine legali dal vivo: almeno una pubblicata e leggibile', false, settled ? (await legal.innerText()).replace(/\s+/g, ' ') : 'menu senza risposta')
+  } else {
+    await legal.locator('li button').first().click()
+    const body = page.getByTestId('legal-body')
+    const shown = await body.waitFor({ timeout: 20000 }).then(() => true).catch(() => false)
+    const text = shown ? await body.innerText() : ''
+    const unsafe = shown ? await body.evaluate((n) => n.querySelectorAll('script, img, iframe, style, [onclick], [onerror]').length) : -1
+    ok('pagine legali dal vivo: il menu elenca quelle pubblicate e la prima si apre col testo del venditore, ripulito',
+      shown && text.length > 200 && unsafe === 0, `${items.map((t) => t.replace('→', '').trim()).join(', ')} · ${text.length} caratteri`)
+    await page.screenshot({ path: `${OUT}/legal-live.png` })
+    await page.keyboard.press('Escape')
+  }
+}
+
 await browser.close()
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.filter((r) => r[0] === 'ok').length} superati, ${results.filter((r) => r[0] === 'FAIL').length} falliti`)

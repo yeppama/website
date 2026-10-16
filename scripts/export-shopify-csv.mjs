@@ -8,35 +8,19 @@
  * e vendita bloccata. Prezzi e testi sono quelli dimostrativi.
  */
 import { storeConfig } from '../src/config/storeConfig.js'
+import { toShopifyCsv, productHtml } from './catalog/shopify-csv.mjs'
 
-const header = ['Handle', 'Title', 'Body (HTML)', 'Vendor', 'Type', 'Tags', 'Published',
-  'Option1 Name', 'Option1 Value', 'Option2 Name', 'Option2 Value', 'Variant SKU',
-  'Variant Inventory Tracker', 'Variant Inventory Qty', 'Variant Inventory Policy',
-  'Variant Fulfillment Service', 'Variant Price', 'Variant Requires Shipping', 'Variant Taxable', 'Status']
-const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-const rows = [header.map(q).join(',')]
 const STOCK = 10
 
-for (const p of storeConfig.products) {
-  let first = true
-  for (const size of p.sizes) {
-    for (const cw of p.colorways) {
-      rows.push([
-        p.commerce.handle,
-        first ? p.name : '',
-        first ? `<p>${p.description}</p><ul>${p.details.map((d) => `<li>${d}</li>`).join('')}</ul>` : '',
-        first ? storeConfig.meta.brand.name : '',
-        first ? p.category : '',
-        first ? [p.collection, ...p.badges].join(', ') : '',
-        first ? 'TRUE' : '',
-        'Taglia', size.label, 'Colore', cw.label,
-        `${p.sku}-${size.label}-${cw.label}`.toUpperCase().replace(/\s+/g, ''),
-        'shopify', size.available ? STOCK : 0, 'deny', 'manual',
-        p.price.amount.toFixed(2), 'TRUE', 'TRUE',
-        first ? 'active' : '',
-      ].map(q).join(','))
-      first = false
-    }
-  }
-}
-process.stdout.write(rows.join('\n') + '\n')
+process.stdout.write(toShopifyCsv(storeConfig.products.map((p) => ({
+  handle: p.commerce.handle,
+  title: p.name,
+  bodyHtml: productHtml(p.description, p.details),
+  type: p.category,
+  tags: [p.collection, ...p.badges],
+  price: p.price.amount,
+  sku: p.sku,
+  stock: STOCK,
+  sizes: p.sizes,
+  colors: p.colorways.map((c) => c.label),
+})), { vendor: storeConfig.meta.brand.name }))

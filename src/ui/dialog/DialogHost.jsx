@@ -6,6 +6,7 @@ import Button from '../primitives/Button.jsx'
 import ProductSheet from '../product/ProductSheet.jsx'
 import LookbookSheet from '../lookbook/LookbookSheet.jsx'
 import CartSheet from '../cart/CartSheet.jsx'
+import LegalSheet from '../legal/LegalSheet.jsx'
 
 /**
  * Contenitore unico delle finestre della Fase 5: mostra la cima della pila
@@ -40,7 +41,10 @@ export default function DialogHost({ device }) {
   const copy = storeConfig.copy
   const product = top.kind === 'product' ? storeConfig.products.find((p) => p.id === top.id) : null
   const entry = top.kind === 'lookbook' ? storeConfig.lookbook.find((l) => l.id === top.id) : null
-  const eyebrow = product ? copy.product.eyebrow : top.kind === 'cart' ? copy.cart.title : copy.lookbook.eyebrow
+  const eyebrow = product ? copy.product.eyebrow
+    : top.kind === 'cart' ? copy.cart.title
+    : top.kind === 'legal' ? copy.legal.eyebrow
+    : copy.lookbook.eyebrow
 
   return (
     <div className="fixed inset-0 flex items-stretch justify-center md:items-center md:p-6" style={{ zIndex: 'var(--z-dialog)' }}>
@@ -74,6 +78,7 @@ export default function DialogHost({ device }) {
           {product && <ProductSheet key={product.id} product={product} headingId={headingId} />}
           {entry && <LookbookSheet key={entry.id} entry={entry} headingId={headingId} />}
           {top.kind === 'cart' && <CartSheet headingId={headingId} />}
+          {top.kind === 'legal' && <LegalSheet key={top.id} id={top.id} headingId={headingId} />}
         </div>
       </div>
     </div>

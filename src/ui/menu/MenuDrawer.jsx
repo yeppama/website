@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { useLegalStore } from '../../state/useLegalStore.js'
 import { useFocusTrap } from '../primitives/useFocusTrap.js'
 import CartButton from '../cart/CartButton.jsx'
 import { commerceActive } from '../../commerce/index.js'
@@ -13,7 +14,8 @@ import Button from '../primitives/Button.jsx'
  * Menu a tendina. Contenuto generato da storeConfig: zone, capi, brand.
  * Chiusura con Esc, focus trattenuto nel pannello e riportato sull'elemento che
  * l'ha aperto. Capi e Brand Story aprono le loro schede sopra il menu: chiuse
- * quelle, si torna qui.
+ * quelle, si torna qui. Con il commercio attivo, in fondo le pagine legali pubblicate
+ * dal venditore (lette dal fornitore all'apertura del menu).
  */
 export default function MenuDrawer() {
   const open = useAppStore((s) => s.menuOpen)
@@ -22,8 +24,10 @@ export default function MenuDrawer() {
   const zoneId = usePlayerStore((s) => s.zoneId)
   const openDialog = useAppStore((s) => s.openDialog)
   const panel = useRef(null)
+  const legal = useLegalStore()
 
   useFocusTrap(panel, open, close)
+  useEffect(() => { if (open && commerceActive()) legal.load() }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null
 
@@ -140,6 +144,36 @@ export default function MenuDrawer() {
             </Button>
           )}
         </section>
+
+        {commerceActive() && (
+          <section className="mt-10" aria-labelledby="menu-legal" data-testid="menu-legal">
+            <h3 id="menu-legal" className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
+              {menu.sections.find((s) => s.id === 'sec-legal').label}
+            </h3>
+            {(legal.status === 'idle' || legal.status === 'loading') && <p className="micro">{storeConfig.copy.legal.loading}</p>}
+            {legal.status === 'error' && (
+              <>
+                <p className="micro" role="alert" style={{ color: 'var(--color-state-danger)' }}>{storeConfig.copy.legal.unavailable}</p>
+                <Button className="mt-3" onClick={legal.load}>{storeConfig.copy.legal.retry}</Button>
+              </>
+            )}
+            {legal.status === 'ready' && !legal.policies.length && <p className="micro">{storeConfig.copy.legal.none}</p>}
+            {legal.status === 'ready' && legal.policies.length > 0 && (
+              <ul className="grid gap-px bg-line-subtle">
+                {legal.policies.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" onClick={() => openDialog('legal', p.id)}
+                            className="flex w-full items-center justify-between gap-3 bg-bg-raised px-3 py-3 text-left text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary"
+                            style={{ minHeight: 'var(--touch-min)', fontSize: 'var(--text-sm)' }}>
+                      {storeConfig.copy.legal.policies[p.id]}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
       </aside>
     </div>
   )

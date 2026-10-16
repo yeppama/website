@@ -157,6 +157,8 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
+  // Rete verso Shopify tagliata dal test: il container ora raggiunge il negozio di sviluppo.
+  await page.route('**/api/*/graphql.json', (route) => route.abort('connectionrefused'))
   await page.goto(BASE + '?debug=x&tier=low&commerce=shopify', { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
   await page.waitForFunction(() => window.__stores && window.__cart, null, { timeout: 20000 })
@@ -209,6 +211,100 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   })
   ok('HUD a 320 px: carrello e menu entrano e non coprono il marchio', hud.right <= 320 && hud.cartLeft > hud.wordRight, JSON.stringify(hud))
   await page.screenshot({ path: `${OUT}/mobile-hud-320.png` })
+  await ctx.close()
+}
+
+// ============================ PAGINE LEGALI (preparazione 8d) ============================
+const L = C.legal
+const legalButtons = (page) => page.getByTestId('menu-legal').getByRole('button')
+{
+  const { ctx, page } = await open('legal')
+  await page.getByRole('button', { name: C.hud.menu, exact: true }).click()
+  const ready = await waitUntil(page, (n) => document.querySelectorAll('[data-testid="menu-legal"] li button').length === n, storeConfig.commerce.policies.length)
+  const labels = await legalButtons(page).allTextContents()
+  ok('menu: le pagine legali del fornitore, nell\'ordine del config',
+    ready && labels.map((t) => t.replace('→', '').trim()).join('|') === storeConfig.commerce.policies.map((p) => L.policies[p.id]).join('|'), labels.join(' | '))
+  const opener = legalButtons(page).filter({ hasText: L.policies.privacy })
+  await opener.click()
+  const body = page.getByTestId('legal-body')
+  await body.waitFor({ timeout: 10000 })
+  ok('scheda legale: titolo, avviso "negozio di prova", testo formattato',
+    await dialog(page).getAttribute('data-dialog') === 'legal' &&
+    (await dialog(page).locator('h2').textContent()).trim() === L.policies.privacy &&
+    await dialog(page).getByText(L.mockNotice).isVisible() &&
+    await body.locator('h3').count() === 1 && await body.locator('li').count() === 2)
+  const mail = body.locator('a')
+  ok('scheda legale: link mailto conservato, aperto a parte', await mail.getAttribute('href') === 'mailto:info@example.com' && await mail.getAttribute('rel') === 'noopener noreferrer')
+  ok('scheda legale: il player è sospeso', await page.evaluate(() => window.__stores.app.getState().dialogs.length === 1))
+  await page.keyboard.press('Escape')
+  ok('ESC: chiude la scheda e torna al menu, focus sulla voce che l\'ha aperta',
+    await dialog(page).count() === 0 && await page.evaluate(() => window.__stores.app.getState().menuOpen) &&
+    await page.evaluate(() => document.activeElement?.textContent?.includes('Privacy') ?? false))
+  await page.screenshot({ path: `${OUT}/legal-menu.png` })
+  await ctx.close()
+}
+
+// Pagina scritta apposta per attaccare il filtro: niente deve eseguirsi né restare.
+{
+  const evil = '<h1>Titolo</h1><p onclick="window.__pwned=\'click\'" style="color:red">Testo sicuro</p>' +
+    '<script>window.__pwned=\'script\'</script><img src="x" onerror="window.__pwned=\'img\'">' +
+    '<a href="javascript:window.__pwned=\'link\'">link js</a> <a href="/policies/x">relativo</a> ' +
+    '<a href="https://example.com/ok" onclick="window.__pwned=\'a\'">buono</a>' +
+    '<iframe src="https://example.com"></iframe><style>body{display:none}</style><form><input name="a"><button>invia</button></form>' +
+    '<svg><script>window.__pwned=\'svg\'</script></svg><table><tr><td>cella</td></tr></table>'
+  let fail = true
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
+  const page = await ctx.newPage()
+  page.on('pageerror', (e) => consoleErrors.push(`[legal-evil] ${e.message}`))
+  await page.route('**/api/*/graphql.json', (route) => {
+    const q = route.request().postDataJSON()?.query ?? ''
+    if (!q.includes('query Policies')) return route.fulfill({ json: { data: { localization: { availableCountries: [{ isoCode: 'IT' }] } } } })
+    if (fail) return route.fulfill({ status: 503, json: {} })
+    return route.fulfill({ json: { data: { shop: { privacyPolicy: { title: 'Privacy di prova', body: evil } } } } })
+  })
+  await page.goto(BASE + '?debug=x&tier=low&commerce=shopify', { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
+  await page.waitForFunction(() => window.__stores, null, { timeout: 20000 })
+  await page.getByRole('button', { name: C.hud.menu, exact: true }).click()
+  const legal = page.getByTestId('menu-legal')
+  ok('Shopify in errore: il menu dice "non raggiungibili" e offre di riprovare',
+    await legal.getByText(L.unavailable).waitFor({ timeout: 10000 }).then(() => true).catch(() => false))
+  fail = false
+  await legal.getByRole('button', { name: L.retry }).click()
+  await legal.getByRole('button', { name: new RegExp(L.policies.privacy) }).click({ timeout: 10000 })
+  const body = page.getByTestId('legal-body')
+  await body.waitFor({ timeout: 10000 })
+  await body.getByText('Testo sicuro').click()
+  await body.getByText('link js').click()
+  const html = await body.innerHTML()
+  const bad = ['<script', '<img', '<iframe', '<style', '<form', '<input', '<button', '<svg', 'onclick', 'onerror', 'style=', 'javascript:']
+    .filter((x) => html.toLowerCase().includes(x))
+  ok('filtro HTML: niente script, immagini, iframe, stili, moduli, attributi on* o link javascript', bad.length === 0, bad.join(', '))
+  ok('filtro HTML: nessun codice eseguito, nemmeno cliccando', await page.evaluate(() => window.__pwned === undefined))
+  ok('filtro HTML: link relativo e javascript senza href, link https conservato; h1 → h3; testo e tabella restano',
+    await body.getByText('relativo').evaluate((n) => n.tagName !== 'A') &&
+    await body.getByText('link js').evaluate((n) => n.tagName !== 'A') &&
+    await body.getByRole('link', { name: 'buono' }).getAttribute('href') === 'https://example.com/ok' &&
+    await body.locator('h3').textContent() === 'Titolo' && await body.locator('h1, h2').count() === 0 &&
+    await body.getByText('cella').isVisible(), html.slice(0, 300))
+  ok('scheda legale: titolo dal venditore', (await dialog(page).locator('h2').textContent()).trim() === 'Privacy di prova')
+  await ctx.close()
+}
+
+// Telefono: scheda legale senza scorrimento orizzontale.
+{
+  const { ctx, page } = await open('legal-mobile', { mobile: true })
+  await page.evaluate(() => window.__stores.app.getState().openDialog('legal', 'privacy'))
+  await page.getByTestId('legal-body').waitFor({ timeout: 10000 })
+  const wide = []
+  for (const w of [320, 360, 390, 430]) {
+    await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(150)
+    const over = await page.evaluate(() => { const sc = document.querySelector('[role="dialog"][data-dialog] .overflow-y-auto'); return sc.scrollWidth - sc.clientWidth })
+    if (over > 0) wide.push(`${w}px: +${over}px`)
+  }
+  ok('mobile: scheda legale senza scorrimento orizzontale a 320/360/390/430', wide.length === 0, wide.join(' | '))
+  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200)
+  await page.screenshot({ path: `${OUT}/mobile-legal.png` })
   await ctx.close()
 }
 
