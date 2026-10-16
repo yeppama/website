@@ -56,6 +56,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium | 1.0 | 1920×911 | 3 | 37.2 | 33.6 | 16.5 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium (grana off) | 1.0 | 1920×911 | 3 | 59.5 | 20.9 | 36.9 | 34 / 52 | 13240 | sì |
 | 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | low | 1.0 | 1920×911 | 3 | 45.5 | 25.3 | 26.4 | 23 / 45 | 7766 | sì |
+| 2026-10-16 | iPhone (modello da indicare; viewport 393 px) | Apple GPU | Safari 26 | 7945fa8 | low · grana overlay | 1.0 | 393×695 | 3 | 58.8 | 17.0 | 55.6 | 18 / 30 | 7432 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -74,6 +75,14 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
      gli stessi, quindi il tier corretto da solo probabilmente non basta. Ipotesi in ordine di peso:
      nove faretti calcolati per ogni pixel di 1920×911 con antialias; le due ombre reali; la grana in
      `mix-blend-mode` sopra il canvas. Le misure diagnostiche sotto separano le tre.
+
+- **iPhone (Safari 26), 2026-10-16** — fluido (58,8 / 55,6) ma **nel tier sbagliato**: `low`, cioè
+  DPR 1 su uno schermo a densità 3, niente ombre reali, niente antialias. Safari non espone la memoria
+  e dichiara meno core di quelli reali, quindi la regola mobile (≥ 6 core e ≥ 4 GB → medium) lo
+  declassa. Il piano lo vuole in `medium`. Manca la prova `?bench=1&tier=medium` sullo stesso iPhone.
+  Dettaglio per tratto: p50 fermo a 58,8 ovunque, scatti isolati al primo passaggio in zone nuove
+  (Nuovi Arrivi 23,8, Ingresso 29,4): ipotesi compilazione degli shader / caricamento delle texture
+  alla prima vista, da anticipare durante il caricamento.
 
 ### Diagnosi in corso — Vivobook (3 run ciascuna, stesso URL dell'anteprima)
 
