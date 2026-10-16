@@ -76,7 +76,11 @@ export const storeConfig = {
     groundShadow: { mode: 'blob', opacity: 0.45, radiusScale: 1.15 },
     // D6-B: velo di grana sopra il canvas, fuori dalla pipeline WebGL.
     postFx: {
-      grain: { mode: 'overlay', opacity: { high: 0.14, medium: 0.12, low: 0.1 }, tileSize: 256, animateHz: 12 },
+      // blend: 'overlay' è la grana approvata. Su un portatile Iris Xe a 1920×911 costa
+      // da sola 37 → 59 fps (docs/PERF.md). 'alpha' (solo granelli scuri, fusione
+      // normale) è in valutazione: si prova con ?perf=1&grain=alpha, in attesa di decisione.
+      grain: { mode: 'overlay', blend: 'overlay', opacity: { high: 0.14, medium: 0.12, low: 0.1 },
+               alphaOpacity: { high: 0.2, medium: 0.18, low: 0.15 }, tileSize: 256, animateHz: 12 },
       vignette: { enabled: true, strength: 0.38 },
     },
   },
@@ -633,6 +637,8 @@ export const storeConfig = {
       title: 'Benchmark',
       seconds: 's',
       fxOff: '(grana off)',
+      grain: 'grana',
+      segments: 'Tratti (p50 / 1% low)',
       warmup: 'Avvio fra poco · non toccare lo schermo',
       running: 'In corso · non toccare lo schermo',
       step: 'Passo',

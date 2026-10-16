@@ -78,6 +78,9 @@ async function useRound(page) {
   await page.waitForTimeout(1000)
   // Riscaldamento: la GPU riceve un oggetto la prima volta che viene disegnato, e
   // a pochi fps un hotspot può comparire per la prima volta solo al secondo giro.
+  // Tre giri: in rendering software un hotspot può essere disegnato la prima
+  // volta anche al terzo. Una perdita vera cresce a ogni giro, non una volta.
+  await useRound(page)
   await useRound(page)
   await useRound(page)
   const warm = await gpu(page)
@@ -198,6 +201,8 @@ async function useRound(page) {
   const row = await page.getByTestId('bench-row').inputValue()
   const cols = row.split('|').slice(1, -1)
   ok('benchmark: riga pronta per PERF.md, 15 colonne, rendering software dichiarato', cols.length === 15 && row.includes(C.bench.realNo), row)
+  const segLine = row.split('\n').find((l) => l.startsWith(C.bench.segments)) ?? ''
+  ok('benchmark: sotto la riga, il dettaglio per tratto del percorso', (segLine.match(/(?:: | ; )\d+ /g) ?? []).length === storeConfig.benchmark.steps.length, segLine)
   ok('benchmark: a misura finita l\'input torna all\'utente', await page.evaluate(() => !window.__stores.app.getState().benchRunning && !document.querySelector('[data-testid="bench-veil"]')))
   await page.screenshot({ path: `${OUT}/bench-results.png` })
   // Ripeti, poi interrompi: lo stato torna pulito.

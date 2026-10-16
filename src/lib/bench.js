@@ -98,6 +98,18 @@ export function aggregateRuns(runs) {
   }
 }
 
+/**
+ * Dettaglio per tratto del percorso, su tutti i run: p50 mediano / 1% low peggiore.
+ * Dice DOVE il dispositivo rallenta (camminata, Focus, lookbook), non solo quanto.
+ */
+export function segmentSummary(runs) {
+  if (!runs.length) return ''
+  return runs[0].segments.map((s, i) => {
+    const seg = runs.map((r) => r.segments[i]).filter(Boolean)
+    return `${i + 1} ${s.label} ${f1(median(seg.map((x) => x.fpsP50)))}/${f1(Math.min(...seg.map((x) => x.fps1Low)))}`
+  }).join(' ; ')
+}
+
 /** Nome e versione del browser dallo user agent, quanto basta per il registro. */
 export function browserLabel(ua = navigator.userAgent) {
   const m = ua.match(/(Edg|OPR|Firefox|CriOS|FxiOS|Chrome)\/(\d+)/) ?? ua.match(/Version\/(\d+)(?:\.\d+)*.*Safari/)

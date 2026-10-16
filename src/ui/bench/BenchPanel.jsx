@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
-import { runBenchmark, aggregateRuns, perfRow, browserLabel } from '../../lib/bench.js'
+import { runBenchmark, aggregateRuns, perfRow, browserLabel, segmentSummary } from '../../lib/bench.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { usePerfStore } from '../../state/usePerfStore.js'
 import Button from '../primitives/Button.jsx'
-import { fxDisabled } from '../fx/GrainOverlay.jsx'
+import { fxDisabled, grainBlend } from '../fx/GrainOverlay.jsx'
 
 /* global __BUILD_COMMIT__ */
 const f1 = (n) => (Number.isFinite(n) ? n.toFixed(1) : '—')
@@ -83,15 +83,17 @@ export default function BenchPanel({ device, ready }) {
     gpu: device.renderer ?? '—',
     browser: browserLabel(),
     commit: __BUILD_COMMIT__,
-    tier: fxDisabled ? `${device.tier} ${t.fxOff}` : device.tier,
+    tier: fxDisabled ? `${device.tier} ${t.fxOff}` : `${device.tier} · ${t.grain} ${grainBlend}`,
     dpr: usePerfStore.getState().dpr,
     viewport: `${window.innerWidth}×${window.innerHeight}`,
     real: software ? t.realNo : `(${t.realYes})`,
   })
+  // La riga per il registro e, sotto, dove il percorso rallenta: si copiano insieme.
+  const report = row && `${row}\n${t.segments}: ${segmentSummary(runs)}`
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(row)
+      await navigator.clipboard.writeText(report)
       setCopied(t.copied)
     } catch {
       setCopied(t.copyManual)
@@ -156,7 +158,7 @@ export default function BenchPanel({ device, ready }) {
               {t.median}: {f1(agg.fpsP50Median)} · {t.worst}: {f1(agg.fps1LowWorst)}
             </p>
             <p className="micro mt-1">{t.runsHint}</p>
-            <textarea readOnly value={row} rows={3} data-testid="bench-row"
+            <textarea readOnly value={report} rows={5} data-testid="bench-row"
                       onFocus={(e) => e.target.select()}
                       className="micro mt-3 w-full resize-none border border-line-subtle bg-bg-base p-2 text-text-primary" />
           </div>

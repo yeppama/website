@@ -53,6 +53,9 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 
 | 2026-10-15 | Pixel | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 5d3d750 | medium | 1.5 | 411×801 | 3 | 60.2 | 17.5 | 49.8 | 31 / 42 | 12910 | sì |
 | 2026-10-15 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5d3d750 | high | 1.0 | 1920×911 | 3 | 31.6 | 36.5 | 14.9 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium | 1.0 | 1920×911 | 3 | 37.2 | 33.6 | 16.5 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | medium (grana off) | 1.0 | 1920×911 | 3 | 59.5 | 20.9 | 36.9 | 34 / 52 | 13240 | sì |
+| 2026-10-16 | Vivobook | ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11) | Chrome 155 | 5125abb | low | 1.0 | 1920×911 | 3 | 45.5 | 25.3 | 26.4 | 23 / 45 | 7766 | sì |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -79,6 +82,24 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | A | `?bench=1` | Il tier ora scelto da solo (atteso: medium). Effetto della sola correzione del tier |
 | B | `?bench=1&tier=medium&fx=0` | A meno grana e vignettatura: costo del compositore |
 | C | `?bench=1&tier=low` | Niente ombre reali, niente antialias, DPR fino a 0,75: costo di ombre e pixel |
+
+| # | Data | Commit | Tier | p50 fps | p95 ms | 1% low fps | Draw call med / max | Esito |
+|---|---|---|---|---|---|---|---|---|
+| A | 2026-10-16 | 5125abb | medium (scelto da solo) | 37.2 | 33.6 | 16.5 | 34 / 52 | +5,6 fps rispetto a high: la correzione del tier funziona ma non basta |
+| B | 2026-10-16 | 5125abb | medium, grana off | 59.5 | 20.9 | 36.9 | 34 / 52 | **+22 fps**: la grana overlay è il costo principale. 1% low ancora sotto 45 |
+| C | 2026-10-16 | 5125abb | low (grana overlay attiva) | 45.5 | 25.3 | 26.4 | 23 / 45 | +8 fps: ombre, antialias e risoluzione pesano molto meno della grana |
+
+**Esito della diagnosi:** il costo dominante è la fusione `mix-blend-mode: overlay` della grana
+sopra il canvas (compositore del browser), non la scena 3D. Resta un secondo problema minore: anche
+senza grana l'1% low è 36,9 contro ≥ 45 (scatti brevi da localizzare col dettaglio per tratto).
+Decisione aperta (dell'utente): grana `alpha` (solo granelli scuri, fusione normale, provabile con
+`&grain=alpha`), grana spenta sulle GPU integrate, o grana attuale sotto soglia. In ambiente software
+la grana overlay alza anche le zone scure (luminanza media 20,4 → 23,7): possibile concausa del
+"nero un pelo grigio" segnalato sul telefono.
+
+Lettura di A: il 1% low a 16,5 fps vuol dire fotogrammi da ~60 ms, cioè scatti visibili, non solo
+una scena "lenta". Dal commit successivo a 5125abb il benchmark riporta anche il dettaglio per tratto
+(ingresso, camminata, Focus, lookbook): dice dove nascono gli scatti.
 
 Se C arriva a 58 e A no, il costo sta in ombre/antialias/risoluzione e si interviene sul tier medium
 desktop. Se nemmeno C ci arriva, il costo sta nei nove faretti per pixel e serve una scelta estetica

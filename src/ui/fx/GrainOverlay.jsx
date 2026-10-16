@@ -13,14 +13,20 @@ import { useAppStore } from '../../state/useAppStore.js'
 // Diagnosi delle prestazioni: con ?perf=1 o ?bench=1, `&fx=0` toglie grana e
 // vignettatura, per misurare quanto costano al compositore sul dispositivo vero.
 const params = new URLSearchParams(window.location.search)
-export const fxDisabled = Boolean(params.get('perf') || params.get('bench') || params.get('debug')) && params.get('fx') === '0'
+const diagnostic = Boolean(params.get('perf') || params.get('bench') || params.get('debug'))
+export const fxDisabled = diagnostic && params.get('fx') === '0'
+// Confronto sul dispositivo vero: &grain=overlay | alpha forza il tipo di fusione.
+const forcedBlend = diagnostic && ['overlay', 'alpha'].includes(params.get('grain')) ? params.get('grain') : null
+export const grainBlend = forcedBlend ?? storeConfig.performance.postFx.grain.blend
 
 export default function GrainOverlay({ tier, reducedMotion }) {
   const fx = storeConfig.performance.postFx
   const inFocus = useAppStore((s) => s.focus.state === 'entering' || s.focus.state === 'focused')
   const vignette = inFocus ? storeConfig.focus.vignetteStrength : fx.vignette.strength
-  const noise = useMemo(() => makeGrainDataUrl(fx.grain.tileSize), [fx.grain.tileSize])
-  const opacity = fx.grain.opacity[tier] ?? fx.grain.opacity.medium
+  const overlay = grainBlend === 'overlay'
+  const noise = useMemo(() => makeGrainDataUrl(fx.grain.tileSize, overlay ? 'overlay' : 'alpha'), [fx.grain.tileSize, overlay])
+  const levels = overlay ? fx.grain.opacity : fx.grain.alphaOpacity
+  const opacity = levels[tier] ?? levels.medium
   if (fxDisabled) return null
   // Un granello = un pixel fisico. Senza questa correzione, a DPR 3 ogni granello
   // occupa 3×3 pixel e su telefono la grana appare tre volte più grossa.
@@ -40,7 +46,7 @@ export default function GrainOverlay({ tier, reducedMotion }) {
           backgroundSize: `${tileCss}px ${tileCss}px`,
           imageRendering: 'pixelated',
           opacity,
-          mixBlendMode: 'overlay',
+          mixBlendMode: overlay ? 'overlay' : 'normal',
           animation: reducedMotion ? 'none' : `grain-shift ${stepMs}ms steps(1, end) infinite`,
           willChange: 'transform',
         }}
