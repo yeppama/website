@@ -1,6 +1,7 @@
 # CONTENUTI.md — Cosa serve per la Fase 7 (opzione B)
 
-Decisione dell'utente (2026-10-16): **prima i contenuti reali, poi la produzione.** La Fase 7 non
+Decisione dell'utente (2026-10-16): **prima i contenuti reali, poi la produzione.** I punti 1–4 sono stati
+inoltrati al cliente il 2026-10-16. La Fase 7 non
 parte finché questo elenco non è completo o finché l'utente non dichiara cosa resta segnaposto.
 
 Si può mandare tutto in chat: testi incollati, file allegati. Una cartella condivisa va bene uguale.
@@ -52,5 +53,5 @@ di più o di meno, si cambia la disposizione degli espositori (dimmi quanti).
 - **Acquisto:** il bottone resta spento ("in arrivo") finché non si fa la Fase 8 (e-commerce reale).
   Va bene così al lancio?
 - **Prezzi:** reali o ancora indicativi? Se indicativi, la nota "dimostrativi" resta visibile.
-- **Dominio:** su quale indirizzo deve stare il sito di produzione (dominio tuo o `*.vercel.app`)?
+- **Dominio:** acquistato dal cliente, verrà comunicato a materiale pronto. Servirà configurarlo su Vercel (Settings → Domains) e nei DNS del registrar: istruzioni al momento.
 - **Misura su Android di fascia media:** mai fatta. Se non è possibile, resta come rischio dichiarato.
