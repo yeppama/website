@@ -127,7 +127,7 @@ for (const f of FORMATS) {
   await dlg.waitFor({ timeout: 15000 })
   await page.waitForTimeout(400)
   const first = {
-    immagine: await inFirstScreen(page.getByTestId('product-media').locator('[role="img"]').first()),
+    immagine: await inFirstScreen(page.getByTestId('product-media').locator('[data-state]').first()),
     nome: await inFirstScreen(dlg.locator('h2')),
     prezzo: await inFirstScreen(page.getByTestId('product-price')),
     colori: await inFirstScreen(dlg.getByRole('radiogroup', { name: new RegExp(C.product.colorways) })),

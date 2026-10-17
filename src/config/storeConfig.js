@@ -206,7 +206,7 @@ export const storeConfig = {
     photo: {
       topWidth: 0.74,
       bottomHeight: 1.0,
-      shellCrop: { Hoodie: [0.26, 0.17, 0.74, 1], default: [0.25, 0.04, 0.75, 1] },
+      shellCrop: { Hoodie: [0.26, 0.17, 0.74, 0.96], default: [0.25, 0.04, 0.75, 0.96] },
       stackCrop: { top: [0.28, 0.22, 0.72, 0.58], bottom: [0.12, 0.0, 0.88, 0.32] },
       roughness: 0.9,
       // Soglia della trasparenza della foto: sotto è fondo, sopra è capo.
@@ -541,9 +541,10 @@ export const storeConfig = {
     // Una texture sola per capo, piccola: 7 capi ≈ 12 MB di memoria GPU con le mipmap.
     texture: { width: 512 },
     // Scontorno automatico dei capi scuri su fondo chiaro: distanza dal colore del fondo
-    // (0–255) sotto cui un pixel collegato ai bordi è fondo. I capi chiari si scontornano
+    // (0–255) sotto cui un pixel collegato ai bordi è fondo. Alta (100): le ombre morbide del fondo
+    // restano fondo, i capi scuri distano 150 e oltre. I capi chiari si scontornano
     // fuori (file `<nome>-cutout.png`, scripts/media/process.py).
-    cutoutThreshold: 40,
+    cutoutThreshold: 100,
   },
 
   copy: {
