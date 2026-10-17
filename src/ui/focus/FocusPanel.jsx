@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useAppStore } from '../../state/useAppStore.js'
-import { formatPrice } from '../../lib/format.js'
+import { useShownPrice } from '../../state/useCartStore.js'
+import { commerceActive } from '../../commerce/index.js'
+import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
 /**
@@ -71,16 +73,23 @@ export default function FocusPanel({ device }) {
           {multi && <p className="micro">{focus.productIndex + 1} {copy.of} {products.length}</p>}
         </div>
 
-        <h2 className="mt-3 font-display font-black uppercase leading-none text-text-primary short:mt-2"
-            style={{ fontSize: 'clamp(var(--text-lg), 6.5vh, var(--text-xl))', letterSpacing: 'var(--tracking-tight)' }}>
-          {product.name}
-        </h2>
-        <p className="micro mt-2">{product.category} · {product.collection} · {product.sku}</p>
+        <div className="mt-3 flex items-start gap-3 short:mt-2">
+          {/* La foto del capo, piccola: su schermo basso lo spazio serve al capo in 3D. */}
+          {product.media[0].src && (
+            <MediaImage media={product.media[0]} ratio={storeConfig.media.productRatio} sizes="4rem"
+                        className="w-14 shrink-0 short:hidden" />
+          )}
+          <div className="min-w-0">
+            <h2 className="font-display font-black uppercase leading-none text-text-primary"
+                style={{ fontSize: 'clamp(var(--text-lg), 6.5vh, var(--text-xl))', letterSpacing: 'var(--tracking-tight)' }}>
+              {product.name}
+            </h2>
+            <p className="micro mt-2">{product.category} · {product.collection} · {product.sku}</p>
+          </div>
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 short:mt-2">
-          <p className="font-mono text-text-primary" style={{ fontSize: 'var(--text-lg)' }}>
-            {formatPrice(product.price, storeConfig.meta.brand.locale)}
-          </p>
+          <PriceTag product={product} />
           <ul className="flex gap-2" aria-label={copy.colorways}>
             {product.colorways.map((cw) => (
               <li key={cw.id} title={cw.label} role="img" aria-label={cw.label}
@@ -93,7 +102,7 @@ export default function FocusPanel({ device }) {
           {sheet.enabled ? (
             <Button className="w-full" onClick={() => openDialog('product', product.id)}>{copy.details} →</Button>
           ) : (
-            <p className="micro">{storeConfig.copy.hints.comingInPhase} {sheet.availableInPhase}</p>
+            <p className="micro">{storeConfig.copy.hints.notAvailable}</p>
           )}
         </div>
 
@@ -109,8 +118,18 @@ export default function FocusPanel({ device }) {
           </Button>
         </div>
         {!device.isTouch && <p className="micro mt-3 text-right">{copy.exitHint}</p>}
-        <p className="micro mt-2 short:mt-1.5" style={{ opacity: 0.7 }}>{storeConfig.copy.legal.priceNotice}</p>
+        {!commerceActive() && (
+          <p className="micro mt-2 short:mt-1.5" style={{ opacity: 0.7 }}>{storeConfig.copy.legal.priceNotice}</p>
+        )}
       </section>
     </div>
+  )
+}
+
+/** Prezzo del capo: dal fornitore se il commercio è attivo (hook fuori dal ritorno anticipato del pannello). */
+function PriceTag({ product }) {
+  const { label } = useShownPrice(product)
+  return (
+    <p className="font-mono text-text-primary" style={{ fontSize: 'var(--text-lg)' }} data-testid="focus-price">{label}</p>
   )
 }

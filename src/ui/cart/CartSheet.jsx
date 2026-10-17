@@ -5,6 +5,7 @@ import { commerceMode, testBanner } from '../../commerce/index.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
+import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
 const productByHandle = new Map(storeConfig.products.filter((p) => p.commerce).map((p) => [p.commerce.handle, p]))
@@ -63,8 +64,10 @@ export default function CartSheet({ headingId }) {
               const color = product?.colorways.find((c) => c.id === line.merchandise.color)
               return (
                 <li key={line.id} className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 bg-bg-raised py-3 sm:grid-cols-[5rem_minmax(0,1fr)_auto] sm:items-center" data-testid="cart-line">
-                  <PlaceholderImage ratio="1:1" variant={product?.media[0].variant} label={product?.media[0].label}
-                                    seed={`${product?.id}-${line.merchandise.color}`} compact />
+                  {product ? (
+                    <MediaImage media={product.media.find((m) => m.colorwayId === line.merchandise.color) ?? product.media[0]}
+                                ratio="1:1" sizes="5rem" seed={`${product.id}-${line.merchandise.color}`} compact />
+                  ) : <PlaceholderImage ratio="1:1" compact />}
                   <div className="min-w-0">
                     <button type="button" onClick={() => product && openDialog('product', product.id)}
                             className="flex items-center text-left font-display font-bold uppercase text-text-primary hover:text-accent-flame"

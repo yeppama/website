@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { storeConfig } from '../config/storeConfig.js'
 import { getProvider } from '../commerce/index.js'
+import { formatPrice } from '../lib/format.js'
 
 const { commerce } = storeConfig
 const readId = () => { try { return localStorage.getItem(commerce.cartStorageKey) } catch { return null } }
@@ -115,3 +116,21 @@ export const useCartStore = create((set, get) => ({
     : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }]))),
   remove: (lineId) => get().run((p, id) => p.removeLines(id, [lineId])),
 }))
+
+/**
+ * Prezzo da mostrare per un capo fuori dalla scheda (menu, Focus, Lookbook).
+ * Senza commercio è quello di storeConfig, dichiarato dimostrativo; con il commercio
+ * attivo viene solo dal fornitore (il più basso fra le varianti del colore, o fra
+ * tutte): finché non risponde '…', se non risponde '—', mai il prezzo di storeConfig.
+ */
+export function useShownPrice(product, colorwayId = null) {
+  const active = getProvider() !== null
+  const entry = useCartStore((s) => s.catalog[product.commerce?.handle])
+  const status = useCartStore((s) => s.catalogStatus)
+  if (!active) return { price: product.price, label: formatPrice(product.price, storeConfig.meta.brand.locale) }
+  const variants = entry?.variants.filter((v) => !colorwayId || v.color === colorwayId) ?? []
+  const price = variants.reduce((min, v) => (!min || v.price.amount < min.amount ? v.price : min), null)
+  if (price) return { price, label: formatPrice(price, storeConfig.meta.brand.locale) }
+  const missing = status === 'error' || (status === 'ready' && !entry)
+  return { price: null, label: missing ? '—' : '…' }
+}

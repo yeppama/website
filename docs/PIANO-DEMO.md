@@ -1,5 +1,8 @@
 # Piano della demo "negozio finito" (vetrina)
 
+> **Avviata il 2026-10-17** con: scopo A preparando B, foto generate con l'IA, capi 3D livello leggero.
+> Stato e blocchi in CONTEXT.md §5; foto in `docs/demo/FOTO.md`; presentazione in `docs/demo/PRESENTAZIONE.md`.
+
 Deciso con l'utente il 2026-10-17, da eseguire in una **sessione nuova** sul branch `demo/vetrina`
 (creato dallo stato di `claude/cool-edison-2svzgj` al commit di questo file). `main` resta il sito
 pubblico di INTO e non si tocca.

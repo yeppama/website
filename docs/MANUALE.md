@@ -105,14 +105,17 @@ Tutti i percorsi sono relativi alla cartella del progetto. "Config" = `src/confi
 |---|---|---|
 | Un testo dell'interfaccia (bottoni, avvisi, menu) | Config → `copy` (r. ~601 in poi), sezione per area: `onboarding`, `focus`, `product`, `cart`, `legal`… | Solo il testo fra apici. Gli apici dentro il testo vanno scritti `\'` |
 | Le istruzioni della schermata d'ingresso | Config → `copy.onboarding.desktop.lines` / `mobile.lines` | Ogni riga ha `requires`: se la funzione è spenta compare "in arrivo" (controllo I15) |
-| Tagline, città, coordinate, credito | Config → `meta.brand` (r. ~43) | La tagline compare nel menu, nell'ingresso e nella Brand Story |
-| Nome, descrizione, dettagli di un capo | Config → `products[]` (r. ~481) | Con Shopify attivo il nome mostrato nel carrello viene da Shopify |
-| Prezzo di un capo | Commercio spento: Config → `products[].price.amount`. Commercio attivo: **su Shopify** | Con Shopify il prezzo di storeConfig è ignorato, di proposito |
-| Taglie e colori di un capo | Config → `products[].sizes` / `colorways` | Con Shopify, i nomi devono coincidere con le opzioni "Taglia" e "Colore" su Shopify (`npm run check:catalog` lo verifica) |
-| Etichetta NEW / ARCHIVE | Config → `products[].badges` | |
-| Testi e immagini della Brand Story | Config → `lookbook[]` (r. ~558) | `productIds` del lookbook e `lookbookIds` del capo devono citarsi a vicenda (I21) |
+| Tagline, città, coordinate, credito | Contenuto → `brand` (`src/content/into.js`; nella demo lo stesso) | La tagline compare nel menu, nell'ingresso e nella Brand Story |
+| Nome, descrizione, dettagli di un capo | Contenuto → `products[]` (`src/content/into.js`, nella demo `demo.js`) | Con Shopify attivo il nome mostrato nel carrello viene da Shopify |
+| Prezzo di un capo | Commercio spento: Contenuto → `products[].price.amount`. Commercio attivo: **su Shopify** | Con Shopify il prezzo di storeConfig è ignorato, di proposito |
+| Taglie e colori di un capo | Contenuto → `products[].sizes` / `colorways` | Con Shopify, i nomi devono coincidere con le opzioni "Taglia" e "Colore" su Shopify (`npm run check:catalog` lo verifica) |
+| Etichetta NEW / ARCHIVE | Contenuto → `products[].badges` | |
+| Testi e immagini della Brand Story | Contenuto → `lookbook[]` | `productIds` del lookbook e `lookbookIds` del capo devono citarsi a vicenda (I21) |
 | Pagine legali | **Su Shopify**: Impostazioni → Informative | Il sito le legge da lì; nel codice non ci sono testi legali |
 | Catalogo completo dal cliente | Modello `docs/modello-catalogo-INTO.xlsx` → `npm run catalog:import -- file.xlsx` | Produce CSV per Shopify e una bozza per Config; la posizione 3D dei capi va decisa a mano |
+| Quale contenuto pubblica il sito (INTO o demo) | Variabile `VITE_CONTENT` (`into` se manca; il branch della demo ha `.env` con `demo`) | Il contenuto porta marchio, capi, Lookbook, posizione dei capi (`products[].displayId`), fornitore del commercio e i testi che cambiano (`copy`) |
+| Foto di un capo o della campagna | Contenuto → `media[].src` / `images[].src`, poi `npm run media:build -- <contenuto>` | Originali in `media-sorgenti/` (fuori da git); istruzioni e stile in `docs/demo/FOTO.md`. Una foto legata a un colore ha `colorwayId` |
+| Foto sul capo 3D | Contenuto → `products[].model3d` | Texture scontornata preparata da `media:build`; senza, resta la sagoma nel colore |
 
 ### Aspetto
 

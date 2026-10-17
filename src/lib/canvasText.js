@@ -58,8 +58,8 @@ export function makeWordmarkSign({ wordmark, descriptor, ovalColor, textColor, a
   return { texture: makeTexture(canvas), aspect: w / h }
 }
 
-/** Pannello del Lookbook: segnaposto editoriale con titolo e trama diagonale. */
-export function makeLookbookPanel({ title, subtitle, accentColor, textColor, bg, width = 1280, height = 400 }) {
+/** Pannello del Lookbook: titolo editoriale con trama diagonale; i testi arrivano da `copy.brandWall`. */
+export function makeLookbookPanel({ title, subtitle, eyebrow, corner, accentColor, textColor, bg, width = 1280, height = 400 }) {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -85,7 +85,7 @@ export function makeLookbookPanel({ title, subtitle, accentColor, textColor, bg,
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = 'rgba(242,240,234,0.55)'
   ctx.font = '400 26px "JetBrains Mono"'
-  ctx.fillText('LOOKBOOK · BRAND STORY', 84, 96)
+  ctx.fillText(eyebrow, 84, 96)
 
   ctx.fillStyle = textColor
   ctx.font = '900 150px "Archivo"'
@@ -97,7 +97,7 @@ export function makeLookbookPanel({ title, subtitle, accentColor, textColor, bg,
 
   ctx.textAlign = 'right'
   ctx.fillStyle = accentColor
-  ctx.fillText('PLH · IN ARRIVO FASE 5', width - 48, height - 48)
+  ctx.fillText(corner, width - 48, height - 48)
 
   return makeTexture(canvas)
 }

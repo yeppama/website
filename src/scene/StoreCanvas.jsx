@@ -211,6 +211,7 @@ function SceneContents({ config, tier }) {
         lookbook={config.lookbook}
         assets={config.assets}
         materials={lighting.materials}
+        copy={config.copy}
       />
       <FloorLabels zones={environment.zones} />
       <Displays config={config} />

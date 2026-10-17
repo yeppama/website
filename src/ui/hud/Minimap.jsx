@@ -83,7 +83,7 @@ export default function Minimap() {
         </svg>
       </div>
       <p className="micro mt-2 hidden sm:block">
-        {w}×{d} m · {environment.zones.length} zone
+        {w}×{d} m · {environment.zones.length} {storeConfig.copy.hud.zones}
       </p>
     </div>
   )

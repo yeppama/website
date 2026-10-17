@@ -9,3 +9,4 @@ src/styles/theme.generated.css
 
 # dati del cliente prodotti da scripts/catalog/import.mjs
 catalogo-importato/
+media-sorgenti/

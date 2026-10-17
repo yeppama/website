@@ -32,7 +32,7 @@ export default function PerfHud({ device }) {
       aria-hidden="true"
     >
       <p className="micro" style={{ color: 'var(--color-accent-flame)' }}>
-        {t.title} · tier {device.tier} · dpr {f1(dpr)} · cap {storeConfig.performance.targetFps}
+        {t.title} · {t.tier} {device.tier} · {t.dpr} {f1(dpr)} · {t.cap} {storeConfig.performance.targetFps}
       </p>
       <dl className="mt-1 grid grid-cols-[auto_auto] gap-x-4">
         {rows.map(([k, v]) => (

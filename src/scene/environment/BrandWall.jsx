@@ -12,7 +12,7 @@ import { whenFontsReady, makeWordmarkSign, makeLookbookPanel } from '../../lib/c
  * come un segno retroilluminato, con l'arancio esatto del token e non quello
  * che il tone mapping restituirebbe.
  */
-export default function BrandWall({ brandWall, brand, lookbook, assets, materials }) {
+export default function BrandWall({ brandWall, brand, lookbook, assets, materials, copy }) {
   const [textures, setTextures] = useState(null)
   const entry = lookbook.find((l) => l.id === brandWall.panel.lookbookId)
   const logo = assets.registry[brandWall.sign.assetId]
@@ -33,6 +33,8 @@ export default function BrandWall({ brandWall, brand, lookbook, assets, material
       const panel = makeLookbookPanel({
         title: entry.title,
         subtitle: entry.subtitle,
+        eyebrow: copy.brandWall.eyebrow,
+        corner: copy.brandWall.corner,
         accentColor: tokens.color.accent.flame,
         textColor: tokens.color.text.primary,
         bg: materials[brandWall.panel.materialId].color,

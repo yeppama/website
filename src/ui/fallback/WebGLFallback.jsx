@@ -19,7 +19,7 @@ export default function WebGLFallback({ renderer }) {
         <div className="rule my-6" />
         <p className="text-text-secondary" style={{ fontSize: 'var(--text-base)' }}>{copy.body}</p>
         <p className="mt-3 text-text-muted" style={{ fontSize: 'var(--text-sm)' }}>{copy.hint}</p>
-        {renderer && <p className="micro mt-8">renderer rilevato: {renderer}</p>}
+        {renderer && <p className="micro mt-8">{copy.renderer}: {renderer}</p>}
       </div>
     </div>
   )

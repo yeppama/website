@@ -89,7 +89,7 @@ const enterFocus = (page, displayId) => page.evaluate((id) => {
   await sheet.getByRole('radio', { name: p1.colorways[1].label }).click()
   ok('desktop: il colore cambia la selezione e l\'immagine', (await page.getByTestId('product-selection').textContent()).includes(p1.colorways[1].label) &&
     await sheet.getByRole('img', { name: new RegExp(p1.colorways[1].label) }).first().isVisible())
-  const buy = sheet.getByRole('button', { name: new RegExp(`${C.hints.comingInPhase} ${storeConfig.features.checkout.availableInPhase}`) })
+  const buy = sheet.getByRole('button', { name: C.product.purchaseClosed })
   ok('desktop: il bottone d\'acquisto c\'è ma è spento e lo dichiara', await buy.isDisabled())
   await page.screenshot({ path: `${OUT}/desktop-product-sheet.png` })
 

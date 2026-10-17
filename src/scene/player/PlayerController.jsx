@@ -102,7 +102,7 @@ export default function PlayerController({ config, device }) {
   const enterFocusFor = (display) => {
     const feature = config.features.focusMode
     if (!feature.enabled) {
-      notify(`${config.copy.hints.comingInPhase} ${feature.availableInPhase}`)
+      notify(config.copy.hints.notAvailable)
       return
     }
     const r = rt.current
@@ -134,7 +134,7 @@ export default function PlayerController({ config, device }) {
   const openLookbook = (lookbookId) => {
     const feature = config.features.lookbook
     if (!feature.enabled) {
-      notify(`${config.copy.hints.comingInPhase} ${feature.availableInPhase}`)
+      notify(config.copy.hints.notAvailable)
       return
     }
     if (rt.current.faceYaw !== null) rt.current.yaw = rt.current.faceYaw
@@ -387,7 +387,7 @@ export default function PlayerController({ config, device }) {
         if (poi?.targetDisplayId) { enterFocusFor(displayById.get(poi.targetDisplayId)); return }
         if (poi?.targetLookbookId) { openLookbook(poi.targetLookbookId); return }
         if (poi?.requires && !config.features[poi.requires]?.enabled) {
-          notify(`${config.copy.hints.comingInPhase} ${config.features[poi.requires].availableInPhase}`)
+          notify(config.copy.hints.notAvailable)
         }
         return
       }

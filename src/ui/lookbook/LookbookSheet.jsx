@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
-import { formatPrice, pad2 } from '../../lib/format.js'
+import { pad2 } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
-import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
+import { useShownPrice } from '../../state/useCartStore.js'
+import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
 /**
@@ -52,12 +53,12 @@ export default function LookbookSheet({ entry, headingId }) {
         <div className="flex items-center justify-center border border-line-subtle bg-bg-base short:mx-auto short:w-[calc(var(--sheet-frame-h)_*_var(--frame-ratio))] short:max-w-full"
              data-testid="lookbook-frame"
              style={{ aspectRatio: `${fw} / ${fh}`, '--frame-ratio': fw / fh }}>
-          <PlaceholderImage
+          <MediaImage
             key={image.id}
-            ratio={image.ratio}
-            variant={image.variant}
-            label={image.label}
+            media={image}
             seed={`${entry.id}-${image.id}`}
+            sizes="(min-width: 1024px) 60rem, 100vw"
+            eager
             className={wide ? 'w-full' : 'h-full'}
           />
         </div>
@@ -92,22 +93,27 @@ export default function LookbookSheet({ entry, headingId }) {
           <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>{t.products}</h3>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {products.map((p) => (
-              <li key={p.id}>
-                <button type="button" onClick={() => openDialog('product', p.id)}
-                        className="group block w-full text-left">
-                  <PlaceholderImage ratio={p.media[0].ratio} variant={p.media[0].variant}
-                                    label={p.media[0].label} category={p.category} seed={p.id} />
-                  <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
-                        style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
-                    {p.name}
-                  </span>
-                  <span className="micro mt-0.5 block">{formatPrice(p.price, brand.locale)}</span>
-                </button>
-              </li>
+              <li key={p.id}><LookProduct product={p} onOpen={() => openDialog('product', p.id)} /></li>
             ))}
           </ul>
         </section>
       )}
     </div>
+  )
+}
+
+/** Capo del look: prima foto, nome e prezzo (dal fornitore se il commercio è attivo). */
+function LookProduct({ product, onOpen }) {
+  const { label } = useShownPrice(product)
+  return (
+    <button type="button" onClick={onOpen} className="group block w-full text-left">
+      <MediaImage media={product.media[0]} ratio={storeConfig.media.productRatio} category={product.category}
+                  seed={product.id} sizes="(min-width: 640px) 14rem, 45vw" />
+      <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
+            style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
+        {product.name}
+      </span>
+      <span className="micro mt-0.5 block">{label}</span>
+    </button>
   )
 }

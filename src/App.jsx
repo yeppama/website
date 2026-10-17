@@ -116,7 +116,7 @@ export default function App() {
   // risposta invece del silenzio: il silenzio sembra un guasto.
   useEffect(() => {
     if (!exploring || navigationOn) return
-    const onKey = (e) => { if (MOVE_KEYS.has(e.code)) showNotice(storeConfig.copy.hints.navigationLocked) }
+    const onKey = (e) => { if (MOVE_KEYS.has(e.code)) showNotice(storeConfig.copy.hints.notAvailable) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [exploring, navigationOn, showNotice])
@@ -133,7 +133,7 @@ export default function App() {
         className="absolute inset-0"
         style={{ zIndex: 'var(--z-canvas)' }}
         onPointerDown={() => {
-          if (exploring && !navigationOn) showNotice(storeConfig.copy.hints.navigationLocked)
+          if (exploring && !navigationOn) showNotice(storeConfig.copy.hints.notAvailable)
         }}
       >
         <SceneErrorBoundary key={sceneKey} onError={onSceneError}>

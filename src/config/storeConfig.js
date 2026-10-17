@@ -6,7 +6,11 @@
  * un prezzo o una frase: tutto arriva da qui, e le relazioni usano ID.
  *
  * Unità: metri. Y verso l'alto. Rotazioni in radianti.
+ *
+ * Marchio, capi, Lookbook e i testi che cambiano col marchio stanno in
+ * `src/content/` (scelto con VITE_CONTENT): qui c'è il negozio, uguale per tutti.
  */
+import content from '../content/index.js'
 
 // Colonne strutturali: una griglia dichiarata qui, da cui derivano sia la
 // geometria visibile sia i collider. Nessun componente conosce queste posizioni.
@@ -37,22 +41,20 @@ const COLUMNS = COLUMN_GRID.xs.flatMap((x) => COLUMN_GRID.zs.map((z) => ({
   groundShadow: true,
 })))
 
+// Dove sta ogni capo lo dice il contenuto (products[].displayId); l'espositore li
+// elenca nello stesso ordine. Un espositore con un capo solo prende il suo nome
+// anche sull'etichetta del POI, altrimenti resta il nome dell'espositore.
+const productsOn = (displayId) => content.products.filter((p) => p.displayId === displayId).map((p) => p.id)
+const poiLabel = (displayId, fallback) => {
+  const ids = productsOn(displayId)
+  return ids.length === 1 ? content.products.find((p) => p.id === ids[0]).name : fallback
+}
+const mainLookbookId = content.lookbook[0]?.id ?? null
+
 export const storeConfig = {
   meta: {
     schemaVersion: '1.0.0',
-    brand: {
-      id: 'into-industries',
-      name: 'INTO industries',
-      wordmark: 'INTO',
-      descriptor: 'industries',
-      origin: { city: 'Florence', country: 'Italy', coords: "43°46'N 11°15'E" },
-      credit: 'Curated and produced by Tommaso Inturrisi',
-      tagline: "We're just looking for somewhere",   // P3: da confermare
-      currency: 'EUR',
-      // Formattazione di prezzi e numeri nell'interfaccia (Intl.NumberFormat).
-      locale: 'it-IT',
-      logo: { assetId: 'asset-logo-primary', shape: 'oval', onDark: 'invert' },
-    },
+    brand: content.brand,
     units: 'meters',
   },
 
@@ -127,7 +129,7 @@ export const storeConfig = {
   // regole del carrello. provider: 'off' (nessun acquisto) | 'mock' (negozio di
   // prova, nessun pagamento) | 'shopify' (Fase 8b). ?commerce=mock lo forza per le prove.
   commerce: {
-    provider: 'off',
+    provider: content.commerce?.provider ?? 'off',
     country: 'IT',
     maxQuantity: 10,
     cartStorageKey: 'into-cart-id',
@@ -198,6 +200,18 @@ export const storeConfig = {
     shapeByCategory: { Hoodie: 'top', Jacket: 'top', 'T-Shirt': 'top', Pants: 'bottom' },
     materialId: 'mat-fabric',
     cordColor: '#f98e30',   // il cordino della reference: un dettaglio, non una campitura
+    // Capi con la foto (contenuto con `model3d`): misure del capo appeso e ritagli della
+    // foto (frazioni del riquadro del capo: x0, y0, x1, y1 con y dall'alto) per il busto
+    // del manichino e per il capo in cima alle pile piegate.
+    photo: {
+      topWidth: 0.74,
+      bottomHeight: 1.0,
+      shellCrop: { Hoodie: [0.26, 0.17, 0.74, 1], default: [0.25, 0.04, 0.75, 1] },
+      stackCrop: { top: [0.28, 0.22, 0.72, 0.58], bottom: [0.12, 0.0, 0.88, 0.32] },
+      roughness: 0.9,
+      // Soglia della trasparenza della foto: sotto è fondo, sopra è capo.
+      alphaTest: 0.5,
+    },
   },
 
   // Camera della Fase 1b: posa fissa. La navigazione arriva in Fase 3.
@@ -288,7 +302,7 @@ export const storeConfig = {
     // tipografico di fallback dichiarato in assets.registry.
     brandWall: {
       sign:  { assetId: 'asset-logo-primary', center: [0, 2.95, -17.86], width: 5.4, color: '#f98e30' },
-      panel: { lookbookId: 'lb-001', center: [0, 1.15, -17.86], size: [4.8, 1.5], materialId: 'mat-sign-panel' },
+      panel: { lookbookId: mainLookbookId, center: [0, 1.15, -17.86], size: [4.8, 1.5], materialId: 'mat-sign-panel' },
     },
     // Spenta per scelta dell'utente (2026-10-16): le Fasi 2–6 sono state approvate
     // senza, perché fino alla Fase 6 non veniva disegnata. Anteprima con ?fog=1.
@@ -429,144 +443,60 @@ export const storeConfig = {
       position: [-7.7, 0.06, 6.6], rotationY: 0.42,
       colliderId: 'col-disp-mann-01', approachWaypointId: 'wp-new-01',
       assetId: 'asset-mannequin-a', materialIds: { body: 'mat-mannequin-matte', base: 'mat-steel-dark' },
-      productIds: ['prod-001'], poiId: 'poi-new-01', spotlightId: 'spot-hall-studio', groundShadow: true,
+      productIds: productsOn('disp-mannequin-01'), poiId: 'poi-new-01', spotlightId: 'spot-hall-studio', groundShadow: true,
       focusCamera: { position: [-6.78, 1.5, 8.62], target: [-7.7, 1.25, 6.6], fov: 40, enterMs: 1100, exitMs: 800 } },
     { id: 'disp-mannequin-02', kind: 'mannequin', zoneId: 'zone-new', label: 'Nuovi Arrivi · 02',
       position: [-5.3, 0.06, 6.6], rotationY: -0.42,
       colliderId: 'col-disp-mann-02', approachWaypointId: 'wp-new-01',
       assetId: 'asset-mannequin-a', materialIds: { body: 'mat-mannequin-matte', base: 'mat-steel-dark' },
-      productIds: ['prod-004'], poiId: 'poi-new-02', spotlightId: 'spot-hall-studio', groundShadow: true,
+      productIds: productsOn('disp-mannequin-02'), poiId: 'poi-new-02', spotlightId: 'spot-hall-studio', groundShadow: true,
       focusCamera: { position: [-6.22, 1.5, 8.62], target: [-5.3, 1.25, 6.6], fov: 40, enterMs: 1100, exitMs: 800 } },
     { id: 'disp-rack-01', kind: 'rack', zoneId: 'zone-new', label: 'Rack · Tees',
       position: [-11.55, 0, 8.0], rotationY: Math.PI / 2,
       colliderId: 'col-disp-rack-01', approachWaypointId: 'wp-aisle-w-p8',
       assetId: 'asset-rack-a', materialIds: { frame: 'mat-steel-dark' },
-      productIds: ['prod-005', 'prod-006'], poiId: 'poi-rack-01', spotlightId: 'spot-rack', groundShadow: true,
+      productIds: productsOn('disp-rack-01'), poiId: 'poi-rack-01', spotlightId: 'spot-rack', groundShadow: true,
       focusCamera: { position: [-8.95, 1.5, 8.0], target: [-11.55, 1.2, 8.0], fov: 48, enterMs: 1100, exitMs: 800 } },
     { id: 'disp-plinth-01', kind: 'plinth', zoneId: 'zone-archive', label: 'Archivio · Plinto',
       position: [6.5, 0.06, 7.0], rotationY: 0,
       colliderId: 'col-plinth-01', approachWaypointId: 'wp-arch-01',
       assetId: 'asset-plinth-a', materialIds: { body: 'mat-concrete-raw' },
-      productIds: ['prod-002', 'prod-003'], poiId: 'poi-arch-01', spotlightId: 'spot-hall-flame', groundShadow: true,
+      productIds: productsOn('disp-plinth-01'), poiId: 'poi-arch-01', spotlightId: 'spot-hall-flame', groundShadow: true,
       focusCamera: { position: [6.5, 1.95, 9.45], target: [6.5, 0.95, 7.0], fov: 42, enterMs: 1100, exitMs: 800 } },
     { id: 'disp-wall-01', kind: 'wall', zoneId: 'zone-archive', label: 'Archivio · Parete',
       position: [11.62, 0, 8.0], rotationY: -Math.PI / 2,
       colliderId: 'col-disp-wall-01', approachWaypointId: 'wp-aisle-e-p8',
       assetId: 'asset-wall-a', materialIds: { panel: 'mat-bone-seamless', frame: 'mat-steel-dark' },
-      productIds: ['prod-007'], poiId: 'poi-wall-01', spotlightId: 'spot-wall-01', groundShadow: false,
+      productIds: productsOn('disp-wall-01'), poiId: 'poi-wall-01', spotlightId: 'spot-wall-01', groundShadow: false,
       focusCamera: { position: [9.0, 1.55, 8.0], target: [11.55, 1.45, 8.0], fov: 46, enterMs: 1100, exitMs: 800 } },
   ],
 
   pois: [
-    { id: 'poi-new-01', type: 'display', label: 'Heavy Hoodie', anchor: [-7.7, 2.3, 6.6],
+    { id: 'poi-new-01', type: 'display', label: poiLabel('disp-mannequin-01', 'Nuovi Arrivi · 01'), anchor: [-7.7, 2.3, 6.6],
       proximity: { showRadius: 7.0, activateRadius: 3.2, hideRadius: 9.0 }, icon: 'tag',
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-01', approachWaypointId: 'wp-new-01', requires: 'focusMode' },
-    { id: 'poi-new-02', type: 'display', label: 'Work Jacket', anchor: [-5.3, 2.3, 6.6],
+    { id: 'poi-new-02', type: 'display', label: poiLabel('disp-mannequin-02', 'Nuovi Arrivi · 02'), anchor: [-5.3, 2.3, 6.6],
       proximity: { showRadius: 7.0, activateRadius: 3.2, hideRadius: 9.0 }, icon: 'tag',
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-02', approachWaypointId: 'wp-new-01', requires: 'focusMode' },
-    { id: 'poi-rack-01', type: 'display', label: 'Rack · Tees', anchor: [-11.15, 2.4, 8.0],
+    { id: 'poi-rack-01', type: 'display', label: poiLabel('disp-rack-01', 'Rack · Tees'), anchor: [-11.15, 2.4, 8.0],
       proximity: { showRadius: 6.5, activateRadius: 2.2, hideRadius: 8.0 }, icon: 'tag',
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-rack-01', approachWaypointId: 'wp-aisle-w-p8', requires: 'focusMode' },
-    { id: 'poi-arch-01', type: 'display', label: 'Archivio', anchor: [6.5, 1.85, 7.0],
+    { id: 'poi-arch-01', type: 'display', label: poiLabel('disp-plinth-01', 'Archivio'), anchor: [6.5, 1.85, 7.0],
       proximity: { showRadius: 7.0, activateRadius: 2.8, hideRadius: 9.0 }, icon: 'tag',
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-plinth-01', approachWaypointId: 'wp-arch-01', requires: 'focusMode' },
-    { id: 'poi-wall-01', type: 'display', label: 'Track Pant', anchor: [11.2, 2.85, 8.0],
+    { id: 'poi-wall-01', type: 'display', label: poiLabel('disp-wall-01', 'Archivio · Parete'), anchor: [11.2, 2.85, 8.0],
       proximity: { showRadius: 6.5, activateRadius: 2.2, hideRadius: 8.0 }, icon: 'tag',
       prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-wall-01', approachWaypointId: 'wp-aisle-e-p8', requires: 'focusMode' },
     { id: 'poi-look-01', type: 'lookbook', label: 'Brand Story', anchor: [0, 2.0, -14.0],
       proximity: { showRadius: 9.0, activateRadius: 3.0, hideRadius: 11.0 }, icon: 'book',
-      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: 'lb-001', approachWaypointId: 'wp-look-01', requires: 'lookbook' },
+      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: mainLookbookId, approachWaypointId: 'wp-look-01', requires: 'lookbook' },
   ],
 
-  products: [
-    { id: 'prod-001', sku: 'INT-001', name: 'Heavy Hoodie', category: 'Hoodie', collection: 'DROP 01',
-      price: { amount: 189, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo, due o tre righe di copy editoriale.',
-      details: ['Cotone pesante segnaposto', 'Vestibilità oversize', 'Made in Florence'],
-      sizes: [{ id: 'xs', label: 'XS', available: false }, { id: 's', label: 'S', available: true },
-              { id: 'm', label: 'M', available: true }, { id: 'l', label: 'L', available: true },
-              { id: 'xl', label: 'XL', available: false }],
-      colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }, { id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }],
-      media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' },
-              { id: 'm2', ratio: '4:5', label: 'Back', variant: 'product' },
-              { id: 'm3', ratio: '16:9', label: 'Detail', variant: 'editorial' }],
-      commerce: { handle: 'heavy-hoodie' },
-      displayId: 'disp-mannequin-01', lookbookIds: ['lb-001'], badges: ['NEW'] },
-    { id: 'prod-002', sku: 'INT-002', name: 'Cargo Pant', category: 'Pants', collection: 'DROP 01',
-      price: { amount: 229, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Tessuto tecnico segnaposto', 'Gamba ampia', 'Cordino flame orange'],
-      sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true },
-              { id: 'l', label: 'L', available: false }],
-      colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
-      media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' },
-              { id: 'm2', ratio: '1:1', label: 'Detail', variant: 'editorial' }],
-      commerce: { handle: 'cargo-pant' },
-      displayId: 'disp-plinth-01', lookbookIds: ['lb-001'], badges: [] },
-    { id: 'prod-003', sku: 'INT-003', name: 'Box Tee', category: 'T-Shirt', collection: 'ARCHIVE',
-      price: { amount: 89, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Jersey pesante segnaposto', 'Spalla scesa'],
-      sizes: [{ id: 'm', label: 'M', available: true }, { id: 'l', label: 'L', available: true }],
-      colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }],
-      media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
-      commerce: { handle: 'box-tee' },
-      displayId: 'disp-plinth-01', lookbookIds: [], badges: ['ARCHIVE'] },
-    { id: 'prod-004', sku: 'INT-004', name: 'Work Jacket', category: 'Jacket', collection: 'DROP 01',
-      price: { amount: 269, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Canvas pesante segnaposto', 'Taglio boxy', 'Tasche applicate'],
-      sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true },
-              { id: 'l', label: 'L', available: true }],
-      colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }, { id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
-      media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' }],
-      commerce: { handle: 'work-jacket' },
-      displayId: 'disp-mannequin-02', lookbookIds: ['lb-001'], badges: ['NEW'] },
-    { id: 'prod-005', sku: 'INT-005', name: 'Logo Tee', category: 'T-Shirt', collection: 'DROP 01',
-      price: { amount: 79, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Jersey segnaposto', 'Stampa frontale'],
-      sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true },
-              { id: 'l', label: 'L', available: true }],
-      colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
-      media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
-      commerce: { handle: 'logo-tee' },
-      displayId: 'disp-rack-01', lookbookIds: [], badges: [] },
-    { id: 'prod-006', sku: 'INT-006', name: 'Longsleeve', category: 'T-Shirt', collection: 'DROP 01',
-      price: { amount: 99, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Jersey segnaposto', 'Manica lunga'],
-      sizes: [{ id: 'm', label: 'M', available: true }, { id: 'l', label: 'L', available: false }],
-      colorways: [{ id: 'cw-bone', label: 'Bone', swatch: '#e8e2d4' }],
-      media: [{ id: 'm1', ratio: '1:1', label: 'Front', variant: 'product' }],
-      commerce: { handle: 'longsleeve' },
-      displayId: 'disp-rack-01', lookbookIds: [], badges: [] },
-    { id: 'prod-007', sku: 'INT-007', name: 'Track Pant', category: 'Pants', collection: 'ARCHIVE',
-      price: { amount: 189, currency: 'EUR' },
-      description: 'Testo segnaposto descrittivo del capo.',
-      details: ['Nylon tecnico segnaposto', 'Cordino flame orange'],
-      sizes: [{ id: 's', label: 'S', available: true }, { id: 'm', label: 'M', available: true }],
-      colorways: [{ id: 'cw-black', label: 'Black', swatch: '#0d0d0d' }],
-      media: [{ id: 'm1', ratio: '4:5', label: 'Front', variant: 'product' }],
-      commerce: { handle: 'track-pant' },
-      displayId: 'disp-wall-01', lookbookIds: [], badges: ['ARCHIVE'] },
-  ],
+  products: content.products,
 
-  // Lookbook / Brand Story (Fase 5). Testi e immagini sono segnaposto dichiarati:
-  // i contenuti reali della campagna li fornisce il brand. La relazione con i
+  // Lookbook / Brand Story (Fase 5): dal contenuto scelto. La relazione con i
   // prodotti è bidirezionale (products[].lookbookIds ↔ lookbook[].productIds, I21).
-  lookbook: [
-    { id: 'lb-001', title: 'DROP 01', subtitle: 'Placeholder subtitle', zoneId: 'zone-lookbook',
-      season: 'FW26',
-      body: [
-        'Paragrafo segnaposto uno: il racconto della collezione, in due o tre righe di copy editoriale.',
-        'Paragrafo segnaposto due: luoghi, materiali, persone. Il testo definitivo arriva dal brand.',
-      ],
-      images: [{ id: 'lbi1', ratio: '16:9', label: 'Campaign 01', variant: 'editorial' },
-               { id: 'lbi2', ratio: '4:5', label: 'Look 01', variant: 'editorial' },
-               { id: 'lbi3', ratio: '1:1', label: 'Detail 01', variant: 'editorial' }],
-      productIds: ['prod-001', 'prod-004', 'prod-002'] },
-  ],
+  lookbook: content.lookbook,
 
   assets: {
     registry: {
@@ -598,6 +528,24 @@ export const storeConfig = {
     productFrame: [4, 5],
   },
 
+  // Foto vere (demo e, dalla 8c, catalogo del cliente). Ogni foto `src` è pubblicata in
+  // più larghezze (`<src>-<w>.webp`, da `npm run media:build`): il browser sceglie la più
+  // piccola che basta, così un telefono non scarica la versione da desktop. Senza `src`
+  // resta il segnaposto grafico dichiarato.
+  media: {
+    widths: [400, 800, 1400],
+    quality: 78,
+    // Ritaglio delle foto prodotto generate in 3:4 verso il 4:5 delle schede.
+    productRatio: '4:5',
+    // Capi 3D (livello leggero): la foto scontornata del fronte applicata sulla sagoma.
+    // Una texture sola per capo, piccola: 7 capi ≈ 12 MB di memoria GPU con le mipmap.
+    texture: { width: 512 },
+    // Scontorno automatico dei capi scuri su fondo chiaro: distanza dal colore del fondo
+    // (0–255) sotto cui un pixel collegato ai bordi è fondo. I capi chiari si scontornano
+    // fuori (file `<nome>-cutout.png`, scripts/media/process.py).
+    cutoutThreshold: 40,
+  },
+
   copy: {
     onboarding: {
       eyebrow: 'Negozio immersivo · prototipo',
@@ -624,7 +572,7 @@ export const storeConfig = {
       },
       loading: 'Caricamento ambiente',
       ready: 'pronto',
-      comingSoon: 'in arrivo · fase',
+      comingSoon: 'in arrivo',
       phaseNotice: 'Prototipo in costruzione. I comandi segnati "in arrivo" non sono ancora attivi.',
     },
     focus: {
@@ -636,6 +584,10 @@ export const storeConfig = {
       colorways: 'Varianti colore',
       of: 'di',
     },
+    // Segnaposto grafico (immagini senza foto): stati e sigle.
+    placeholder: { loading: 'Immagine in caricamento', label: 'Segnaposto', unlabeled: 'senza etichetta', error: 'ERRORE', mark: 'PLH' },
+    // Pannello della parete del brand, disegnato su texture.
+    brandWall: { eyebrow: 'LOOKBOOK · BRAND STORY', corner: 'APRI LA BRAND STORY →' },
     // Finestre di dialogo della Fase 5: scheda prodotto e Lookbook.
     dialog: { close: 'Chiudi', back: 'Indietro', closeHint: 'ESC per chiudere' },
     product: {
@@ -648,6 +600,7 @@ export const storeConfig = {
       media: 'Immagini',
       details: 'Dettagli',
       inLookbook: 'Nel lookbook',
+      purchaseClosed: 'Acquisti non ancora aperti',
     },
     lookbook: {
       eyebrow: 'Brand Story',
@@ -667,13 +620,16 @@ export const storeConfig = {
       lockPromptSub: 'WASD per muoverti · ESC per liberare il cursore',
       quickTravel: 'Vai a',
       minimap: 'pianta',
+      zones: 'zone',
+      inputTouch: 'touch',
+      inputPointer: 'puntatore',
+      tier: 'tier',
     },
     hints: {
-      navigationLocked: 'La navigazione arriva nella Fase 3',
       unreachable: 'Punto non raggiungibile',
       wall: 'Lì c\'è un muro',
       pointerLockFailed: 'Il browser non ha concesso il controllo del mouse: riprova con un click',
-      comingInPhase: 'In arrivo nella Fase',
+      notAvailable: 'Non ancora disponibile',
       tooFar: 'Avvicinati per esaminare',
     },
     menu: {
@@ -695,6 +651,9 @@ export const storeConfig = {
       tris: 'triangoli',
       memory: 'geo / tex / prog',
       window: 'finestra',
+      tier: 'tier',
+      dpr: 'dpr',
+      cap: 'cap',
       softwareWarning: 'Rendering software: questi numeri non valgono come misura reale',
     },
     bench: {
@@ -762,6 +721,7 @@ export const storeConfig = {
         title: 'WebGL non disponibile',
         body: 'Questo dispositivo o browser non supporta il rendering 3D richiesto.',
         hint: 'Prova con Chrome, Edge, Firefox o Safari aggiornati, con accelerazione hardware attiva.',
+        renderer: 'renderer rilevato',
       },
     },
     legal: {
@@ -785,5 +745,14 @@ export const storeConfig = {
     },
   },
 }
+
+// Testi del contenuto scelto, fusi sopra quelli comuni (stesse chiavi).
+function mergeInto(base, extra) {
+  for (const [k, v] of Object.entries(extra ?? {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object') mergeInto(base[k], v)
+    else base[k] = v
+  }
+}
+mergeInto(storeConfig.copy, content.copy)
 
 export default storeConfig

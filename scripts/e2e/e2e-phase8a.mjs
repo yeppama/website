@@ -41,7 +41,7 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   const { ctx, page } = await open('off', { query: '?debug=x&tier=low' })
   ok('commercio spento di default: niente bottone carrello nell\'HUD', (await page.getByTestId('cart-button').count()) === 0)
   await openProduct(page, 'prod-001')
-  const buy = dialog(page).getByRole('button', { name: new RegExp(`${C.hints.comingInPhase} ${storeConfig.features.checkout.availableInPhase}`) })
+  const buy = dialog(page).getByRole('button', { name: C.product.purchaseClosed })
   ok('commercio spento: la scheda resta col bottone d\'acquisto spento e il prezzo dimostrativo',
     await buy.isDisabled() && (await page.getByTestId('product-price').textContent()).trim() === price(hoodie.price.amount))
   await ctx.close()

@@ -23,6 +23,7 @@ export default function PlaceholderImage({
   className = '',
 }) {
   const cfg = storeConfig.placeholders
+  const t = storeConfig.copy.placeholder
   const spec = cfg.variants[variant] ?? cfg.variants.product
   const [w, h] = cfg.ratios[ratio] ?? cfg.ratios['1:1']
   const patternId = useId()
@@ -54,7 +55,7 @@ export default function PlaceholderImage({
         border: `1px solid ${isError ? 'var(--color-state-danger)' : 'var(--color-line-subtle)'}`,
       }}
       role="img"
-      aria-label={isLoading ? 'Immagine in caricamento' : `Segnaposto: ${label ?? 'senza etichetta'}`}
+      aria-label={isLoading ? t.loading : `${t.label}: ${label ?? t.unlabeled}`}
       data-state={resolved}
     >
       {!isLoading && spec.pattern !== 'none' && (
@@ -89,7 +90,7 @@ export default function PlaceholderImage({
         <div className={`absolute inset-0 flex flex-col justify-between ${compact ? 'p-2' : 'p-3'}`}>
           <div className="flex items-start justify-between gap-2">
             <span className="micro" style={{ color: spec.fg }}>
-              {isError ? 'ERRORE' : ratio}
+              {isError ? t.error : ratio}
             </span>
             {spec.showCategory && category && (
               <span className="micro" style={{ color: spec.fg }}>{category}</span>
@@ -102,7 +103,7 @@ export default function PlaceholderImage({
             >
               {label}
             </span>
-            {!compact && <span className="micro" style={{ color: spec.fg, opacity: 0.6 }}>PLH</span>}
+            {!compact && <span className="micro" style={{ color: spec.fg, opacity: 0.6 }}>{t.mark}</span>}
           </div>
         </div>
       )}

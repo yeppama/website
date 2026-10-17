@@ -253,6 +253,23 @@ export function validateStoreConfig(config) {
     }
   }
 
+  // I26 — foto (demo, 8c): una foto legata a un colore e la foto 3D di un colore citano
+  // un colore del capo, e ogni colore ha almeno una foto che lo mostra (o nessuna
+  // foto legata ai colori). Altrimenti scegliendo un colore la galleria resta vuota.
+  for (const prod of config.products) {
+    const colorIds = new Set(prod.colorways.map((c) => c.id))
+    for (const m of prod.media) {
+      if (m.colorwayId && !colorIds.has(m.colorwayId)) fail('I26', `prodotto ${prod.id}: foto ${m.id} legata al colore inesistente "${m.colorwayId}"`)
+      if (m.src !== undefined && !/^\/[\w/.-]+$/.test(m.src)) fail('I26', `prodotto ${prod.id}: foto ${m.id} con indirizzo non valido "${m.src}"`)
+    }
+    for (const cid of Object.keys(prod.model3d?.byColorway ?? {})) {
+      if (!colorIds.has(cid)) fail('I26', `prodotto ${prod.id}: foto 3D per il colore inesistente "${cid}"`)
+    }
+    for (const c of prod.colorways) {
+      if (!prod.media.some((m) => !m.colorwayId || m.colorwayId === c.id)) fail('I26', `prodotto ${prod.id}: nessuna foto per il colore ${c.id}`)
+    }
+  }
+
   return errors
 }
 
@@ -264,5 +281,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 25 invarianti verificate, nessun errore')
+  console.info('storeConfig: 26 invarianti verificate, nessun errore')
 }

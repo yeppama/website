@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
-import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { useLegalStore } from '../../state/useLegalStore.js'
+import { useShownPrice } from '../../state/useCartStore.js'
 import { useFocusTrap } from '../primitives/useFocusTrap.js'
 import CartButton from '../cart/CartButton.jsx'
 import { commerceActive } from '../../commerce/index.js'
-import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
+import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
 /**
@@ -105,29 +105,11 @@ export default function MenuDrawer() {
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {storeConfig.products.map((product) => (
-              <article key={product.id}>
-                <button type="button" className="group block w-full text-left"
-                        disabled={!features.productModal.enabled}
-                        onClick={() => openDialog('product', product.id)}>
-                  <PlaceholderImage
-                    ratio={product.media[0].ratio}
-                    variant={product.media[0].variant}
-                    label={product.media[0].label}
-                    category={product.category}
-                    seed={product.id}
-                  />
-                  <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
-                        style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
-                    {product.name}
-                  </span>
-                  <span className="micro mt-0.5 block">
-                    {product.sku} · {formatPrice(product.price, brand.locale)}
-                  </span>
-                </button>
-              </article>
+              <ProductCard key={product.id} product={product} disabled={!features.productModal.enabled}
+                           onOpen={() => openDialog('product', product.id)} />
             ))}
           </div>
-          <p className="micro mt-4">{storeConfig.copy.legal.priceNotice}</p>
+          {!commerceActive() && <p className="micro mt-4">{storeConfig.copy.legal.priceNotice}</p>}
         </section>
 
         <section className="mt-10">
@@ -176,5 +158,25 @@ export default function MenuDrawer() {
         )}
       </aside>
     </div>
+  )
+}
+
+/** Capo nell'indice: prima foto, nome, codice e prezzo (dal fornitore se il commercio è attivo). */
+function ProductCard({ product, disabled, onOpen }) {
+  const { label } = useShownPrice(product)
+  return (
+    <article>
+      <button type="button" className="group block w-full text-left" disabled={disabled} onClick={onOpen}>
+        <MediaImage media={product.media[0]} ratio={storeConfig.media.productRatio} category={product.category}
+                    seed={product.id} sizes="(min-width: 640px) 12rem, 45vw" />
+        <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
+              style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
+          {product.name}
+        </span>
+        <span className="micro mt-0.5 block" data-testid="menu-price">
+          {product.sku} · {label}
+        </span>
+      </button>
+    </article>
   )
 }

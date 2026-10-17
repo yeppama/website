@@ -83,7 +83,7 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
                 <span className={active ? '' : 'line-through decoration-line-strong'}>{line.text}</span>
                 {!active && (
                   <span className="micro border border-line-strong px-1.5 py-0.5">
-                    {copy.comingSoon} {feature.availableInPhase}
+                    {copy.comingSoon}
                   </span>
                 )}
               </li>

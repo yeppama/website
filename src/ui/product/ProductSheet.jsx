@@ -4,7 +4,7 @@ import { formatPrice } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
 import { commerceActive, testBanner } from '../../commerce/index.js'
-import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
+import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 import OptionGroup from './OptionGroup.jsx'
 
@@ -22,7 +22,9 @@ export default function ProductSheet({ product, headingId }) {
   const [colorwayId, setColorwayId] = useState(product.colorways[0].id)
   const [sizeId, setSizeId] = useState(null)
 
-  const media = product.media.find((m) => m.id === mediaId)
+  // Le foto legate a un colore (media[].colorwayId) compaiono solo con quel colore.
+  const visibleMedia = product.media.filter((m) => !m.colorwayId || m.colorwayId === colorwayId)
+  const media = visibleMedia.find((m) => m.id === mediaId) ?? visibleMedia[0]
   const [mw, mh] = storeConfig.placeholders.ratios[media.ratio]
   const [pw, ph] = storeConfig.placeholders.productFrame
   const colorway = product.colorways.find((c) => c.id === colorwayId)
@@ -57,6 +59,9 @@ export default function ProductSheet({ product, headingId }) {
   const chooseColor = (id) => {
     setColorwayId(id)
     setAdded(false)
+    // Sulla foto del colore nuovo, se ne ha una sua.
+    const own = product.media.find((m) => m.colorwayId === id)
+    if (own) setMediaId(own.id)
     // Una taglia esaurita nel nuovo colore non resta selezionata.
     if (active && entry && sizeId && !inStock(sizeId, id)) setSizeId(null)
   }
@@ -98,27 +103,28 @@ export default function ProductSheet({ product, headingId }) {
                style={{ '--frame-ratio': pw / ph }}
                className="md:col-start-1 md:row-span-2 md:row-start-1 short:sticky short:top-0 short:col-start-1 short:row-span-2 short:row-start-1 short:w-[calc(var(--sheet-frame-h)_*_var(--frame-ratio))] short:self-start">
         <div className="short:flex short:h-(--sheet-frame-h) short:items-center short:justify-center">
-          <PlaceholderImage
-            ratio={media.ratio}
-            variant={media.variant}
+          <MediaImage
+            media={media}
             label={`${media.label} · ${colorway.label}`}
             category={product.category}
             seed={`${product.id}-${media.id}-${colorway.id}`}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            eager
             className={mw / mh < pw / ph ? 'short:h-full' : 'short:w-full'}
           />
         </div>
-        {product.media.length > 1 && (
+        {visibleMedia.length > 1 && (
           <ul className="mt-3 grid grid-cols-4 gap-2 short:mt-2 short:grid-cols-[repeat(auto-fill,minmax(var(--touch-min),1fr))] short:gap-1">
-            {product.media.map((m) => (
+            {visibleMedia.map((m) => (
               <li key={m.id}>
                 <button
                   type="button"
-                  aria-pressed={m.id === mediaId}
+                  aria-pressed={m.id === media.id}
                   aria-label={`${t.media}: ${m.label}`}
                   onClick={() => setMediaId(m.id)}
-                  className={`block w-full border ${m.id === mediaId ? 'border-accent-flame' : 'border-transparent hover:border-line-strong'}`}
+                  className={`block w-full border ${m.id === media.id ? 'border-accent-flame' : 'border-transparent hover:border-line-strong'}`}
                 >
-                  <PlaceholderImage ratio="1:1" variant={m.variant} label={m.label} seed={`${product.id}-${m.id}`} compact />
+                  <MediaImage media={m} ratio="1:1" seed={`${product.id}-${m.id}`} sizes="6rem" compact />
                 </button>
               </li>
             ))}
@@ -177,10 +183,10 @@ export default function ProductSheet({ product, headingId }) {
             </>
           ) : (
             <Button variant="primary" className="mt-3 w-full" disabled={!checkout.enabled}>
-              {`${copy.hints.comingInPhase} ${checkout.availableInPhase}`}
+              {t.purchaseClosed}
             </Button>
           )}
-          <p className="micro mt-3" style={{ opacity: 0.7 }}>{copy.legal.priceNotice}</p>
+          {!active && <p className="micro mt-3" style={{ opacity: 0.7 }}>{copy.legal.priceNotice}</p>}
         </div>
 
         <div className="short:order-2">

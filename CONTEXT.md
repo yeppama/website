@@ -1,5 +1,7 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
+> **Demo "negozio finito" (2026-10-17, branch `ccr-91a33afa-mmw7de`, nato da `demo/vetrina`):** contenuti separati dal codice (`src/content/`), foto vere in schede/menu/Lookbook/Focus/carrello, capi 3D con la foto, prezzi dal fornitore ovunque, testi di fase tolti. Foto generate (18) ma **non ancora nel repository**: l'host delle foto è bloccato dalla rete del container. Dettagli in §5.
+>
 > Stato al 2026-10-16 · branch `claude/cool-edison-2svzgj` (avanti rispetto a `main`, che resta alla Fase 7) · **Fase 8b chiusa** (ordine di prova #1001 pagato su Shopify) · **preparazione 8c/8d eseguita** (modello Excel del catalogo, import, controllo dal vivo, pagine legali da Shopify) · **telefono in orizzontale corretto** (Focus e schede) · **controllo completo del sito** (16 difetti confermati, 15 corretti) · 8c in attesa del catalogo del cliente e del comando
 > Il piano completo (schema dati, roadmap, limiti dell'ambiente) è in `PLAN.md` v1.6. Registro prestazioni: `docs/PERF.md`.
 
@@ -15,8 +17,9 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 - **Zustand** (D2): stato letto a 60 Hz dal render loop; Context ridisegnerebbe tutti i consumer.
 
 **Architettura data-driven**
+- Contenuti separati (demo, 2026-10-17): marchio, capi, Lookbook, posizione dei capi (`products[].displayId`, da cui `displays[].productIds` ed etichette dei POI), fornitore del commercio e testi propri (`copy`, fusi sopra) stanno in `src/content/<id>.js`, scelto con `VITE_CONTENT` (default `into`; Node lo legge da `process.env`). Il branch della demo ha `.env` con `demo`: **non portarlo su main**.
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 25 invarianti (I1–I25), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 26 invarianti (I1–I26), errore bloccante solo in DEV, rimosso dal bundle di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
 - `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
 - Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
@@ -66,6 +69,8 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 **Struttura**
 ```
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
+src/content/       index.js (sceglie con VITE_CONTENT) · into.js (INTO, segnaposto) · demo.js (demo) · demo.media.json (generato)
+scripts/media/     build.mjs + process.py (foto → WebP in più larghezze e texture 3D; Python 3 + Pillow + numpy)
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
 src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova) · shopify.js (Storefront API)
 src/lib/sanitizeHtml.js   filtro dell'HTML esterno (pagine legali del venditore)
@@ -76,7 +81,8 @@ scripts/           generate-theme.js · test-navigation.mjs · test-framing.mjs 
 scripts/catalog/   schema.mjs (colonne del modello) · make-template.mjs · importer.mjs · import.mjs · shopify-csv.mjs · check.mjs
 docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dal cliente) · modello-catalogo-INTO.xlsx (da compilare) · PLAN-8.md
 docs/MANUALE.md    come funziona il sito e "voglio cambiare X → dove" (per l'utente)
-docs/codice/       spiegazione riga per riga di tutti gli 80 file del sito (commit ac1cb32): da aggiornare quando un file cambia molto
+docs/codice/       spiegazione riga per riga di tutti gli 80 file del sito (commit ac1cb32): da aggiornare quando un file cambia molto (la demo ha cambiato storeConfig, schede, menu, Focus, Lookbook, carrello, espositori: non ancora aggiornata)
+docs/demo/         FOTO.md (stile e procedura) · PRESENTAZIONE.md (traccia di 2 minuti) · catalogo-demo.xlsx · foto-sorgenti.tsv
 ```
 
 **Geometria (`src/lib/geometry.js`) — convenzione di three, verificata contro le sue matrici**
@@ -182,6 +188,12 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 - Una barra a scorrimento con l'ultima voce tagliata sembra un difetto: griglia a colonne uguali, corpo `clamp()`, verificata a 320/360/390/430 px.
 - Tasti premuti all'apertura del menu o alla perdita di focus: azzerarli, o il player cammina da solo.
 
+**Demo e foto (2026-10-17)**
+- Higgsfield col piano gratuito: GPT Image bloccato ("Requires basic plan"), modelli realistici 1–1,5 crediti, Z Image 0,15; al massimo ~4 generazioni contemporanee (429) e 1 sola rimozione dello sfondo per volta (1 credito l'una).
+- Le immagini generate stanno su `d8j0ntlcm91z4.cloudfront.net`: il container non lo raggiunge finché non viene aggiunto agli host consentiti.
+- `ImageDraw.floodfill` non scrive su un'immagine nata da un array numpy (memoria condivisa): serve `.copy()`. Senza, lo scontorno restituiva il capo grande quanto la foto.
+- Cambiare la mappa di un materiale con un'altra non ricompila lo shader: i capi 3D nascono con una mappa trasparente 1×1 e prendono la foto all'arrivo, senza scatti dopo il riscaldamento.
+
 **Test e processo**
 - Le richieste dirette di Playwright (`ctx.request`) non passano dal proxy del container: le verifiche di rete si fanno dal browser (`page.goto`, `fetch` nella pagina).
 - Una pagina che risponde 200 non è per forza quella attesa: la "cassa" Shopify era la pagina `/password`. Controllare l'indirizzo d'arrivo.
@@ -228,7 +240,10 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 - **Fase 8a — consegnata (2026-10-16):** carrello completo col negozio di prova. `src/commerce/` (contratto del fornitore in `index.js`, `mock.js`), `src/state/useCartStore.js`, `src/ui/cart/` (`CartSheet` come scheda `kind: 'cart'` della pila `dialogs`, `CartButton` in HUD e menu). `storeConfig.commerce` (provider `off` di default, `?commerce=mock` per provarlo, `&mockerror=1` simula il fornitore in errore), `products[].commerce.handle`. Invarianti I23 (handle valido e unico) e I24 (regole del commercio); oggi 25 con I25. Con commercio attivo prezzo, varianti e taglie disponibili vengono solo dal fornitore; se non risponde il capo è "non disponibile", mai col prezzo di storeConfig. Suite `e2e-phase8a.mjs` (oggi 45 verifiche, con le pagine legali).
 - **Fase 8 — piano:** `docs/PLAN-8.md`. Decisioni: Shopify headless, account del cliente a suo nome, vendita UE in EUR, carrello. Sotto-fasi 8a (carrello con fornitore finto, nessuna dipendenza) → 8b (negozio Shopify di sviluppo) → 8c (catalogo del cliente) → 8d (dati e pagine legali) → 8e (messa in vendita). 8a e 8b chiuse; 8c in attesa del catalogo del cliente.
 - ~~Fase 7~~ — produzione su `main` (opzione A). L'URL pubblico lo verifica l'utente: dal container `*.vercel.app` non è raggiungibile.
-- **Piccole incongruenze trovate scrivendo `docs/codice/` (2026-10-17, non corrette):** testi scritti nei componenti invece che in `copy` (`canvasText.js` r. 88 e 100, fra cui "IN ARRIVO FASE 5" ormai falso; `PlaceholderImage` "ERRORE", "PLH", "Segnaposto:"; `WebGLFallback` "renderer rilevato"; `PerfHud` "tier/dpr/cap"; `Hud.jsx` "touch/puntatore"; `Minimap.jsx` "zone") · `placeholders.skeleton.minVisibleMs` mai applicato · campi di config letti da nessuno (`zones[].accentColor/ambientBoost`, `spots[].kind/zoneId`, `tiers.*.envMapResolution`, `grain.mode`, `benchmark.suggestedRuns`, token `weight/border/breakpoint`) · variabili inutilizzate (`pad` in Minimap, `zones` in MenuDrawer, `zoneAt` riesportato da deviceProfile) · commento "12 passi" della grana (sono 10) · `font-display` ripetuto in fonts.css · `browserLabel` del benchmark probabilmente scrive "Chrome" anche per Edge/Opera · griglia del pavimento condivisa fra materiali con la stessa griglia.
-- **Demo "negozio finito" (2026-10-17):** piano in `docs/PIANO-DEMO.md`, da fare in una sessione nuova sul branch `demo/vetrina` (creato da questo branch, non da `main`). Parte solo con `Approvato, procedi con la demo` e le tre scelte (scopo, foto, capi 3D).
+- **Piccole incongruenze trovate scrivendo `docs/codice/` (2026-10-17; i testi nei componenti corretti con la demo, il resto no):** testi scritti nei componenti invece che in `copy` (`canvasText.js` r. 88 e 100, fra cui "IN ARRIVO FASE 5" ormai falso; `PlaceholderImage` "ERRORE", "PLH", "Segnaposto:"; `WebGLFallback` "renderer rilevato"; `PerfHud` "tier/dpr/cap"; `Hud.jsx` "touch/puntatore"; `Minimap.jsx` "zone") · `placeholders.skeleton.minVisibleMs` mai applicato · campi di config letti da nessuno (`zones[].accentColor/ambientBoost`, `spots[].kind/zoneId`, `tiers.*.envMapResolution`, `grain.mode`, `benchmark.suggestedRuns`, token `weight/border/breakpoint`) · variabili inutilizzate (`pad` in Minimap, `zones` in MenuDrawer, `zoneAt` riesportato da deviceProfile) · commento "12 passi" della grana (sono 10) · `font-display` ripetuto in fonts.css · `browserLabel` del benchmark probabilmente scrive "Chrome" anche per Edge/Opera · griglia del pavimento condivisa fra materiali con la stessa griglia.
+- **Demo "negozio finito" — in corso (2026-10-17, "Approvato, procedi con la demo: scopo A preparando B, foto generate con l'IA, capi 3D livello leggero").** Piano in `docs/PIANO-DEMO.md`. Branch di sessione `ccr-91a33afa-mmw7de` (nato da `demo/vetrina`).
+  - Fatto: contenuti in `src/content/` (`into` = segnaposto di sempre, `demo` = stessi capi, handle, prezzi e varianti del negozio di sviluppo, con testi credibili, foto e `commerce.provider: 'shopify'`); `MediaImage` (srcset 400/800/1400 WebP, caricamento pigro, stati loading/error del segnaposto) in scheda, menu, Lookbook, Focus (miniatura), carrello; foto legate al colore (`media[].colorwayId`); capi 3D con la foto (`model3d`: carte scontornate su rack e parete, ritaglio in cima alle pile del plinto, proiezione frontale sul busto del manichino; senza texture resta la sagoma); `useShownPrice` (menu, Focus, Lookbook: prezzo solo dal fornitore col commercio attivo, "—" se non risponde) → **difetto dei prezzi della 8c corretto**; nota "prezzi dimostrativi" solo a commercio spento; "In arrivo nella Fase N" → `hints.notAvailable` / `product.purchaseClosed`; testi scritti nei componenti spostati in `copy` (`placeholder`, `brandWall`, `hud.zones/inputTouch/inputPointer/tier`, `perf.tier/dpr/cap`, `errors.webgl.renderer`); `npm run media:build`, `npm run test:content`, `scripts/catalog/fill-from-content.mjs` (→ `docs/demo/catalogo-demo.xlsx`, reimportato con 0 errori), suite `e2e-demo.mjs` e `shots-demo.mjs`.
+  - **Bloccato:** le 18 foto generate (e 4 scontorni) non arrivano nel container (host bloccato). Finché mancano, `public/media/demo/` non è nel repository e `demo.media.json` è vuoto: l'anteprima mostra i segnaposto in stato "errore" e i capi 3D come sagome. Sbloccato l'host: `npm run media:build -- demo --fetch docs/demo/foto-sorgenti.tsv`, guardare le foto, `npm run test:content`, commit.
+  - Non eseguito: benchmark su iPhone, Pixel e Honor con le foto (serve l'utente), prova completa da telefono, aggiornamento di `docs/codice/`.
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).

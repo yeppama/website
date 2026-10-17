@@ -1,6 +1,23 @@
 import { useMemo } from 'react'
 import { getMaterial } from '../../lib/materials.js'
 import { getGarmentGeometry } from '../../lib/garments.js'
+import { getPhotoMaterial, getPhotoCardGeometry } from '../../lib/garmentPhotos.js'
+
+/** Foto del capo per il 3D (contenuto `model3d`), nel colore esposto: il primo. Null se non c'è. */
+export function garmentPhoto(product) {
+  const m = product.model3d
+  const photo = m?.byColorway?.[product.colorways[0].id] ?? m
+  // Senza texture preparata (npm run media:build) resta la silhouette.
+  return photo?.texture ? photo : null
+}
+
+/** Materiale con la foto del capo: scontornato (capo appeso) o pieno (busto, pile). */
+export function usePhotoMaterial(photo, garments, cutout) {
+  return useMemo(
+    () => (photo ? getPhotoMaterial(photo.texture, { cutout, roughness: garments.photo.roughness }, garments.photo.alphaTest) : null),
+    [photo, garments, cutout],
+  )
+}
 
 /** Materiale del tessuto con il colore della prima variante del prodotto. */
 export function useFabric(product, garments, materials) {
@@ -33,15 +50,23 @@ export function Cord({ position, length = 0.24, spread = 0.05, color }) {
   )
 }
 
-/** Capo appeso piatto (rack, parete): silhouette estrusa, rivolta verso +z locale. */
+/**
+ * Capo appeso piatto (rack, parete), rivolto verso +z locale. Con la foto è la foto
+ * scontornata su un piano (la sagoma è quella della foto); senza, la silhouette
+ * estrusa nel colore della prima variante.
+ */
 export function FlatGarment({ product, garments, materials, position, rotation }) {
   const kind = garments.shapeByCategory[product.category]
   const fabric = useFabric(product, garments, materials)
-  const geometry = getGarmentGeometry(kind)
+  const photo = garmentPhoto(product)
+  const photoMaterial = usePhotoMaterial(photo, garments, true)
+  const geometry = photo
+    ? getPhotoCardGeometry(photo, photo.aspect, kind === 'bottom' ? { height: garments.photo.bottomHeight } : { width: garments.photo.topWidth })
+    : getGarmentGeometry(kind)
   return (
     <group position={position} rotation={rotation}>
-      <mesh geometry={geometry} material={fabric} castShadow receiveShadow />
-      {kind === 'bottom' && <Cord position={[0, 0.47, 0.03]} length={0.26} color={garments.cordColor} />}
+      <mesh geometry={geometry} material={photoMaterial ?? fabric} castShadow receiveShadow />
+      {kind === 'bottom' && !photo && <Cord position={[0, 0.47, 0.03]} length={0.26} color={garments.cordColor} />}
     </group>
   )
 }

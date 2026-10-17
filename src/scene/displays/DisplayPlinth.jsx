@@ -1,4 +1,5 @@
-import { useMat, useFabric, Cord } from './parts.jsx'
+import { useMat, useFabric, Cord, garmentPhoto, usePhotoMaterial } from './parts.jsx'
+import { getPhotoPatchGeometry } from '../../lib/garmentPhotos.js'
 
 /**
  * Plinto: blocco in cemento con piano in acciaio e i capi piegati in pile.
@@ -10,6 +11,9 @@ const W = 1.2
 
 function FoldedStack({ product, garments, materials, x }) {
   const fabric = useFabric(product, garments, materials)
+  const photo = garmentPhoto(product)
+  const photoMaterial = usePhotoMaterial(photo, garments, false)
+  const crop = garments.photo.stackCrop[garments.shapeByCategory[product.category]]
   const layers = 3
   return (
     <group position={[x, H + 0.02, 0]}>
@@ -19,7 +23,12 @@ function FoldedStack({ product, garments, materials, x }) {
           <boxGeometry args={[0.4, 0.05, 0.31]} />
         </mesh>
       ))}
-      {garments.shapeByCategory[product.category] === 'bottom' && (
+      {/* Con la foto, in cima alla pila si vede il capo piegato: un ritaglio della foto. */}
+      {photo && (
+        <mesh position={[(layers - 1) % 2 * 0.012, 0.03 + (layers - 1) * 0.052 + 0.026, (layers - 1) % 2 * -0.01]}
+          rotation={[0, (layers - 2) * 0.04, 0]} geometry={getPhotoPatchGeometry(photo, crop, 0.39, 0.3)} material={photoMaterial} receiveShadow />
+      )}
+      {garments.shapeByCategory[product.category] === 'bottom' && !photo && (
         <Cord position={[0.12, 0.03 + layers * 0.052, 0.155]} length={0.12} spread={0.03} color={garments.cordColor} />
       )}
     </group>

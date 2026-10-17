@@ -53,7 +53,7 @@ function ProximityPrompt({ poi, isTouch }) {
           {poi.label}
         </span>
         <span className="micro">
-          {locked ? `${copy.hints.comingInPhase} ${feature.availableInPhase}` : (isTouch ? poi.prompt.mobile : poi.prompt.desktop)}
+          {locked ? copy.hints.notAvailable : (isTouch ? poi.prompt.mobile : poi.prompt.desktop)}
         </span>
       </div>
     </div>
@@ -102,7 +102,7 @@ export default function Hud({ device }) {
           <div className="flex items-end justify-between gap-4">
             <Minimap />
             <div className="text-right">
-              <p className="micro">{device.isTouch ? 'touch' : 'puntatore'} · tier {device.tier}</p>
+              <p className="micro">{device.isTouch ? copy.inputTouch : copy.inputPointer} · {copy.tier} {device.tier}</p>
               <p className="micro mt-1">{brand.origin.coords}</p>
             </div>
           </div>
