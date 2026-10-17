@@ -22,13 +22,17 @@ const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi)
 // Il pannello del Lookbook sta dentro lo spessore del collider del muro: il raggio
 // colpisce prima il collider, poi il pannello qualche centimetro dietro.
 const PANEL_DEPTH_TOLERANCE = 0.3
+// Passo della ricerca del punto raggiungibile più vicino a un click non raggiungibile.
+const NEAREST_STEP = 0.15
 
 /**
  * Controller del player — Fase 3.
  *
- * Desktop: WASD/frecce + mouse con Pointer Lock. Il lock si chiede SOLO su un
- *   click esplicito sulla scena; si rilascia da solo quando si apre il menu o
- *   la finestra perde il focus, e non si riattiva mai senza un nuovo click.
+ * Desktop, "tastiera e mouse": WASD/frecce + mouse con Pointer Lock. Il lock si
+ *   chiede SOLO su un click esplicito sulla scena; si rilascia da solo quando si
+ *   apre il menu o la finestra perde il focus, e non si riattiva mai senza un nuovo click.
+ * Desktop, "solo mouse" (scelta all'ingresso): come su telefono, trascina = guarda,
+ *   click = vai lì o esamina. Niente cursore catturato.
  * Mobile: niente joystick. Tap = vai lì (pavimento) o avvicinati (hotspot);
  *   trascinamento = orienta la visuale. Tap e trascinamento sono distinti da
  *   soglie di distanza e durata configurate.
@@ -180,6 +184,47 @@ export default function PlayerController({ config, device }) {
     return true
   }
 
+  /**
+   * Il punto raggiungibile più vicino a `target` sulla linea verso il player (un
+   * click su un muro, su una colonna o dentro un mobile porta lì davanti), o null.
+   */
+  const nearestReachable = (target) => {
+    const r = rt.current
+    const dx = r.pos.x - target[0]
+    const dz = r.pos.z - target[1]
+    const len = Math.hypot(dx, dz)
+    const steps = Math.max(1, Math.ceil(len / NEAREST_STEP))
+    for (let i = 0; i <= steps; i++) {
+      const p = [target[0] + (dx * i) / steps, target[1] + (dz * i) / steps]
+      if (nav.isWalkable(p) && nav.plan([r.pos.x, r.pos.z], p).ok) return p
+    }
+    return null
+  }
+
+  /** Va a `target` o, se non si può, al punto raggiungibile più vicino; altrimenti avvisa. */
+  const goToNearest = (target, notReachable) => {
+    const p = nav.isWalkable(target) && nav.plan([rt.current.pos.x, rt.current.pos.z], target).ok ? target : nearestReachable(target)
+    if (p) return goTo(p)
+    ping(target[0], target[1], false)
+    notify(notReachable)
+    return false
+  }
+
+  /** Comando di un POI: esamina l'espositore o apre il Lookbook, da dove si è. */
+  const activatePoi = (poi) => {
+    if (poi?.requires && !config.features[poi.requires]?.enabled) { notify(config.copy.hints.notAvailable); return }
+    if (poi?.targetDisplayId) enterFocusFor(displayById.get(poi.targetDisplayId))
+    else if (poi?.targetLookbookId) openLookbook(poi.targetLookbookId)
+  }
+
+  /** POI il cui indicatore a terra contiene il punto del pavimento, fra quelli visibili. */
+  const floorMarkerAt = ([x, z]) => {
+    const f = config.navigation.hotspot.floor
+    const reach = f.radius * f.ratio * f.tapScale
+    return pois.find((poi) => poi.floorMarker && rt.current.poiState[poi.id] !== 'hidden' &&
+      Math.hypot(poi.floorMarker[0] - x, poi.floorMarker[1] - z) <= reach) ?? null
+  }
+
   // --- Comandi dall'interfaccia (teletrasporto, avvicinamento) -----------------
   const runCommand = (cmd) => {
     const r = rt.current
@@ -202,6 +247,11 @@ export default function PlayerController({ config, device }) {
     }
     if (cmd.type === 'focus') {
       enterFocusFor(displayById.get(cmd.displayId))
+      return
+    }
+    // Il bottone del capo vicino (avviso in basso): funziona anche da dietro l'espositore.
+    if (cmd.type === 'activate') {
+      activatePoi(pois.find((p) => p.id === cmd.poiId))
       return
     }
     if (cmd.type === 'face') {
@@ -329,6 +379,10 @@ export default function PlayerController({ config, device }) {
       if (t < best.t) best = { t, kind: 'floor', point: [o[0] + d[0] * t, o[2] + d[2] * t] }
     }
 
+    // L'indicatore a terra di un espositore vale come il suo hotspot.
+    const marked = best.kind === 'floor' ? floorMarkerAt(best.point) : null
+    if (marked) best = { t: best.t, kind: 'poi', poi: marked }
+
     if (best.kind === 'display') {
       approachOrFocus(best.display)
     } else if (best.kind === 'poi' && best.poi.targetDisplayId) {
@@ -339,13 +393,12 @@ export default function PlayerController({ config, device }) {
       const w = waypoints.get(best.poi.approachWaypointId)
       goTo([w.position[0], w.position[2]], best.poi.anchor)
     } else if (best.kind === 'floor') {
-      goTo(best.point)
+      goToNearest(best.point, config.copy.hints.unreachable)
     } else if (best.kind === 'wall' && lookbookPoi && panelHit(o, d) !== null && panelHit(o, d) <= best.t + PANEL_DEPTH_TOLERANCE) {
       approachOrOpenLookbook(lookbookPoi)
     } else if (best.kind === 'wall') {
-      const p = [o[0] + d[0] * best.t, o[2] + d[2] * best.t]
-      ping(p[0], p[1], false)
-      notify(config.copy.hints.wall)
+      // Muro o colonna: si va al punto libero più vicino lì davanti.
+      goToNearest([o[0] + d[0] * best.t, o[2] + d[2] * best.t], config.copy.hints.wall)
     }
   }
 
@@ -357,7 +410,8 @@ export default function PlayerController({ config, device }) {
       if (inputLocked()) return
       const r = rt.current
       const isMouse = e.pointerType === 'mouse' && !device.isTouch
-      if (isMouse) {
+      const mouseOnly = isMouse && useAppStore.getState().controlMode === 'mouse'
+      if (isMouse && !mouseOnly) {
         if (document.pointerLockElement !== canvas) {
           // Gesto esplicito: l'unico modo per (ri)attivare il controllo del mouse.
           try {
@@ -380,6 +434,12 @@ export default function PlayerController({ config, device }) {
           if (t !== null && t > 0 && t < aimedT) { aimedT = t; aimed = displayByCollider.get(col.id) ?? null }
         }
         if (aimed) { enterFocusFor(aimed); return }
+        // Mirino sull'indicatore a terra di un espositore, entro la stessa distanza.
+        if (dir[1] < -1e-4) {
+          const tf = -o[1] / dir[1]
+          const marked = tf < aimedT ? floorMarkerAt([o[0] + dir[0] * tf, o[2] + dir[2] * tf]) : null
+          if (marked) { activatePoi(marked); return }
+        }
         const pt = panelHit(o, dir)
         if (lookbookPoi && pt !== null && pt <= aimedT + PANEL_DEPTH_TOLERANCE) { openLookbook(lookbookPoi.targetLookbookId); return }
         const activeId = usePlayerStore.getState().activePoiId
@@ -392,7 +452,8 @@ export default function PlayerController({ config, device }) {
         return
       }
       if (r.gesture) return // un solo dito alla volta
-      r.gesture = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), dragging: false }
+      if (mouseOnly && e.button !== 0) return // solo il tasto sinistro
+      r.gesture = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), dragging: false, mouse: mouseOnly }
       try { canvas.setPointerCapture?.(e.pointerId) } catch { /* puntatore già rilasciato: il gesto prosegue lo stesso */ }
     }
     const onMove = (e) => {
@@ -401,9 +462,11 @@ export default function PlayerController({ config, device }) {
       if (!g || g.id !== e.pointerId) return
       if (!g.dragging && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > I.tapMaxMovePx) g.dragging = true
       if (g.dragging) {
-        // Convenzione "afferra la scena": la scena segue il dito.
-        r.yaw += (e.clientX - g.x) * P.lookSensitivity.mobileDrag
-        r.pitch = clamp(r.pitch + (e.clientY - g.y) * P.lookSensitivity.mobileDrag, P.pitchClamp[0], P.pitchClamp[1])
+        // Convenzione "afferra la scena": la scena segue il dito (o il mouse).
+        const k = g.mouse ? P.lookSensitivity.mouseDrag : P.lookSensitivity.mobileDrag
+        if (g.mouse) canvas.style.cursor = 'grabbing'
+        r.yaw += (e.clientX - g.x) * k
+        r.pitch = clamp(r.pitch + (e.clientY - g.y) * k, P.pitchClamp[0], P.pitchClamp[1])
         r.lastLookInput = performance.now()
       }
       g.x = e.clientX
@@ -414,9 +477,12 @@ export default function PlayerController({ config, device }) {
       const g = r.gesture
       if (!g || g.id !== e.pointerId) return
       r.gesture = null
-      if (!g.dragging && performance.now() - g.t0 <= I.tapMaxMs && !inputLocked()) handleTap(e.clientX, e.clientY)
+      if (g.mouse) canvas.style.cursor = ''
+      // Col mouse un click può durare più di un tocco: conta solo che non si sia trascinato.
+      const quick = g.mouse || performance.now() - g.t0 <= I.tapMaxMs
+      if (!g.dragging && quick && !inputLocked()) handleTap(e.clientX, e.clientY)
     }
-    const onCancel = (e) => { if (rt.current.gesture?.id === e.pointerId) rt.current.gesture = null }
+    const onCancel = (e) => { if (rt.current.gesture?.id === e.pointerId) { rt.current.gesture = null; canvas.style.cursor = '' } }
 
     canvas.addEventListener('pointerdown', onDown)
     canvas.addEventListener('pointermove', onMove)

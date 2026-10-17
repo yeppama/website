@@ -15,6 +15,12 @@ export const APP_PHASE = {
   UNSUPPORTED: 'unsupported',
 }
 
+// Comandi da computer scelti all'ingresso: 'keyboard' (WASD + cursore catturato) o
+// 'mouse' (trascina per guardare, click per andare, come su telefono). Ricordati dal
+// browser per la visita dopo; senza memoria disponibile si riparte da 'keyboard'.
+const CONTROL_KEY = 'into-control-mode'
+const readControl = () => { try { return localStorage.getItem(CONTROL_KEY) === 'mouse' ? 'mouse' : 'keyboard' } catch { return 'keyboard' } }
+
 export const useAppStore = create((set, get) => ({
   phase: APP_PHASE.BOOT,
   device: null,          // popolato da useDeviceProfile
@@ -24,6 +30,7 @@ export const useAppStore = create((set, get) => ({
   reducedMotion: false,
   loadStage: 'boot',
   notice: null,          // messaggio breve mostrato sopra la scena
+  controlMode: readControl(),
 
   // Focus Mode (Fase 4) — macchina a stati:
   //   idle → entering → focused → exiting → idle
@@ -45,6 +52,10 @@ export const useAppStore = create((set, get) => ({
   benchRunning: false,
 
   setPhase: (phase) => set({ phase }),
+  setControlMode: (controlMode) => {
+    try { localStorage.setItem(CONTROL_KEY, controlMode) } catch { /* solo per questa visita */ }
+    set({ controlMode })
+  },
   setDevice: (device) => set({ device }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   setActiveZone: (activeZoneId) => set({ activeZoneId }),

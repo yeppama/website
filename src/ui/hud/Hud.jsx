@@ -40,13 +40,22 @@ function LockPrompt() {
   )
 }
 
+/**
+ * Il capo (o la Brand Story) più vicino. È un bottone: si apre da qui anche quando
+ * l'espositore è alle spalle o fuori dall'inquadratura, per esempio da dietro un
+ * manichino. Con il cursore catturato basta un click ovunque, come prima.
+ */
 function ProximityPrompt({ poi, isTouch }) {
   const { features, copy } = storeConfig
   const feature = poi.requires ? features[poi.requires] : null
   const locked = feature && !feature.enabled
+  const issue = usePlayerStore((s) => s.issue)
   return (
     <div className="pointer-events-none flex justify-center" role="status" aria-live="polite">
-      <div className="flex items-center gap-3 border border-line-strong bg-bg-base/80 px-4 py-2 backdrop-blur-sm">
+      <button type="button" disabled={locked} onClick={() => issue({ type: 'activate', poiId: poi.id })}
+              data-testid="proximity-prompt"
+              className="pointer-events-auto flex items-center gap-3 border border-line-strong bg-bg-base/80 px-4 py-2 text-left backdrop-blur-sm transition-colors hover:border-accent-flame disabled:cursor-default"
+              style={{ minHeight: 'var(--touch-min)' }}>
         <span className="micro" style={{ color: 'var(--color-accent-flame)' }}>●</span>
         <span className="font-display font-bold uppercase text-text-primary"
               style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-wide)' }}>
@@ -55,7 +64,7 @@ function ProximityPrompt({ poi, isTouch }) {
         <span className="micro">
           {locked ? copy.hints.notAvailable : (isTouch ? poi.prompt.mobile : poi.prompt.desktop)}
         </span>
-      </div>
+      </button>
     </div>
   )
 }
@@ -69,13 +78,16 @@ export default function Hud({ device }) {
   const locked = usePlayerStore((s) => s.pointerLocked)
   const activePoiId = usePlayerStore((s) => s.activePoiId)
   const inFocus = useAppStore((s) => s.focus.state !== 'idle')
+  // Mirino e invito a catturare il cursore solo con "tastiera e mouse".
+  const controlMode = useAppStore((s) => s.controlMode)
+  const keyboard = !device.isTouch && controlMode === 'keyboard'
 
   const zone = storeConfig.environment.zones.find((z) => z.id === zoneId)
   const poi = storeConfig.pois.find((p) => p.id === activePoiId)
 
   return (
     <>
-      {!device.isTouch && locked && !inFocus && <Crosshair />}
+      {keyboard && locked && !inFocus && <Crosshair />}
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
         <header className="flex items-start justify-between gap-4">
@@ -98,7 +110,7 @@ export default function Hud({ device }) {
           {/* Prompt impilati nella stessa colonna: non possono sovrapporsi a
               nessuna altezza di schermo, qualunque sia la taglia della minimappa. */}
           {poi && <ProximityPrompt poi={poi} isTouch={device.isTouch} />}
-          {!device.isTouch && !locked && !menuOpen && <LockPrompt />}
+          {keyboard && !locked && !menuOpen && <LockPrompt />}
           <div className="flex items-end justify-between gap-4">
             <Minimap />
             <div className="text-right">

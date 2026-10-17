@@ -246,7 +246,7 @@ export function validateStoreConfig(config) {
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))
   for (const variant of ['desktop', 'mobile']) {
-    for (const line of config.copy.onboarding[variant].lines) {
+    for (const line of [...config.copy.onboarding[variant].lines, ...(config.copy.onboarding[variant].mouseLines ?? [])]) {
       if (line.requires && !featureIds.has(line.requires)) {
         fail('I15', `onboarding ${variant}: "${line.text}" richiede la funzione inesistente "${line.requires}"`)
       }
@@ -270,6 +270,16 @@ export function validateStoreConfig(config) {
     }
   }
 
+  // I27 — indicatori a terra dei POI: sul pavimento del negozio e fuori da ogni
+  // collider, o il tocco colpirebbe il mobile e l'anello finirebbe dentro un muro.
+  for (const poi of config.pois) {
+    if (!poi.floorMarker) continue
+    if (!inAnyArea(poi.floorMarker, config.navigation.walkableAreas)) fail('I27', `poi ${poi.id}: indicatore a terra fuori dal negozio`)
+    for (const c of config.colliders) {
+      if (pointInCollider(poi.floorMarker, c, 0.05)) fail('I27', `poi ${poi.id}: indicatore a terra dentro il collider ${c.id}`)
+    }
+  }
+
   return errors
 }
 
@@ -281,5 +291,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 26 invarianti verificate, nessun errore')
+  console.info('storeConfig: 27 invarianti verificate, nessun errore')
 }

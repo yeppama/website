@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { tokens } from '../../config/designTokens.js'
 import { whenFontsReady, makeHotspot } from '../../lib/canvasText.js'
+import { floorHeightAt } from '../../lib/geometry.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { useAppStore } from '../../state/useAppStore.js'
 
@@ -61,7 +62,39 @@ function Hotspot({ poi, texture, state, style }) {
   )
 }
 
-export default function Hotspots({ pois, style }) {
+/**
+ * Indicatore a terra davanti all'espositore: l'ellisse del marchio, distesa sul
+ * pavimento e di traverso rispetto al mobile. Si vede anche guardando in basso o
+ * di lato, quando l'hotspot sospeso è fuori dall'inquadratura; il controller la
+ * tratta come l'hotspot (stesso raggio di prossimità, stesso comando).
+ */
+function FloorMarker({ poi, state, style, floorY }) {
+  const material = useRef()
+  const phase = useMemo(() => Math.random() * Math.PI * 2, [])
+  const f = style.floor
+  const hidden = state === 'hidden'
+  const [mx, mz] = poi.floorMarker
+  // Asse lungo perpendicolare alla direzione marcatore → espositore.
+  const angle = Math.atan2(poi.anchor[0] - mx, poi.anchor[2] - mz)
+
+  useFrame(({ clock }) => {
+    if (hidden || !material.current) return
+    const base = state === 'active' ? 0.95 : 0.45
+    const pulse = 0.5 + 0.5 * Math.sin((clock.elapsedTime / f.pulseSeconds) * Math.PI * 2 + phase)
+    material.current.opacity = base * (0.65 + 0.35 * pulse)
+  })
+
+  return (
+    <group position={[mx, floorY + 0.012, mz]} rotation={[0, angle, 0]} visible={!hidden} userData={{ warmup: true }}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[f.radius * f.ratio, f.radius, 1]}>
+        <ringGeometry args={[1 - f.ring, 1, 48]} />
+        <meshBasicMaterial ref={material} color={style.color} transparent opacity={0.45} depthWrite={false} toneMapped={false} />
+      </mesh>
+    </group>
+  )
+}
+
+export default function Hotspots({ pois, style, platforms = [] }) {
   const states = usePlayerStore((s) => s.poiStates)
   const inFocus = useAppStore((s) => s.focus.state !== 'idle')
   const [textures, setTextures] = useState(null)
@@ -92,6 +125,10 @@ export default function Hotspots({ pois, style }) {
     <group visible={!inFocus}>
       {pois.map((poi) => (
         <Hotspot key={poi.id} poi={poi} texture={textures[poi.id]} state={states[poi.id] ?? 'hidden'} style={style} />
+      ))}
+      {pois.filter((poi) => poi.floorMarker).map((poi) => (
+        <FloorMarker key={`${poi.id}-floor`} poi={poi} state={states[poi.id] ?? 'hidden'} style={style}
+                     floorY={floorHeightAt(poi.floorMarker, platforms)} />
       ))}
     </group>
   )

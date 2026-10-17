@@ -5,6 +5,7 @@ import { getDeviceProfile } from './lib/deviceProfile.js'
 import { useAppStore, APP_PHASE } from './state/useAppStore.js'
 import { usePlayerStore } from './state/usePlayerStore.js'
 import { useCartStore } from './state/useCartStore.js'
+import { installBackButton } from './state/backButton.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
 // appare subito e la barra di progresso misura passaggi reali.
@@ -111,6 +112,9 @@ export default function App() {
 
   const exploring = phase === APP_PHASE.EXPLORING
   const navigationOn = storeConfig.features.navigation.enabled
+
+  // Indietro del browser: chiude scheda, menu o Focus invece di lasciare il sito.
+  useEffect(() => (exploring ? installBackButton() : undefined), [exploring])
 
   // Finché la navigazione non esiste, un tentativo di muoversi riceve una
   // risposta invece del silenzio: il silenzio sembra un guasto.

@@ -128,3 +128,13 @@ export function clampToAreas([x, z], areas) {
   }
   return best ?? [x, z]
 }
+
+/**
+ * Altezza del pavimento sotto un punto: il piano di una pedana (architecture.platforms)
+ * se ci cade sopra, altrimenti 0. Ciò che si disegna a terra (tocco, percorso,
+ * indicatori) va sopra la pedana, o resta nascosto sotto.
+ */
+export function floorHeightAt([x, z], platforms = []) {
+  const p = platforms.find((q) => Math.abs(x - q.center[0]) <= q.size[0] / 2 && Math.abs(z - q.center[2]) <= q.size[2] / 2)
+  return p ? p.center[1] + p.size[1] / 2 : 0
+}

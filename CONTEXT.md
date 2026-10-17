@@ -19,7 +19,7 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 **Architettura data-driven**
 - Contenuti separati (demo, 2026-10-17): marchio, capi, Lookbook, posizione dei capi (`products[].displayId`, da cui `displays[].productIds` ed etichette dei POI), fornitore del commercio e testi propri (`copy`, fusi sopra) stanno in `src/content/<id>.js`, scelto con `VITE_CONTENT` (default `into`; Node lo legge da `process.env`). Il branch della demo ha `.env` con `demo`: **non portarlo su main**.
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 26 invarianti (I1–I26), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 27 invarianti (I1–I27), errore bloccante solo in DEV, rimosso dal bundle di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
 - `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
 - Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
@@ -52,7 +52,12 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 **Navigazione e interazione**
 - Collisioni solo cerchio-contro-box (`colliders`), mai sulle mesh. Convenzione di rotazione identica a `Object3D.rotation.y` di three.
 - Grafo di 16 waypoint (centro + due corridoi laterali a x = ±10.35). Percorso: diretto se libero, altrimenti Dijkstra da ogni nodo visibile + string pulling. Ogni segmento è libero da collider con margine `player.radius`.
-- Desktop: WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo.
+- Desktop: due modi scelti all'ingresso (2026-10-17, `useAppStore.controlMode`, ricordato in `localStorage`): **tastiera e mouse** (WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo; è il default) o **solo mouse** (come su telefono: trascina = guarda con `lookSensitivity.mouseDrag`, click = vai/esamina; niente cursore catturato, niente mirino né invito al lock).
+- Indietro del browser (2026-10-17, `state/backButton.js`): ogni livello aperto (scheda della pila, menu, Focus) ha una voce di cronologia; Indietro chiude il livello in cima, chiudere coi bottoni del sito toglie la voce (`history.go` con i ritorni propri ignorati). A nessun livello aperto Indietro lascia il sito, di proposito.
+- Avviso del capo vicino (in basso) = bottone (comando `activate`): apre Focus o Lookbook anche da dietro l'espositore o senza guardarlo.
+- Click su muro, colonna o punto non raggiungibile: si va al punto raggiungibile più vicino sulla linea verso il player (`nearestReachable`, passo 15 cm); l'avviso "c'è un muro" resta solo se non ce n'è nessuno.
+- Margine invisibile di 0,2 m per lato attorno agli espositori (`DISPLAY_CLEARANCE`, collider allargati con `guarded()`).
+- Indicatore a terra davanti a ogni espositore (`pois[].floorMarker`, stile `navigation.hotspot.floor`): ellisse del marchio sul pavimento (sopra la pedana, `floorHeightAt`), visibile quando l'hotspot lo è, toccabile/cliccabile come l'hotspot. I27: dentro il negozio e fuori dai collider.
 - Durante la dissolvenza del teletrasporto l'input è bloccato e allo scambio il percorso si annulla. Il navigatore, se il player è appoggiato a un collider (box allargato ad angoli vivi), riprova da un punto libero a 10–35 cm (`plan` → `planFrom`).
 - Mobile: tap = vai/avvicinati; trascinamento = guarda (soglie `navigation.input`); barra "Vai a" solo verso waypoint `safeForTeleport`.
 - Focus Mode: macchina a stati `idle → entering → focused → exiting → idle`, interrompibile in ogni stato. La luce "studio" nasce dal contrasto (gli altri faretti scendono), non da più luce sul capo.
@@ -137,6 +142,7 @@ npm run test:device                    # scelta del tier da stringhe GPU reali, 
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 22 test
 npm run test:framing                   # inquadratura del Focus contro la camera di three e limitatore di fps, 9 test
+# e2e-navfix.mjs: Indietro del browser, solo mouse, avviso da dietro, click sul muro, margine, indicatore a terra (18 verifiche)
 # e2e-landscape.mjs: Focus e schede su 5 formati bassi (anche Safari con le barre, 852×330, e 568×320), verticale e desktop; rotazione durante il Focus
 npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
 npm run catalog:import -- <file.xlsx> [uscita] [--foto <cartella>]   # resoconto.md sempre; CSV Shopify, bozza dei capi, testi EN solo senza errori
@@ -187,6 +193,10 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 - Prompt fissi in percentuale e prompt nel flusso si sovrappongono: stessa colonna, impilati.
 - Una barra a scorrimento con l'ultima voce tagliata sembra un difetto: griglia a colonne uguali, corpo `clamp()`, verificata a 320/360/390/430 px.
 - Tasti premuti all'apertura del menu o alla perdita di focus: azzerarli, o il player cammina da solo.
+
+**Navigazione (correzioni del 2026-10-17)**
+- Ciò che si disegna a terra (anello del tocco, linea del percorso, indicatori) a y ≈ 0,02 finiva **sotto le pedane** (alte 6 cm): i test dicevano "visibile" perché controllavano `visible`, non l'occlusione. Visto solo nello screenshot. Ora l'altezza viene da `floorHeightAt`.
+- Contro un manichino il player scivola lungo il margine e passa fra i due manichini: un test di collisione va fatto su tutte le posizioni della camminata, col modello della fisica (`circleOverlapsCollider`, angoli arrotondati), non col box ad angoli vivi.
 
 **Demo e foto (2026-10-17)**
 - Higgsfield col piano gratuito: GPT Image bloccato ("Requires basic plan"), modelli realistici 1–1,5 crediti, Z Image 0,15; al massimo ~4 generazioni contemporanee (429) e 1 sola rimozione dello sfondo per volta (1 credito l'una).

@@ -292,8 +292,8 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
             <FocusCameraRig config={config} reducedMotion={device.reducedMotion} />
           </>
         )}
-      <Hotspots pois={config.pois} style={config.navigation.hotspot} />
-      <MoveFeedback feedback={config.navigation.feedback} />
+      <Hotspots pois={config.pois} style={config.navigation.hotspot} platforms={config.environment.architecture.platforms} />
+      <MoveFeedback feedback={config.navigation.feedback} platforms={config.environment.architecture.platforms} />
       <FrameLimiter targetFps={targetFps} />
       <FirstFrameSignal onStage={onStage} />
       <GpuLifecycle />

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { brandMotif, tokens } from '../../config/designTokens.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { floorHeightAt } from '../../lib/geometry.js'
 
 /**
  * Conferma visiva dei tap: un'ellisse del marchio sul punto toccato (arancio se
@@ -10,7 +11,7 @@ import { usePlayerStore } from '../../state/usePlayerStore.js'
  * sta seguendo. Rendere visibile il percorso è anche una prova: si vede che
  * aggira colonne e mobili invece di attraversarli.
  */
-function Ping({ ping, durationMs }) {
+function Ping({ ping, durationMs, platforms }) {
   // Un solo anello, riusato: a ogni tap riparte l'animazione. Montarne uno nuovo
   // per tap (chiave = id del ping) lasciava in scena gli anelli vecchi (Fase 6).
   const mesh = useRef()
@@ -27,7 +28,7 @@ function Ping({ ping, durationMs }) {
   return (
     // userData.warmup: GpuWarmup lo disegna una volta durante il caricamento, così il
     // primo tap non paga il primo uso del suo shader (docs/PERF.md, indagine primo uso).
-    <mesh ref={mesh} position={[ping?.x ?? 0, 0.02, ping?.z ?? 0]} rotation={[-Math.PI / 2, 0, 0]} visible={false}
+    <mesh ref={mesh} position={[ping?.x ?? 0, (ping ? floorHeightAt([ping.x, ping.z], platforms) : 0) + 0.02, ping?.z ?? 0]} rotation={[-Math.PI / 2, 0, 0]} visible={false}
           userData={{ warmup: true }}>
       <ringGeometry args={[0.82, 1, 48]} />
       <meshBasicMaterial color={ping?.ok === false ? tokens.color.text.muted : tokens.color.accent.flame}
@@ -36,7 +37,7 @@ function Ping({ ping, durationMs }) {
   )
 }
 
-const toPoints = (points) => points.map(([x, z]) => new THREE.Vector3(x, 0.025, z))
+const toPoints = (points, platforms = []) => points.map(([x, z]) => new THREE.Vector3(x, floorHeightAt([x, z], platforms) + 0.025, z))
 
 /**
  * Una sola linea per tutta la visita: a ogni percorso cambia solo la geometria.
@@ -44,7 +45,7 @@ const toPoints = (points) => points.map(([x, z]) => new THREE.Vector3(x, 0.025, 
  * shader a ogni cammino (misurato: 2 compilazioni + 1 link per cammino).
  * Senza percorso la linea è nascosta, non smontata.
  */
-function RouteLine({ route, color }) {
+function RouteLine({ route, color, platforms }) {
   const line = useMemo(() => {
     const material = new THREE.LineDashedMaterial({ color, dashSize: 0.25, gapSize: 0.18, transparent: true, opacity: 0.8, toneMapped: false })
     // Due punti coincidenti: una geometria valida da disegnare durante il riscaldamento.
@@ -59,11 +60,11 @@ function RouteLine({ route, color }) {
   useEffect(() => {
     if (!route) { line.visible = false; return }
     const previous = line.geometry
-    line.geometry = new THREE.BufferGeometry().setFromPoints(toPoints(route.points))
+    line.geometry = new THREE.BufferGeometry().setFromPoints(toPoints(route.points, platforms))
     line.computeLineDistances()
     previous.dispose()
     line.visible = true
-  }, [route, line])
+  }, [route, line, platforms])
 
   // `primitive` non viene liberato da React Three Fiber: geometria e materiale
   // si liberano qui, allo smontaggio della scena.
@@ -71,13 +72,13 @@ function RouteLine({ route, color }) {
   return <primitive object={line} />
 }
 
-export default function MoveFeedback({ feedback }) {
+export default function MoveFeedback({ feedback, platforms }) {
   const ping = usePlayerStore((s) => s.ping)
   const route = usePlayerStore((s) => s.route)
   return (
     <group>
-      <Ping ping={ping} durationMs={feedback.pingMs} />
-      <RouteLine route={route} color={feedback.pathColor} />
+      <Ping ping={ping} durationMs={feedback.pingMs} platforms={platforms} />
+      <RouteLine route={route} color={feedback.pathColor} platforms={platforms} />
     </group>
   )
 }

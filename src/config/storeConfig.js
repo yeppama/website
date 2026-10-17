@@ -15,6 +15,11 @@ import content from '../content/index.js'
 // Colonne strutturali: una griglia dichiarata qui, da cui derivano sia la
 // geometria visibile sia i collider. Nessun componente conosce queste posizioni.
 const COLUMN_GRID = { xs: [-9, 9], zs: [12, 4, -4, -12], size: [0.7, 4.2, 0.7] }
+// Margine invisibile attorno agli espositori: il player si ferma prima di toccare
+// maniche, grucce e pile (richiesta dell'utente, 2026-10-17). Allarga i collider degli
+// espositori su entrambi i lati del piano; l'altezza resta quella del mobile.
+const DISPLAY_CLEARANCE = 0.2
+const guarded = (c) => ({ ...c, size: [c.size[0] + 2 * DISPLAY_CLEARANCE, c.size[1], c.size[2] + 2 * DISPLAY_CLEARANCE] })
 // Corridoi laterali del grafo di navigazione, fra le colonne e le pareti.
 const AISLE_X = 10.35
 const AISLE_ZS = [16, 8, 0, -8, -16]
@@ -375,19 +380,19 @@ export const storeConfig = {
     { id: 'col-wall-w',       center: [-12, 2.1, 0],    size: [0.4, 4.2, 36.4], rotationY: 0 },
     { id: 'col-wall-s-left',  center: [-6.75, 2.1, 18], size: [10.5, 4.2, 0.4], rotationY: 0 },
     { id: 'col-wall-s-right', center: [6.75, 2.1, 18],  size: [10.5, 4.2, 0.4], rotationY: 0 },
-    { id: 'col-disp-mann-01', center: [-7.7, 1.0, 6.6],   size: [0.9, 2.0, 0.9],  rotationY: 0.42 },
-    { id: 'col-disp-mann-02', center: [-5.3, 1.0, 6.6],   size: [0.9, 2.0, 0.9],  rotationY: -0.42 },
-    { id: 'col-disp-rack-01', center: [-11.55, 1.0, 8.0], size: [2.3, 2.0, 0.5],  rotationY: Math.PI / 2 },
-    { id: 'col-disp-wall-01', center: [11.62, 1.2, 8.0],  size: [2.1, 2.4, 0.35], rotationY: -Math.PI / 2 },
+    guarded({ id: 'col-disp-mann-01', center: [-7.7, 1.0, 6.6],   size: [0.9, 2.0, 0.9],  rotationY: 0.42 }),
+    guarded({ id: 'col-disp-mann-02', center: [-5.3, 1.0, 6.6],   size: [0.9, 2.0, 0.9],  rotationY: -0.42 }),
+    guarded({ id: 'col-disp-rack-01', center: [-11.55, 1.0, 8.0], size: [2.3, 2.0, 0.5],  rotationY: Math.PI / 2 }),
+    guarded({ id: 'col-disp-wall-01', center: [11.62, 1.2, 8.0],  size: [2.1, 2.4, 0.35], rotationY: -Math.PI / 2 }),
     ...COLUMNS.map((c) => ({ id: c.colliderId, center: [c.position[0], c.size[1] / 2, c.position[2]], size: c.size, rotationY: 0 })),
-    { id: 'col-plinth-01',    center: [6.5, 0.6, 7.0],  size: [1.5, 1.2, 1.5],  rotationY: 0 },
+    guarded({ id: 'col-plinth-01',    center: [6.5, 0.6, 7.0],  size: [1.5, 1.2, 1.5],  rotationY: 0 }),
   ],
 
   navigation: {
     player: {
       eyeHeight: 1.65, radius: 0.35,
       walkSpeed: 3.0, sprintMultiplier: 1.6, acceleration: 14, damping: 10,
-      lookSensitivity: { desktop: 0.0022, mobileDrag: 0.0045 },
+      lookSensitivity: { desktop: 0.0022, mobileDrag: 0.0045, mouseDrag: 0.0035 },
       pitchClamp: [-1.2, 1.2],
       // In verticale lo schermo è stretto: il fov verticale si allarga quanto basta
       // a garantire un campo orizzontale minimo, senza superare il massimo.
@@ -407,7 +412,10 @@ export const storeConfig = {
       maxCatchUp: 0.25,
     },
     teleport: { fadeMs: 220 },
-    hotspot: { color: '#f98e30', width: 0.9, bob: 0.06, bobPeriodSeconds: 3.2, tapRadius: 0.9, pinColor: '#f98e30' },
+    hotspot: { color: '#f98e30', width: 0.9, bob: 0.06, bobPeriodSeconds: 3.2, tapRadius: 0.9, pinColor: '#f98e30',
+               // Indicatore a terra davanti all'espositore (pois[].floorMarker): si vede anche
+               // guardando in basso, quando l'hotspot sopra è fuori dall'inquadratura, e si tocca.
+               floor: { radius: 0.36, ratio: 1.7, ring: 0.16, pulseSeconds: 2.4, tapScale: 1.4 } },
     feedback: { pingMs: 650, pathColor: '#f98e30' },
     waypoints: [
       { id: 'wp-entrance', position: [0, 0, 15.5],  label: 'Ingresso',      safeForTeleport: true,  lookAt: [0, 1.65, 10] },
@@ -474,22 +482,22 @@ export const storeConfig = {
   pois: [
     { id: 'poi-new-01', type: 'display', label: poiLabel('disp-mannequin-01', 'Nuovi Arrivi · 01'), anchor: [-7.7, 2.3, 6.6],
       proximity: { showRadius: 7.0, activateRadius: 3.2, hideRadius: 9.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-01', approachWaypointId: 'wp-new-01', requires: 'focusMode' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-01', approachWaypointId: 'wp-new-01', floorMarker: [-7.3, 7.4], requires: 'focusMode' },
     { id: 'poi-new-02', type: 'display', label: poiLabel('disp-mannequin-02', 'Nuovi Arrivi · 02'), anchor: [-5.3, 2.3, 6.6],
       proximity: { showRadius: 7.0, activateRadius: 3.2, hideRadius: 9.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-02', approachWaypointId: 'wp-new-01', requires: 'focusMode' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-mannequin-02', approachWaypointId: 'wp-new-01', floorMarker: [-5.7, 7.4], requires: 'focusMode' },
     { id: 'poi-rack-01', type: 'display', label: poiLabel('disp-rack-01', 'Rack · Tees'), anchor: [-11.15, 2.4, 8.0],
       proximity: { showRadius: 6.5, activateRadius: 2.2, hideRadius: 8.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-rack-01', approachWaypointId: 'wp-aisle-w-p8', requires: 'focusMode' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-rack-01', approachWaypointId: 'wp-aisle-w-p8', floorMarker: [-10.75, 8.0], requires: 'focusMode' },
     { id: 'poi-arch-01', type: 'display', label: poiLabel('disp-plinth-01', 'Archivio'), anchor: [6.5, 1.85, 7.0],
       proximity: { showRadius: 7.0, activateRadius: 2.8, hideRadius: 9.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-plinth-01', approachWaypointId: 'wp-arch-01', requires: 'focusMode' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-plinth-01', approachWaypointId: 'wp-arch-01', floorMarker: [6.5, 8.25], requires: 'focusMode' },
     { id: 'poi-wall-01', type: 'display', label: poiLabel('disp-wall-01', 'Archivio · Parete'), anchor: [11.2, 2.85, 8.0],
       proximity: { showRadius: 6.5, activateRadius: 2.2, hideRadius: 8.0 }, icon: 'tag',
-      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-wall-01', approachWaypointId: 'wp-aisle-e-p8', requires: 'focusMode' },
+      prompt: { desktop: 'Click per esaminare', mobile: 'Tap per esaminare' }, targetDisplayId: 'disp-wall-01', approachWaypointId: 'wp-aisle-e-p8', floorMarker: [10.9, 8.0], requires: 'focusMode' },
     { id: 'poi-look-01', type: 'lookbook', label: 'Brand Story', anchor: [0, 2.0, -14.0],
       proximity: { showRadius: 9.0, activateRadius: 3.0, hideRadius: 11.0 }, icon: 'book',
-      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: mainLookbookId, approachWaypointId: 'wp-look-01', requires: 'lookbook' },
+      prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: mainLookbookId, approachWaypointId: 'wp-look-01', floorMarker: [0, -12.6], requires: 'lookbook' },
   ],
 
   products: content.products,
@@ -559,6 +567,18 @@ export const storeConfig = {
           { text: 'Menu → Vai a per spostarti subito',                requires: 'navigation' },
           { text: 'Click su un espositore per esaminarlo',            requires: 'focusMode' },
         ],
+        // Con "Solo mouse": niente tastiera né cursore catturato, come su telefono.
+        mouseLines: [
+          { text: 'Trascina col mouse per guardarti attorno',  requires: 'navigation' },
+          { text: 'Click sul pavimento per spostarti',         requires: 'navigation' },
+          { text: 'Menu → Vai a per spostarti subito',         requires: 'navigation' },
+          { text: 'Click su un espositore per esaminarlo',     requires: 'focusMode' },
+        ],
+        modes: {
+          label: 'Come vuoi muoverti',
+          keyboard: { title: 'Tastiera e mouse', hint: 'WASD per camminare, il mouse guarda' },
+          mouse: { title: 'Solo mouse', hint: 'Trascina per guardare, click per andare' },
+        },
         cta: 'Entra',
       },
       mobile: {

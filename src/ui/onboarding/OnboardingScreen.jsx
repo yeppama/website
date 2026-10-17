@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
+import { useAppStore } from '../../state/useAppStore.js'
 import Button from '../primitives/Button.jsx'
 
 /**
@@ -18,6 +19,10 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
   const copy = storeConfig.copy.onboarding
   const variant = device.isTouch ? copy.mobile : copy.desktop
   const features = storeConfig.features
+  // Da computer si sceglie come muoversi: tastiera e mouse, o solo mouse (come su telefono).
+  const controlMode = useAppStore((s) => s.controlMode)
+  const setControlMode = useAppStore((s) => s.setControlMode)
+  const lines = !device.isTouch && controlMode === 'mouse' ? variant.mouseLines : variant.lines
 
   // Il progresso non torna mai indietro e non si blocca a metà all'occhio.
   const [shown, setShown] = useState(0)
@@ -68,8 +73,26 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
         <h2 className="micro mb-4" style={{ color: 'var(--color-text-secondary)' }}>
           {variant.heading}
         </h2>
+        {!device.isTouch && (
+          <div role="radiogroup" aria-label={variant.modes.label} className="mb-6 grid gap-2 sm:grid-cols-2" data-testid="control-mode">
+            {['keyboard', 'mouse'].map((mode) => {
+              const on = controlMode === mode
+              return (
+                <button key={mode} type="button" role="radio" aria-checked={on} onClick={() => setControlMode(mode)}
+                        className={`border px-4 py-3 text-left transition-colors ${on ? 'border-accent-flame' : 'border-line-strong hover:border-text-secondary'}`}
+                        style={{ minHeight: 'var(--touch-min)' }}>
+                  <span className={`block font-display font-bold uppercase ${on ? 'text-accent-flame' : 'text-text-primary'}`}
+                        style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-wide)' }}>
+                    {variant.modes[mode].title}
+                  </span>
+                  <span className="micro mt-1 block">{variant.modes[mode].hint}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
         <ul className="grid gap-2 sm:grid-cols-2">
-          {variant.lines.map((line, i) => {
+          {lines.map((line, i) => {
             const feature = line.requires ? features[line.requires] : null
             const active = !feature || feature.enabled
             return (

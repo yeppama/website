@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core'
 import { storeConfig } from '../../src/config/storeConfig.js'
-import { circleOverlapsCollider } from '../../src/lib/geometry.js'
+import { circleOverlapsCollider, pointInCollider } from '../../src/lib/geometry.js'
 
 const BASE = process.argv[2], OUT = process.argv[3]
 const browser = await chromium.launch({
@@ -183,7 +183,12 @@ const project = (page, [x, y, z]) => page.evaluate(([x, y, z]) => {
   const col = await project(page, [-9, 1.5, 4.36])
   await page.touchscreen.tap(col.sx, col.sy); await page.waitForTimeout(300)
   const s1 = await page.evaluate(() => window.__stores.player.getState())
-  ok('mobile: tap su una colonna → rifiutato, nessun percorso', !s1.route && s1.ping && s1.ping.ok === false && (await page.getByText(/c'è un muro/i).isVisible()))
+  // Dal 2026-10-17 (richiesta dell'utente) un tocco su un muro o una colonna porta al
+  // punto libero più vicino lì davanti, invece di rifiutarlo.
+  const colEnd = s1.route?.points.at(-1)
+  ok('mobile: tap su una colonna → si va davanti alla colonna, fuori dal suo collider',
+    Boolean(colEnd) && s1.ping?.ok === true && !storeConfig.colliders.some((c) => pointInCollider(colEnd, c, storeConfig.navigation.player.radius)),
+    colEnd ? `arrivo ${colEnd.map((v) => v.toFixed(2))}` : 'nessun percorso')
 
   await place(page, -9, 7, 0); await page.waitForTimeout(300)
   await startTrace(page)

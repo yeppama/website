@@ -136,9 +136,12 @@ Tutti i percorsi sono relativi alla cartella del progetto. "Config" = `src/confi
 
 | Voglio cambiare… | Dove | Note e rischi |
 |---|---|---|
-| Spostare un espositore | Config → `displays[]`: `position`, `rotationY` **e** il suo collider in `colliders` **e** `focusCamera` **e** l'`anchor` del suo POI in `pois` **e** il `targetPosition` del suo faretto | Muovere solo `position` lascia il "muro invisibile" nel posto vecchio. I controlli I16 e I19 segnalano molti errori, non tutti: guardare `?debug=top&colliders=1` |
-| Mettere un capo su un altro espositore | Config → `products[].displayId` **e** `displays[].productIds` | |
+| Spostare un espositore | Config → `displays[]`: `position`, `rotationY` **e** il suo collider in `colliders` **e** `focusCamera` **e** l'`anchor` e il `floorMarker` del suo POI in `pois` **e** il `targetPosition` del suo faretto | Muovere solo `position` lascia il "muro invisibile" nel posto vecchio. I controlli I16 e I19 segnalano molti errori, non tutti: guardare `?debug=top&colliders=1` |
+| Mettere un capo su un altro espositore | Contenuto → `products[].displayId` | L'elenco dei capi dell'espositore si ricava da lì |
 | Aggiungere un capo | Config → nuovo oggetto in `products` con `id` nuovo, `commerce.handle` unico, `displayId`, e l'`id` aggiunto ai `productIds` di un espositore | La categoria deve avere una sagoma in `garments.shapeByCategory` (I20) |
+| Margine invisibile attorno agli espositori | Config → `DISPLAY_CLEARANCE` (in cima al file, oggi 0,2 m) | Più grande = il visitatore si ferma più lontano; i controlli I9, I16 e I19 dicono se un punto di passaggio o una camera finiscono dentro |
+| Indicatore a terra davanti a un espositore | Config → `pois[].floorMarker` (posizione), `navigation.hotspot.floor` (misure, pulsazione) | Il controllo I27 lo vuole sul pavimento libero |
+| Comandi da computer (tastiera e mouse / solo mouse) | Si scelgono all'ingresso; testi in `copy.onboarding.desktop.modes` e `mouseLines`, sensibilità in `navigation.player.lookSensitivity.mouseDrag` | La scelta resta nel browser del visitatore |
 | Muri, colonne, pedane | Config → `environment.walls`, `architecture` | Ogni muro solido ha un collider in `colliders`: il disegno e l'urto sono separati di proposito |
 | Zone (Ingresso, Nuovi Arrivi…) | Config → `environment.zones` | Servono a HUD e minimappa |
 | Destinazioni della barra "Vai a" | Config → `navigation.quickTravel` | Solo verso punti `safeForTeleport: true` |
