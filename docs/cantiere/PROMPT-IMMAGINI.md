@@ -30,10 +30,17 @@ dice altro.
 > formwork panel seams, small air holes, subtle water stains, flat even lighting, orthographic front view,
 > no perspective, no shadows, no objects, edges must tile perfectly in all directions.
 
-**A2 · `cemento-pavimento.png` · 1:1**
-> Seamless tileable texture of a worn industrial concrete floor, mid grey around #5A5A5A to #7A7A7A,
-> polished in places, fine cracks, faint tyre marks and dust, flat even lighting, top-down orthographic
-> view, no perspective, no objects, edges must tile perfectly in all directions.
+**A2 · `cemento-pavimento.png` · 1:1** — *da rifare (2026-10-18)*: la prima versione aveva segni di
+pneumatici grandi e riconoscibili, che ripetuti sul pavimento formano un motivo evidente, e un leggero
+cambio di luce sui bordi. Prompt corretto:
+> Seamless tileable texture of a worn industrial concrete floor, uniform mid grey around #6A6A6A to
+> #7A7A7A, evenly distributed fine hairline cracks, small pores and light dust, NO large distinctive marks,
+> no tyre tracks, no footprints, no big stains, no gradients or vignetting, perfectly even brightness across
+> the whole image, flat even lighting, top-down orthographic view, no perspective, no objects, edges must
+> tile perfectly in all directions.
+
+Esito della prima consegna: **A1 parete ok · A3 rete ok** (controllate in ripetizione e sui bordi).
+Regola per tutte le texture: niente segni grandi e unici, perché ripetuti diventano un motivo.
 
 **A3 · `rete-metallica.png` · 1:1, fondo nero**
 > Seamless tileable texture of black steel welded wire mesh with square holes, slight rust at the welds,
