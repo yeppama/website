@@ -25,6 +25,12 @@ descrizione per un allegato che non trova e risponde "I don't seem to have acces
 | A2 pavimento | ok alla seconda versione (la prima aveva segni di pneumatici ripetuti) |
 | A3 rete | ok |
 | B2 adesivi | ok, **tranne la stella nel cerchio**: ricorda il logo All Star di Converse, non si usa |
+| B1 poster | arrivati come **2 collage 16:9** invece di 6 poster 2:3: vanno bene, diventano due pareti di poster |
+| B3 cartello | ok |
+| C1, C2, C3 campagna | contenuto ok, ma **orizzontali 16:9 a 1024×572 px**: ritagliate in verticale resterebbero ~380 px di larghezza, troppo poco per un pannello luminoso. Decisione: pannelli orizzontali 16:9 (vedi sotto) e, se possibile, file a piena risoluzione |
+
+Nota sulla risoluzione: tutte le immagini arrivate dopo le texture sono larghe 1024 px. Se Gemini offre
+"Scarica" a dimensione piena, usare quello invece di copiare o salvare l'anteprima.
 
 ## Stile comune (incollalo in fondo a ogni prompt se Gemini perde coerenza)
 
