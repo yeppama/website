@@ -12,6 +12,20 @@ quello attuale. Le immagini le genera l'utente con Gemini; qui ci sono i prompt,
 - Gemini a volte ignora il rapporto richiesto: va bene lo stesso se il soggetto è centrato con margine,
   ritaglio io.
 
+## Regola per Gemini (2026-10-18)
+
+Ogni prompt va preceduto da **"Create an image:"**. Senza una richiesta esplicita Gemini scambia la
+descrizione per un allegato che non trova e risponde "I don't seem to have access to that content".
+
+## Stato delle consegne
+
+| Immagine | Esito |
+|---|---|
+| A1 parete | ok |
+| A2 pavimento | ok alla seconda versione (la prima aveva segni di pneumatici ripetuti) |
+| A3 rete | ok |
+| B2 adesivi | ok, **tranne la stella nel cerchio**: ricorda il logo All Star di Converse, non si usa |
+
 ## Stile comune (incollalo in fondo a ogni prompt se Gemini perde coerenza)
 
 > Gritty industrial construction-site aesthetic, raw grey concrete, black steel, a single accent colour
