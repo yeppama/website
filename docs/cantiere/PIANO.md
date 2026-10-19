@@ -58,8 +58,7 @@ passa dalla stessa riduzione.
 
 ## Immagine di prova (2026-10-19)
 
-Pagina separata `prova-cantiere.html` (src/prototype/cantiere/), nella stessa build del sito ma col suo
-bundle: la pagina principale non scarica nulla in più (precarica solo React, come prima). Stanza 10×8×4,
+Pagina separata `prova-cantiere.html` (tolta con la fase 1: il cantiere ora è nel negozio vero). Stanza 10×8×4,
 texture di Gemini, neon con alone finto, rete metallica, 2 pareti di poster, adesivi, cartello, 3 pannelli
 luminosi, tavolo di blocchi (istanze) con pile di capi piegati, rack di tubi con 5 capi GLB, 2 pantaloni GLB
 appesi a catene (anelli in istanza), cono, tubi e binari a soffitto, 6 faretti. Camera che gira attorno
@@ -74,8 +73,25 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
 
 ## Fasi
 
-1. Stanza 10×8 m e navigazione (muri, collisioni, punti di passaggio, minimappa, benchmark, Focus), come
-   allestimento selezionabile; test adattati alle nuove coordinate.
-2. Materiali e oggetti di scena.
-3. Neon, poster, pannelli del Lookbook, capi GLB.
-4. Luci, prestazioni, prova sui telefoni.
+1. **Fatta (2026-10-19, "Approvato, procedi alla fase 1").** Il cantiere è il secondo allestimento del
+   negozio: si apre con `?allestimento=cantiere` (o `VITE_LAYOUT=cantiere` nella build); senza, il negozio
+   di sempre, invariato. Concordato prima di partire: stessa navigazione del negozio (camminata in prima
+   persona, Focus, schede, carrello, minimappa, "Vai a", Indietro, indicatori a terra), niente camera che
+   gira attorno; rack, catene e tavolo diventano espositori veri; tutti gli oggetti di scena della prova.
+   - `src/layouts/cantiere.js`: stanza, muri, collider, grafo, espositori, POI, luci, inquadrature,
+     benchmark, collocazione dei capi (`placement`). `src/layouts/index.js` sceglie l'allestimento;
+     `storeConfig` sostituisce solo le parti con coordinate, il resto (testi, giocatore, commercio) è comune.
+   - Scena: `scene/environment/CantiereRoom.jsx` (stanza e oggetti di scena), espositori `pipeRack`,
+     `chain`, `blockTable` in `scene/displays/`, capo 3D `HangingGarment` (GLB se il contenuto ha
+     `model3d.glb`, altrimenti il capo piatto con la foto o la sagoma). Il pannello del Lookbook si tocca
+     anche su una parete perpendicolare a x (`panel.axis: 'x'`).
+   - Il segnale "pronto" e il riscaldamento della GPU partono dopo il caricamento di texture e GLB:
+     l'onboarding copre l'attesa.
+   - Spostati rispetto alla prova, per far passare il player: tavolo a z = 0,7 (fra tavolo e catene non
+     c'era corridoio), punti di passaggio di rack e catene; pantaloni abbassati a 1,1–2,3 m (erano sopra
+     la testa, e l'hotspot ci finiva sopra); blocchi, tubi e catene con materiali propri.
+   - Verifiche: `scripts/e2e/e2e-cantiere.mjs` (30), `npm run test:content` controlla le invarianti di
+     ogni contenuto in ogni allestimento. Screenshot: `scripts/e2e/shots-cantiere.mjs`.
+   - Misurato in SwiftShader (non è velocità): 49–91 draw call, 42–69 mila triangoli secondo la vista.
+2. Bloom vero solo su GPU dedicata (scelta 2), alone finto per gli altri: da fare.
+3. Luci, prestazioni, prova sui telefoni (iPhone, Pixel, Honor): da fare, servono le misure dell'utente.

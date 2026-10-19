@@ -153,18 +153,21 @@ export default function PlayerController({ config, device }) {
     goTo([w.position[0], w.position[2]], poi.anchor, { lookbook: poi.targetLookbookId })
   }
 
-  // Il pannello della parete del brand: un piano verticale rivolto verso +z.
-  // Un raggio che lo colpisce apre il Lookbook a cui il pannello è legato.
+  // Il pannello della parete del brand: un piano verticale perpendicolare a z (negozio) o,
+  // con `axis: 'x'`, perpendicolare a x (cantiere). Un raggio che lo colpisce apre il
+  // Lookbook a cui il pannello è legato.
   const brandPanel = config.environment.brandWall.panel
   const lookbookPoi = pois.find((p) => p.targetLookbookId === brandPanel.lookbookId) ?? null
+  const panelNormal = brandPanel.axis === 'x' ? 0 : 2
+  const panelAcross = brandPanel.axis === 'x' ? 2 : 0
   const panelHit = (o, d) => {
-    if (Math.abs(d[2]) < 1e-6) return null
-    const [cx, cy, cz] = brandPanel.center
-    const t = (cz - o[2]) / d[2]
+    if (Math.abs(d[panelNormal]) < 1e-6) return null
+    const t = (brandPanel.center[panelNormal] - o[panelNormal]) / d[panelNormal]
     if (t <= 0) return null
-    const x = o[0] + d[0] * t
+    const across = o[panelAcross] + d[panelAcross] * t
     const y = o[1] + d[1] * t
-    return Math.abs(x - cx) <= brandPanel.size[0] / 2 && Math.abs(y - cy) <= brandPanel.size[1] / 2 ? t : null
+    return Math.abs(across - brandPanel.center[panelAcross]) <= brandPanel.size[0] / 2
+      && Math.abs(y - brandPanel.center[1]) <= brandPanel.size[1] / 2 ? t : null
   }
 
   /** Avvia un percorso automatico verso un punto del pavimento. */

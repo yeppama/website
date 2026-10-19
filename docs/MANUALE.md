@@ -136,6 +136,7 @@ Tutti i percorsi sono relativi alla cartella del progetto. "Config" = `src/confi
 
 | Voglio cambiare… | Dove | Note e rischi |
 |---|---|---|
+| Allestimento (negozio o cantiere) | Indirizzo `?allestimento=cantiere`; per la build `VITE_LAYOUT`. Il cantiere sta in `src/layouts/cantiere.js` (stanza, oggetti, espositori, luci, posizione dei capi in `placement`) | Le righe qui sotto valgono anche per il cantiere, ma dentro quel file invece che in storeConfig |
 | Spostare un espositore | Config → `displays[]`: `position`, `rotationY` **e** il suo collider in `colliders` **e** `focusCamera` **e** l'`anchor` e il `floorMarker` del suo POI in `pois` **e** il `targetPosition` del suo faretto | Muovere solo `position` lascia il "muro invisibile" nel posto vecchio. I controlli I16 e I19 segnalano molti errori, non tutti: guardare `?debug=top&colliders=1` |
 | Mettere un capo su un altro espositore | Contenuto → `products[].displayId` | L'elenco dei capi dell'espositore si ricava da lì |
 | Aggiungere un capo | Config → nuovo oggetto in `products` con `id` nuovo, `commerce.handle` unico, `displayId`, e l'`id` aggiunto ai `productIds` di un espositore | La categoria deve avere una sagoma in `garments.shapeByCategory` (I20) |

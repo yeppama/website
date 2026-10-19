@@ -9,6 +9,7 @@ import Architecture from './environment/Architecture.jsx'
 import BrandWall from './environment/BrandWall.jsx'
 import FloorLabels from './environment/FloorLabels.jsx'
 import GroundShadows from './environment/GroundShadows.jsx'
+import CantiereRoom from './environment/CantiereRoom.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 import LightFixtures from './lighting/LightFixtures.jsx'
 import ColliderDebug from './debug/ColliderDebug.jsx'
@@ -197,23 +198,28 @@ function SceneContents({ config, tier }) {
 
   return (
     <>
-      <Floor floor={environment.floor} materials={lighting.materials} />
-      <Walls
-        walls={environment.walls}
-        ceiling={environment.ceiling}
-        floor={environment.floor}
-        materials={lighting.materials}
-      />
+      {/* L'allestimento del cantiere ha la sua stanza; il resto della scena è lo stesso. */}
+      {environment.cantiere ? <CantiereRoom environment={environment} /> : (
+        <>
+          <Floor floor={environment.floor} materials={lighting.materials} />
+          <Walls
+            walls={environment.walls}
+            ceiling={environment.ceiling}
+            floor={environment.floor}
+            materials={lighting.materials}
+          />
+          <BrandWall
+            brandWall={environment.brandWall}
+            brand={config.meta.brand}
+            lookbook={config.lookbook}
+            assets={config.assets}
+            materials={lighting.materials}
+            copy={config.copy}
+          />
+          <FloorLabels zones={environment.zones} />
+        </>
+      )}
       <Architecture environment={environment} materials={lighting.materials} />
-      <BrandWall
-        brandWall={environment.brandWall}
-        brand={config.meta.brand}
-        lookbook={config.lookbook}
-        assets={config.assets}
-        materials={lighting.materials}
-        copy={config.copy}
-      />
-      <FloorLabels zones={environment.zones} />
       <Displays config={config} />
       <GroundShadows
         objects={[
@@ -295,12 +301,14 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
       <Hotspots pois={config.pois} style={config.navigation.hotspot} platforms={config.environment.architecture.platforms} />
       <MoveFeedback feedback={config.navigation.feedback} platforms={config.environment.architecture.platforms} />
       <FrameLimiter targetFps={targetFps} />
-      <FirstFrameSignal onStage={onStage} />
       <GpuLifecycle />
-      <GpuWarmup enabled={!((params.get('perf') || params.get('bench') || params.get('debug')) && params.get('warm') === '0')} />
       <PerfProbe monitor={config.performance.monitor} />
+      {/* Pronto e riscaldamento dopo la scena: con texture e capi 3D da caricare (cantiere)
+          partono solo quando sono arrivati, così l'onboarding copre anche quell'attesa. */}
       <Suspense fallback={null}>
         <SceneContents config={config} tier={tier} />
+        <FirstFrameSignal onStage={onStage} />
+        <GpuWarmup enabled={!((params.get('perf') || params.get('bench') || params.get('debug')) && params.get('warm') === '0')} />
       </Suspense>
     </Canvas>
   )

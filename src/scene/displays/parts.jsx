@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import * as THREE from 'three'
+import { useGLTF } from '@react-three/drei'
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { getMaterial } from '../../lib/materials.js'
 import { getGarmentGeometry } from '../../lib/garments.js'
 import { getPhotoMaterial, getPhotoCardGeometry } from '../../lib/garmentPhotos.js'
@@ -68,6 +71,55 @@ export function FlatGarment({ product, garments, materials, position, rotation }
       <mesh geometry={geometry} material={photoMaterial ?? fabric} castShadow receiveShadow />
       {kind === 'bottom' && !photo && <Cord position={[0, 0.47, 0.03]} length={0.26} color={garments.cordColor} />}
     </group>
+  )
+}
+
+/**
+ * Capo in 3D (GLB ridotto) appeso con il centro di gruccia in `position`, rivolto verso +z
+ * locale, alto quanto la sua forma. Ogni uso è una copia che condivide geometria e materiali.
+ * Va tenuto fuori da MergeByMaterial: la copia arriva dopo il caricamento.
+ */
+function GlbGarment({ url, height, model, position, rotation }) {
+  const { scene } = useGLTF(url)
+  const object = useMemo(() => {
+    scene.traverse((m) => {
+      if (!m.isMesh || m.userData.prepared) return
+      if (!m.geometry.attributes.normal) m.geometry = toCreasedNormals(m.geometry, model.creaseAngle)
+      m.material.roughness = model.roughness
+      m.material.metalness = 0
+      m.userData.prepared = true
+    })
+    const o = scene.clone(true)
+    o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true } })
+    const box = new THREE.Box3().setFromObject(o)
+    const s = height / (box.max.y - box.min.y)
+    o.scale.setScalar(s)
+    // Il capo pende dalla gruccia: la cima del modello in y = 0, centrato in x e z.
+    const c = box.getCenter(new THREE.Vector3())
+    o.position.set(-c.x * s, -box.max.y * s, -c.z * s)
+    return o
+  }, [scene, height, model])
+  return (
+    <group position={position} rotation={rotation}>
+      <primitive object={object} />
+    </group>
+  )
+}
+
+/**
+ * Capo appeso: il modello 3D se il contenuto lo ha (`model3d.glb`), altrimenti il capo piatto
+ * con la foto o la silhouette. `position` è il punto di gruccia (la cima del capo).
+ */
+export function HangingGarment({ product, garments, materials, position, rotation }) {
+  const kind = garments.shapeByCategory[product.category]
+  const height = garments.model.height[kind]
+  const url = product.model3d?.glb
+  if (url) return <GlbGarment url={url} height={height} model={garments.model} position={position} rotation={rotation} />
+  // Il capo piatto ha il centro a metà altezza.
+  const flatHeight = kind === 'bottom' ? garments.photo.bottomHeight : height
+  return (
+    <FlatGarment product={product} garments={garments} materials={materials}
+      position={[position[0], position[1] - flatHeight / 2, position[2]]} rotation={rotation} />
   )
 }
 

@@ -74,6 +74,7 @@ Prototipo web 3D navigabile in prima persona del brand INTO industries (Florence
 **Struttura**
 ```
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
+src/layouts/       index.js (sceglie con ?allestimento= o VITE_LAYOUT) · cantiere.js (secondo allestimento)
 src/content/       index.js (sceglie con VITE_CONTENT) · into.js (INTO, segnaposto) · demo.js (demo) · demo.media.json (generato)
 scripts/media/     build.mjs + process.py (foto → WebP in più larghezze e texture 3D; Python 3 + Pillow + numpy)
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
@@ -142,6 +143,7 @@ npm run test:device                    # scelta del tier da stringhe GPU reali, 
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 22 test
 npm run test:framing                   # inquadratura del Focus contro la camera di three e limitatore di fps, 9 test
+# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, Focus su rack/catene/tavolo, Lookbook dai pannelli, Vai a, Indietro), 30 verifiche
 # e2e-navfix.mjs: Indietro del browser, solo mouse, avviso da dietro, click sul muro, margine, indicatore a terra (18 verifiche)
 # e2e-landscape.mjs: Focus e schede su 5 formati bassi (anche Safari con le barre, 852×330, e 568×320), verticale e desktop; rotazione durante il Focus
 npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
@@ -156,7 +158,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
+**Parametri anche in produzione:** `?allestimento=cantiere` (secondo allestimento), `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
 
 ## 4. Lezioni apprese & edge case
 
@@ -204,6 +206,7 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 - Scontorno locale con soglia 40: le ombre morbide del fondo finivano nel capo (striscia grigia sulla felpa, ombra a terra sul pantalone). Con 100 sono fondo; guardare sempre le texture su un fondo colorato.
 - Z Image non segue sempre il testo: il pantalone da tuta è uscito con bande arancioni invece che tono su tono. Si corregge il testo, non si rigenera.
 - `ImageDraw.floodfill` non scrive su un'immagine nata da un array numpy (memoria condivisa): serve `.copy()`. Senza, lo scontorno restituiva il capo grande quanto la foto.
+- Cantiere (2026-10-19): fra tavolo e catene della prova il corridoio era largo zero (I16 lo ha trovato): con margine e raggio del player un oggetto "a 1 m" può chiudere un passaggio. I GLB e le istanze vanno fuori da MergeByMaterial. Uno script e2e che legge storeConfig in Node deve usare lo stesso contenuto della build (`.env`), o i controlli sui capi passano a vuoto.
 - Cambiare la mappa di un materiale con un'altra non ricompila lo shader: i capi 3D nascono con una mappa trasparente 1×1 e prendono la foto all'arrivo, senza scatti dopo il riscaldamento.
 
 **Test e processo**
@@ -257,6 +260,6 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
   - Fatto: contenuti in `src/content/` (`into` = segnaposto di sempre, `demo` = stessi capi, handle, prezzi e varianti del negozio di sviluppo, con testi credibili, foto e `commerce.provider: 'shopify'`); `MediaImage` (srcset 400/800/1400 WebP, caricamento pigro, stati loading/error del segnaposto) in scheda, menu, Lookbook, Focus (miniatura), carrello; foto legate al colore (`media[].colorwayId`); capi 3D con la foto (`model3d`: carte scontornate su rack e parete, ritaglio in cima alle pile del plinto, proiezione frontale sul busto del manichino; senza texture resta la sagoma); `useShownPrice` (menu, Focus, Lookbook: prezzo solo dal fornitore col commercio attivo, "—" se non risponde) → **difetto dei prezzi della 8c corretto**; nota "prezzi dimostrativi" solo a commercio spento; "In arrivo nella Fase N" → `hints.notAvailable` / `product.purchaseClosed`; testi scritti nei componenti spostati in `copy` (`placeholder`, `brandWall`, `hud.zones/inputTouch/inputPointer/tier`, `perf.tier/dpr/cap`, `errors.webgl.renderer`); `npm run media:build`, `npm run test:content`, `scripts/catalog/fill-from-content.mjs` (→ `docs/demo/catalogo-demo.xlsx`, reimportato con 0 errori), suite `e2e-demo.mjs` e `shots-demo.mjs`.
   - Foto: scaricate e pubblicate (`public/media/demo/`, 2,8 MB, 18 foto in 3 larghezze + 8 texture), guardate una per una e sulla scena 3D (screenshot da `shots-demo.mjs`).
   - Non eseguito: benchmark su iPhone, Pixel e Honor con le foto (serve l'utente), prova completa da telefono, aggiornamento di `docs/codice/`.
-- **Allestimento "cantiere" — immagine di prova fatta (2026-10-19):** da **affiancare** all'allestimento attuale. Scelte dell'utente: arancione del marchio, Bloom solo su GPU dedicata, modelli 3D con Higgsfield (7 capi fatti, ~120 KB l'uno), pannelli del Lookbook orizzontali. Pagina separata `prova-cantiere.html` (`src/prototype/cantiere/`, immagini in `public/cantiere/`, preparate da `scripts/cantiere/prepare.py` e `reduce-glb.sh`). Piano, esito e prossime fasi in `docs/cantiere/PIANO.md`; prompt per Gemini in `docs/cantiere/PROMPT-IMMAGINI.md`. Le fasi 1–4 (cantiere nel negozio vero) partono solo con `Approvato, procedi`.
+- **Allestimento "cantiere" — fase 1 fatta (2026-10-19):** secondo allestimento accanto al negozio, con `?allestimento=cantiere` (anche in produzione) o `VITE_LAYOUT=cantiere`; senza parametro il negozio è invariato. `src/layouts/` (cantiere.js: stanza 10×8×4, collider, grafo, espositori `pipeRack`/`chain`/`blockTable`, POI, luci, benchmark, `placement` dei capi), `scene/environment/CantiereRoom.jsx`, capi GLB da `model3d.glb` (`HangingGarment` in `displays/parts.jsx`). Stessa navigazione del negozio (scelta dell'utente: niente camera orbitale). Pagina di prova `prova-cantiere.html` tolta. Suite `e2e-cantiere.mjs` (30). Restano: Bloom vero su GPU dedicata, misure sui telefoni. Dettagli in `docs/cantiere/PIANO.md`.
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
