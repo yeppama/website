@@ -7,6 +7,7 @@
 **Struttura**
 ```
 src/config/        storeConfig.js · designTokens.js · validateStoreConfig.js
+src/layouts/       index.js (sceglie con ?allestimento= o VITE_LAYOUT) · cantiere.js (secondo allestimento)
 src/content/       index.js (sceglie con VITE_CONTENT) · into.js (INTO, segnaposto) · demo.js (demo) · demo.media.json (generato)
 scripts/media/     build.mjs + process.py (foto → WebP in più larghezze e texture 3D; Python 3 + Pillow + numpy)
 src/lib/           geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
@@ -75,6 +76,7 @@ npm run test:device                    # scelta del tier da stringhe GPU reali, 
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 22 test
 npm run test:framing                   # inquadratura del Focus contro la camera di three e limitatore di fps, 9 test
+# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, Focus su rack/catene/tavolo, Lookbook dai pannelli, Vai a, Indietro), 30 verifiche
 # e2e-navfix.mjs: Indietro del browser, solo mouse, avviso da dietro, click sul muro, margine, indicatore a terra (18 verifiche)
 # e2e-landscape.mjs: Focus e schede su 5 formati bassi (anche Safari con le barre, 852×330, e 568×320), verticale e desktop; rotazione durante il Focus
 npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
@@ -89,5 +91,5 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
+**Parametri anche in produzione:** `?allestimento=cantiere` (secondo allestimento), `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
 

@@ -11,6 +11,7 @@
  * `src/content/` (scelto con VITE_CONTENT): qui c'è il negozio, uguale per tutti.
  */
 import content from '../content/index.js'
+import { layouts, layoutId } from '../layouts/index.js'
 
 // Colonne strutturali: una griglia dichiarata qui, da cui derivano sia la
 // geometria visibile sia i collider. Nessun componente conosce queste posizioni.
@@ -49,10 +50,15 @@ const COLUMNS = COLUMN_GRID.xs.flatMap((x) => COLUMN_GRID.zs.map((z) => ({
 // Dove sta ogni capo lo dice il contenuto (products[].displayId); l'espositore li
 // elenca nello stesso ordine. Un espositore con un capo solo prende il suo nome
 // anche sull'etichetta del POI, altrimenti resta il nome dell'espositore.
-const productsOn = (displayId) => content.products.filter((p) => p.displayId === displayId).map((p) => p.id)
+// Un allestimento diverso dal negozio (src/layouts/) ricolloca i capi nei suoi espositori.
+const layout = layouts[layoutId]
+const products = layout
+  ? content.products.map((p) => ({ ...p, displayId: layout.placement[p.id] ?? null }))
+  : content.products
+const productsOn = (displayId) => products.filter((p) => p.displayId === displayId).map((p) => p.id)
 const poiLabel = (displayId, fallback) => {
   const ids = productsOn(displayId)
-  return ids.length === 1 ? content.products.find((p) => p.id === ids[0]).name : fallback
+  return ids.length === 1 ? products.find((p) => p.id === ids[0]).name : fallback
 }
 const mainLookbookId = content.lookbook[0]?.id ?? null
 
@@ -217,6 +223,10 @@ export const storeConfig = {
       // Soglia della trasparenza della foto: sotto è fondo, sopra è capo.
       alphaTest: 0.5,
     },
+    // Capi in 3D (contenuto `model3d.glb`, allestimento del cantiere): il GLB ridotto, scalato
+    // all'altezza della sua forma. Arriva senza normali: si mediano fra vertici vicini, salvo
+    // spigoli oltre `creaseAngle` (calcolate a facce darebbero un capo sfaccettato).
+    model: { height: { top: 0.72, bottom: 1.0 }, creaseAngle: Math.PI / 3, roughness: 0.9 },
   },
 
   // Camera della Fase 1b: posa fissa. La navigazione arriva in Fase 3.
@@ -370,6 +380,10 @@ export const storeConfig = {
       'mat-fabric':            { color: '#ffffff', roughness: 0.93, metalness: 0.0 },
       'mat-mannequin-matte':   { color: '#d9d6cf', roughness: 0.55, metalness: 0.02 },
       'mat-accent-flame':      { color: '#f98e30', roughness: 0.4,  metalness: 0.0, emissive: '#f98e30', emissiveIntensity: 0.6 },
+      // Allestimento del cantiere: tubi neri del rack, catene, blocchi di cemento.
+      'mat-pipe-black':        { color: '#121214', roughness: 0.35, metalness: 0.9 },
+      'mat-chain-steel':       { color: '#5a5148', roughness: 0.2,  metalness: 0.9 },
+      'mat-cinder-block':      { color: '#8a8984', roughness: 0.95, metalness: 0.0 },
     },
   },
 
@@ -500,7 +514,7 @@ export const storeConfig = {
       prompt: { desktop: 'Click per aprire', mobile: 'Tap per aprire' }, targetLookbookId: mainLookbookId, approachWaypointId: 'wp-look-01', floorMarker: [0, -12.6], requires: 'lookbook' },
   ],
 
-  products: content.products,
+  products,
 
   // Lookbook / Brand Story (Fase 5): dal contenuto scelto. La relazione con i
   // prodotti è bidirezionale (products[].lookbookIds ↔ lookbook[].productIds, I21).
@@ -775,5 +789,22 @@ function mergeInto(base, extra) {
   }
 }
 mergeInto(storeConfig.copy, content.copy)
+
+// Allestimento: sostituisce la stanza e tutto ciò che ha coordinate (muri, collider, grafo,
+// espositori, POI, luci, inquadrature, percorso del benchmark). Giocatore, input, materiali,
+// testi e commercio restano quelli comuni.
+storeConfig.layout = { id: layoutId }
+if (layout) {
+  const L = layout.build({ productsOn, poiLabel, mainLookbookId })
+  storeConfig.performance.toneMappingExposure = L.performance.toneMappingExposure
+  Object.assign(storeConfig.camera, L.camera)
+  storeConfig.environment = L.environment
+  storeConfig.lighting = { ...storeConfig.lighting, ...L.lighting }
+  storeConfig.colliders = L.colliders
+  Object.assign(storeConfig.navigation, L.navigation)
+  storeConfig.displays = L.displays
+  storeConfig.pois = L.pois
+  storeConfig.benchmark.steps = L.benchmark.steps
+}
 
 export default storeConfig

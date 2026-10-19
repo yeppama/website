@@ -16,7 +16,7 @@ Prototipo web 3D navigabile in prima persona del negozio streetwear INTO industr
 | `archivio/docs-ristrutturati` | Archivio: riordino dei documenti del 2026-10-16 mai unito. Non ci si lavora. |
 
 - Il contenuto `demo` non può finire in produzione: con `VERCEL_ENV=production` o da `main` la build si ferma (`vite.config.js`, `guardProductionContent`). Unendo `sviluppo` in `main` va tolto `.env`.
-- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Si cancellano da GitHub; il proxy del container non permette di cancellare branch né di creare tag.
+- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Si cancellano da GitHub; il proxy del container non permette di cancellare branch né di creare tag.
 
 ## 3. Le due proposte per il cliente
 
@@ -24,19 +24,20 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 
 | | A · Negozio attuale | B · Cantiere |
 |---|---|---|
-| Dove | pagina principale (`index.html`) | `prova-cantiere.html` (`src/prototype/cantiere/`, immagini in `public/cantiere/`) |
-| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify | **immagine di prova**: camera che gira attorno (OrbitControls) con 7 viste, non si cammina, niente schede né carrello |
+| Dove | indirizzo dell'anteprima, senza parametri | stesso indirizzo + `?allestimento=cantiere` (anche in produzione; nella build `VITE_LAYOUT=cantiere`) |
+| Codice | `src/config/storeConfig.js` | `src/layouts/cantiere.js`, `scene/environment/CantiereRoom.jsx`, espositori `pipeRack`/`chain`/`blockTable`; immagini in `public/cantiere/` |
+| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify | fase 1 fatta: navigabile come il negozio, capi GLB. Da fare: Bloom su GPU dedicata (fase 2), luci e misure sui telefoni (fase 3) |
 | Documenti | `docs/PIANO-DEMO.md`, `docs/demo/` | `docs/cantiere/PIANO.md`, `docs/cantiere/PROMPT-IMMAGINI.md` |
 
-- Il confronto oggi non è alla pari (B non è navigabile): dirlo all'utente quando prepara la presentazione.
-- Rendere B un allestimento selezionabile del negozio vero = fasi 1–4 di `docs/cantiere/PIANO.md`. Partono solo con `Approvato, procedi`.
+- **Requisito dell'utente: entrambe le versioni devono restare accessibili** dallo stesso link. Nessuna modifica può rompere o nascondere una delle due; ogni verifica si fa su tutte e due (`e2e-cantiere.mjs` per B, le suite del negozio per A).
+- Le fasi successive del cantiere partono solo con `Approvato, procedi alla fase X`.
 
 ## 4. Stato
 
 - **Fasi 0–7** chiuse; produzione su `main` (opzione A, segnaposto dichiarati, `noindex`).
 - **Fase 8:** 8a (carrello, fornitore finto) e 8b (Shopify di sviluppo, ordine di prova #1001 pagato) chiuse; preparazione 8c/8d fatta (modello Excel del catalogo, import, controllo dal vivo, pagine legali). **8c in attesa del catalogo del cliente.** Piano: `docs/PLAN-8.md`.
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono, aggiornamento di `docs/codice/` (oggi superato).
-- **Cantiere:** immagine di prova fatta (2026-10-19), 7 capi GLB da Higgsfield. Prossimo: fasi 1–4 su comando.
+- **Cantiere:** fase 1 fatta (2026-10-19): secondo allestimento navigabile, pagina di prova `prova-cantiere.html` tolta. Prossimo: fasi 2–3 su comando (`docs/cantiere/PIANO.md`).
 
 ## 5. Regole di processo (dall'utente)
 

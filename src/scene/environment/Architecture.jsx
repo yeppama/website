@@ -44,8 +44,8 @@ export default function Architecture({ environment, materials, merge = true }) {
         )
       })}
 
-      <ConfigBox {...entrance.lintel} materials={materials} />
-      <ConfigBox {...entrance.threshold} materials={materials} />
+      {entrance.lintel && <ConfigBox {...entrance.lintel} materials={materials} />}
+      {entrance.threshold && <ConfigBox {...entrance.threshold} materials={materials} />}
       {entrance.exteriorGlow && (
         <mesh position={entrance.exteriorGlow.center} rotation={[0, Math.PI, 0]}>
           <planeGeometry args={entrance.exteriorGlow.size} />

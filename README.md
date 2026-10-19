@@ -9,7 +9,7 @@ e `src/content/`. **Prezzi, capi e testi sono dimostrativi.**
 | Proposta | Dove si vede | Stato |
 |---|---|---|
 | **A · Negozio attuale** | pagina principale dell'anteprima | completo e navigabile, foto e prezzi di prova |
-| **B · Cantiere** | stessa anteprima, indirizzo + `/prova-cantiere.html` | immagine di prova: si guarda girando attorno, non si cammina |
+| **B · Cantiere** | stesso indirizzo + `?allestimento=cantiere` | navigabile come il negozio; Bloom e misure sui telefoni da fare |
 
 L'anteprima è quella che Vercel crea a ogni push sul branch `sviluppo`; `main` è la produzione. Header e
 cache in `vercel.json`. Dettagli: `CONTEXT.md` §3.

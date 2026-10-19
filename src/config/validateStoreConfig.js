@@ -141,13 +141,13 @@ export function validateStoreConfig(config) {
     if (!materialIds.has(tr.materialId)) fail('I18', `binario ${tr.id}: materiale "${tr.materialId}" inesistente`)
   }
   const bw = config.environment.brandWall
-  if (!assetIds.has(bw.sign.assetId)) fail('I18', `insegna: asset "${bw.sign.assetId}" inesistente`)
+  if (bw.sign && !assetIds.has(bw.sign.assetId)) fail('I18', `insegna: asset "${bw.sign.assetId}" inesistente`)
   if (!lookbookIds.has(bw.panel.lookbookId)) fail('I18', `pannello: lookbook "${bw.panel.lookbookId}" inesistente`)
   if (!materialIds.has(bw.panel.materialId)) fail('I18', `pannello: materiale "${bw.panel.materialId}" inesistente`)
 
   // I19 — espositori: tipo supportato, faretto esistente, POI reciproco, posa di
   // Focus con la camera fuori dai collider e dentro il negozio.
-  const KINDS = new Set(['mannequin', 'plinth', 'rack', 'wall'])
+  const KINDS = new Set(['mannequin', 'plinth', 'rack', 'wall', 'pipeRack', 'chain', 'blockTable'])
   const spotIds = ids(config.lighting.spots)
   const poiById = new Map(config.pois.map((x) => [x.id, x]))
   for (const d of config.displays) {

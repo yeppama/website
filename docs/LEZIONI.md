@@ -48,6 +48,7 @@
 - Scontorno locale con soglia 40: le ombre morbide del fondo finivano nel capo (striscia grigia sulla felpa, ombra a terra sul pantalone). Con 100 sono fondo; guardare sempre le texture su un fondo colorato.
 - Z Image non segue sempre il testo: il pantalone da tuta è uscito con bande arancioni invece che tono su tono. Si corregge il testo, non si rigenera.
 - `ImageDraw.floodfill` non scrive su un'immagine nata da un array numpy (memoria condivisa): serve `.copy()`. Senza, lo scontorno restituiva il capo grande quanto la foto.
+- Cantiere (2026-10-19): fra tavolo e catene della prova il corridoio era largo zero (I16 lo ha trovato): con margine e raggio del player un oggetto "a 1 m" può chiudere un passaggio. I GLB e le istanze vanno fuori da MergeByMaterial. Uno script e2e che legge storeConfig in Node deve usare lo stesso contenuto della build (`.env`), o i controlli sui capi passano a vuoto.
 - Cambiare la mappa di un materiale con un'altra non ricompila lo shader: i capi 3D nascono con una mappa trasparente 1×1 e prendono la foto all'arrivo, senza scatti dopo il riscaldamento.
 
 **Test e processo**
