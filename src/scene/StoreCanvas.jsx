@@ -26,6 +26,7 @@ import PerfProbe from './debug/PerfProbe.jsx'
 import { useAppStore } from '../state/useAppStore.js'
 import { retainGpuCaches, releaseGpuCaches } from '../lib/gpuCaches.js'
 import { whenFontsReady } from '../lib/canvasText.js'
+import { markShadowsDirty, takeShadowsDirty } from '../lib/staticShadows.js'
 
 const debugParams = () => new URLSearchParams(window.location.search)
 
@@ -171,6 +172,22 @@ function GpuWarmup({ enabled }) {
     })))
     return () => { alive = false }
   }, [enabled, gl, scene, camera])
+  return null
+}
+
+/**
+ * Ombre statiche (lib/staticShadows.js): le mappe d'ombra si ridisegnano solo quando la scena
+ * cambia forma, non a ogni fotogramma. Montato dentro la Suspense della scena, quindi parte
+ * quando stanza, capi 3D e immagini ci sono già.
+ */
+function StaticShadows() {
+  const { gl } = useThree()
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false
+    markShadowsDirty()
+    return () => { gl.shadowMap.autoUpdate = true }
+  }, [gl])
+  useFrame(() => { if (takeShadowsDirty()) gl.shadowMap.needsUpdate = true })
   return null
 }
 
@@ -324,6 +341,7 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
           partono solo quando sono arrivati, così l'onboarding copre anche quell'attesa. */}
       <Suspense fallback={null}>
         <SceneContents config={config} tier={tier} bloom={bloom} />
+        {tier.maxShadowCasters > 0 && <StaticShadows />}
         <FirstFrameSignal onStage={onStage} />
         <GpuWarmup enabled={!((params.get('perf') || params.get('bench') || params.get('debug')) && params.get('warm') === '0')} />
       </Suspense>

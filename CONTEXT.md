@@ -37,7 +37,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 - **Fasi 0–7** chiuse; produzione su `main` (opzione A, segnaposto dichiarati, `noindex`).
 - **Fase 8:** 8a (carrello, fornitore finto) e 8b (Shopify di sviluppo, ordine di prova #1001 pagato) chiuse; preparazione 8c/8d fatta (modello Excel del catalogo, import, controllo dal vivo, pagine legali). **8c in attesa del catalogo del cliente.** Piano: `docs/PLAN-8.md`.
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono, aggiornamento di `docs/codice/` (oggi superato).
-- **Cantiere:** fasi 1–2 fatte; fase 3 avviata il 2026-10-19 e **bloccata sulle misure dell'utente** (protocollo in `docs/PERF.md`, "Fase 3 del cantiere"): bench su iPhone, Pixel, Honor e PC con scheda dedicata, più giudizio su luminosità e neri. Poi taratura di luci ed esposizione.
+- **Cantiere:** fasi 1–2 fatte; fase 3 in corso (protocollo in `docs/PERF.md`). Prime misure 2026-10-19: Pixel 10 nel cantiere fallita (1% low 30,9), Honor nel negozio A in regressione (25,2): corretti con ombre statiche e grafica caricata prima di entrare, **da rimisurare**. Mancano iPhone, PC con scheda dedicata, giudizio su luminosità e neri.
 - **Correzioni richieste il 2026-10-19:** fasi A (manichino, zoom rack, catene), B (grafica del cantiere, punti luce arancioni) e C (negozio A 24 × 24 con grafica e arredi, più luce in entrambi) fatte. Non eseguito: prova sul telefono dell'utente.
 
 ## 5. Regole di processo (dall'utente)

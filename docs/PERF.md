@@ -92,6 +92,10 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | c5db6fa | medium (sbagliato) · grana alpha | 1.5 | 423×856 | 3 | 9.7 | 137.6 | 6.0 | 31 / 41 | 12910 | sì · **fallita** |
 | 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | 01ae63c | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 18.8 | 43.5 | 18 / 30 | 7432 | sì · superata (4 > 50 ms, max 140 ms) |
 | 2026-10-16 | Honor (fascia bassa) | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 153 | 01ae63c | low (grana off) | 1.0 | 423×856 | 3 | 59.9 | 19.2 | 47.4 | 18 / 30 | 7432 | sì · superata (0 > 50 ms, max 43 ms) |
+| 2026-10-19 | Pixel 10 · negozio A | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 1218036 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 17.7 | 54.6 | 40 / 53 | 12598 | sì · superata (max 43 ms, 0 > 50 ms) |
+| 2026-10-19 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 1218036 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 19.1 | 30.9 | 49 / 80 | 124711 | sì · **fallita** (1% low < 40; Rack 21,0, Lookbook 24,6, Catene 30,6; max 53 ms, 2 > 50 ms) |
+| 2026-10-19 | Honor · negozio A | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.5 | 30.7 | 25.2 | 23 / 39 | 7156 | sì · superata (soglia low: p50), ma scatti: max 95 ms, 6 > 50 ms (il 16/10: 43,5, max 140 ms 4 > 50) |
+| 2026-10-19 | Honor · cantiere | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 19.0 | 43.1 | 26 / 57 | 56515 | sì · superata (max 58 ms, 1 > 50 ms) |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -270,3 +274,22 @@ Honor in `low` su `01ae63c` (tier scelto da solo): **59,9 / 43,5, superata** (so
 Con la grana alpha però 4 fotogrammi > 50 ms (max 140 ms) e 1% low fino a 14,6 in un tratto; senza grana
 0 > 50 ms, max 43 ms, 1% low 47,4. Decisione dell'utente: grana spenta solo nel tier low (applicata il 2026-10-16).
 
+
+
+## 2026-10-19 · prime misure dei due negozi (Pixel 10, Honor) e correzioni
+
+Misure dell'utente sul commit `1218036` (righe sopra). Due problemi:
+
+- **Pixel 10 nel cantiere, 1% low 30,9 (soglia 40).** Nessuna texture o shader caricato a metà percorso
+  (verificato nel container contando texture e programmi durante il benchmark). Il carico per fotogramma
+  sul tier medium era quasi il doppio di quello senza ombre (124 711 triangoli contro 56 515 sul low): i
+  due faretti con ombra ridisegnavano ogni fotogramma tutta la scena, catene comprese. Correzione: ombre
+  calcolate una volta e rifatte solo quando una sagoma cambia (`lib/staticShadows.js`). Nel container,
+  stessa posa, tier medium: Rack 46 → 22 draw call, 106 838 → 38 680 triangoli; ingresso del cantiere
+  67 → 43 / 95 624 → 27 466; negozio 37 → 18 e 42 → 23 draw call.
+- **Honor nel negozio A, 1% low da 43,5 (16/10) a 25,2.** Dalla fase C la grafica alle pareti si caricava
+  a scena avviata: in rete mobile arrivava a metà percorso e il caricamento sulla GPU dava scatti.
+  Correzione: la scena aspetta anche quelle immagini (Suspense), come nel cantiere, che sull'Honor regge
+  (43,1). Ipotesi coerente coi dati, non dimostrata: va rimisurata.
+
+Da rimisurare dopo le correzioni: Pixel nel cantiere, Honor nel negozio A (e, per controllo, gli altri due).

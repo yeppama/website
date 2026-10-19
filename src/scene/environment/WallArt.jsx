@@ -1,13 +1,15 @@
 import { useLayoutEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { useMat } from '../displays/parts.jsx'
-import { getSharedTexture } from '../../lib/sharedTextures.js'
+import { useSharedTextures } from '../../lib/sharedTextures.js'
 
 /**
  * Grafica alle pareti (fase C, 2026-10-19), da `environment.wallArt`: manifesti e murali
  * (`kind: 'image'`, piani appena staccati dal muro, trasparenza della foto rispettata) e stampe
  * della campagna in cornice (`kind: 'print'`, foto del Lookbook del contenuto: se il contenuto
- * non ce l'ha, il config non la elenca). Texture condivise in lib/sharedTextures.js.
+ * non ce l'ha, il config non la elenca). Texture condivise in lib/sharedTextures.js; la scena
+ * aspetta le immagini (Suspense): caricate a scena avviata, arrivavano a metà percorso sui telefoni
+ * in rete mobile e il loro caricamento sulla GPU dava scatti (Honor, 2026-10-19: 1% low 43,5 → 25,2).
  *
  * I materiali nascono qui e passano alla mesh come proprietà: un materiale scritto in JSX, allo
  * smontaggio, viene liberato da React Three Fiber insieme alla sua `map`, cioè la texture
@@ -35,12 +37,14 @@ function Art({ item, material, frame }) {
 
 export default function WallArt({ items, frameMaterialId, printTint, materials }) {
   const frame = useMat(frameMaterialId, materials)
-  const own = useMemo(() => items.map((item) => {
-    const map = getSharedTexture(item.url)
+  const maps = useSharedTextures(items.map((x) => x.url))
+  const own = useMemo(() => items.map((item, i) => {
+    const map = maps[i]
     return item.kind === 'print'
       ? new THREE.MeshBasicMaterial({ map, color: printTint, toneMapped: false })
       : new THREE.MeshStandardMaterial({ map, transparent: true, alphaTest: 0.05, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -1 })
-  }), [items, printTint])
+    // `maps` è un array nuovo a ogni render, ma le texture sono le stesse per ogni indirizzo (cache).
+  }), [items, printTint]) // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => () => own.forEach((m) => m.dispose()), [own])
   return (
     <group>

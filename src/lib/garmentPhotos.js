@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { registerGpuCache } from './gpuCaches.js'
+import { markShadowsDirty } from './staticShadows.js'
 
 /**
  * Capi 3D col livello "leggero" (docs/PIANO-DEMO.md): la foto scontornata del fronte
@@ -40,6 +41,8 @@ function loadInto(url, material) {
   if (!textures.has(url)) {
     const texture = new THREE.TextureLoader().load(url, () => {
       for (const m of materials.values()) if (m.userData.photoUrl === url) m.map = texture
+      // La sagoma scontornata del capo cambia l'ombra che proietta: le ombre statiche si rifanno.
+      markShadowsDirty()
     }, undefined, () => console.warn(`capo 3D: foto non caricata ${url}`))
     texture.colorSpace = THREE.SRGBColorSpace
     texture.anisotropy = 4

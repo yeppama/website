@@ -24,7 +24,7 @@
 - Font auto-ospitati in `public/fonts` (Archivo, JetBrains Mono, UnifrakturCook).
 
 **Rendering e prestazioni**
-- Ombre (D3-A): max 2 faretti con ombra reale su tier high/medium; tier low nessuna shadow map + ombre blob ellittiche.
+- Ombre (D3-A): max 2 faretti con ombra reale su tier high/medium; tier low nessuna shadow map + ombre blob ellittiche. Dal 2026-10-19 le mappe d'ombra si calcolano una volta e si rifanno solo su `markShadowsDirty` (`lib/staticShadows.js`): nulla che proietti ombra si muove.
 - Grana (D6-B): velo CSS sopra il canvas, fuori da WebGL; tessera dimensionata per `devicePixelRatio`. Dal 2026-10-16 fusione `alpha` (solo granelli scuri) invece di `mix-blend-mode: overlay`, che su Iris Xe costava ~20 fps e alzava il nero. Nel tier low niente grana (telefoni economici: picchi fino a 140 ms sull'Adreno 619).
 - `frameloop="demand"` + `FrameLimiter` (cap reale a `performance.targetFps`). Dal 2026-10-16 ritmo regolare (`lib/frameScheduler.js`): un fotogramma ogni k vsync, k = frequenza ÷ target per difetto (60 Hz → 60, 90 → 90, 120 → 60, 144 → 72). La regola vecchia ("tempo dall'ultimo ≥ 90%") dava 45 a 90 Hz; il primo correttivo (a scadenze) dava 60 irregolari a 90 Hz, alternando 11 e 22 ms (Pixel 7: mediana fra 50 e 88, 1% low 44). Il p50 del benchmark misura gli intervalli: con ritmo irregolare inganna, guardare anche l'1% low.
 - `StoreCanvas` caricato con `lazy()`: JS iniziale 92 kB gzip (budget 380), chunk 3D 258 kB differito. **Niente `manualChunks`.**

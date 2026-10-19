@@ -108,8 +108,11 @@ async function useRound(page) {
     await page.evaluate(() => window.__remountScene())
     const swapped = await waitUntil(page, () => window.__gl && window.__gl !== window.__oldGl && window.__player, null, 20000)
     if (!swapped || !(await rendering(page))) renderedEvery = false
-    await page.waitForTimeout(600)
-    const m = await gpu(page)
+    // In rendering software la scena rimontata può impiegare secondi a ridisegnare tutto: si aspetta
+    // che le risorse tornino quelle della prima (condizione, non tempo fisso; docs/LEZIONI.md).
+    // Una perdita non ci torna mai e fa fallire comunque.
+    let m = await gpu(page)
+    for (let t = 0; t < 30 && !same(m, fresh); t++) { await page.waitForTimeout(1000); m = await gpu(page) }
     if (!same(m, fresh)) { sameEvery = false; notes.push(`ciclo ${i}: ${fmt(m)}`) }
     if (i === 3) heapAt3 = await heap()
   }

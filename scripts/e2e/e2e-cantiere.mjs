@@ -290,6 +290,13 @@ for (const d of storeConfig.displays) {
   const accentLit = Math.min(storeConfig.performance.tiers.high.maxAccentLights, storeConfig.environment.accentLights.filter((x) => x.light).length)
   const highLights = await high.evaluate(() => { let n = 0; window.__scene.traverse((o) => { if (o.isPointLight) n++ }); return n })
   ok('tier high: luci arancioni vere accese fino al limite del tier', highLights === 1 + accentLit, `${highLights} luci puntiformi (neon + ${accentLit})`)
+  // Ombre statiche (fase 3): le mappe non si ridisegnano a ogni fotogramma, ma ci sono.
+  const sh = await high.evaluate(() => {
+    let maps = 0
+    window.__scene.traverse((o) => { if (o.isSpotLight && o.castShadow && o.shadow.map) maps++ })
+    return { autoUpdate: window.__gl.shadowMap.autoUpdate, maps }
+  })
+  ok('tier high: ombre calcolate una volta (non a ogni fotogramma) e presenti', sh.autoUpdate === false && sh.maps > 0, JSON.stringify(sh))
   // Il Focus sposta l'inquadratura con setViewOffset: il Bloom deve seguirlo senza errori.
   const rack = storeConfig.displays.find((d) => d.kind === 'pipeRack')
   ok('tier high: Focus sul rack col Bloom attivo', await focusOn(high, rack.id))

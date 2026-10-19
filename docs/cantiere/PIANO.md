@@ -141,5 +141,7 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
    - Benchmark di entrambi i negozi provato fino in fondo dopo gli spostamenti (catene, negozio 24 × 24).
    - Protocollo delle misure in `docs/PERF.md` ("Fase 3 del cantiere"): bench su iPhone, Pixel, Honor e
      PC con scheda dedicata (anche `&bloom=0`), più il giudizio a occhio su luminosità e neri.
-   - Da fare quando arrivano le misure: tarare luci ed esposizione, numero di luci arancioni per tier,
-     eventuali tagli sul tier low.
+   - Prime misure dell'utente (Pixel 10, Honor; `docs/PERF.md`): Pixel nel cantiere **fallita** (1% low
+     30,9), Honor nel negozio A con scatti (25,2, era 43,5). Corretti: ombre calcolate una volta
+     (`lib/staticShadows.js`), grafica del negozio A caricata prima di entrare. Da rimisurare; mancano
+     iPhone, PC con scheda dedicata e il giudizio su luminosità e neri.
