@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-Stato del progetto, decisioni, codice di riferimento, lezioni apprese e prossimi passi:
+Stato del progetto, branch, le due proposte per il cliente e dove leggere il resto:
 
 @CONTEXT.md
 
-Piano completo, schema dati e limiti dell'ambiente: `PLAN.md`.
+Decisioni tecniche: `docs/DECISIONI.md` · riferimento del codice e comandi: `docs/RIFERIMENTO.md` · lezioni apprese: `docs/LEZIONI.md` · storia: `docs/STORIA.md` · piano completo e schema dati: `PLAN.md`.
 
 ## Regole non negoziabili
 
@@ -13,4 +13,5 @@ Piano completo, schema dati e limiti dell'ambiente: `PLAN.md`.
 - Collisioni solo sui box di `colliders`, mai sulle mesh.
 - Prima di ogni commit: `npm run build`, `npm run test:nav` e le suite `scripts/e2e/` interessate, **leggendo l'esito**.
 - Report di fine fase: eseguito / non eseguito / bloccato, mai una verifica impossibile presentata come superata.
-- Branch di lavoro: `claude/cool-edison-2svzgj` (dalla Fase 5; allineato a `claude/determined-thompson-yfnsdc`, che resta com'era a fine Fase 4).
+- Branch di lavoro: `sviluppo` (dal 2026-10-19; contiene tutto il lavoro dei branch precedenti). `main` è la produzione e non si tocca senza comando dell'utente.
+- Prima di toccare un'area, leggere la sezione pertinente di `docs/LEZIONI.md`.

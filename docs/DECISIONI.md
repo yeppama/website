@@ -1,0 +1,64 @@
+# DECISIONI — scelte tecniche vigenti
+
+> Spostato parola per parola da `CONTEXT.md` §2 il 2026-10-19 (riordino del repository). Leggere la sezione pertinente prima di toccare architettura, identità visiva, rendering o navigazione.
+
+## 2. Decisioni tecniche
+
+**Stack (versioni verificate sul registry npm)**
+- Vite 8.3.4 · React 19.3.1 · three 0.186.1 · @react-three/fiber 9.8.2 · @react-three/drei 10.7.9 (quasi inutilizzato) · Tailwind 4.3.3 via `@tailwindcss/vite` · Zustand 5.0.15 · `playwright-core` (solo test).
+- **Tailwind** (D1): zero CSS-in-JS a runtime, il main thread serve al canvas.
+- **Zustand** (D2): stato letto a 60 Hz dal render loop; Context ridisegnerebbe tutti i consumer.
+
+**Architettura data-driven**
+- Contenuti separati (demo, 2026-10-17): marchio, capi, Lookbook, posizione dei capi (`products[].displayId`, da cui `displays[].productIds` ed etichette dei POI), fornitore del commercio e testi propri (`copy`, fusi sopra) stanno in `src/content/<id>.js`, scelto con `VITE_CONTENT` (default `into`; Node lo legge da `process.env`). Il branch della demo ha `.env` con `demo`: **non portarlo su main**.
+- `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
+- `src/config/validateStoreConfig.js`: 27 invarianti (I1–I27), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
+- `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
+- Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.
+
+**Identità visiva**
+- Accento unico **Flame Orange #F98E30** (PANTONE 15-1157 TPG, simulazione a schermo), token `accent.flame`. Fondi `#060606` (negozio) e `#dcdcd8` (studio). Testo osso `#f2f0ea`. Il rosso `#c21025` solo come stato d'errore.
+- Nome `INTO industries`: wordmark `INTO` + descrittore `(industries*)`, mai una parola sola.
+- Motivo geometrico: l'ellisse del logo (`brandMotif.oval.ratio = 2.9`) riusata per hotspot, ping dei tap, ombre blob, bottone primario, minimappa.
+- Font auto-ospitati in `public/fonts` (Archivo, JetBrains Mono, UnifrakturCook).
+
+**Rendering e prestazioni**
+- Ombre (D3-A): max 2 faretti con ombra reale su tier high/medium; tier low nessuna shadow map + ombre blob ellittiche.
+- Grana (D6-B): velo CSS sopra il canvas, fuori da WebGL; tessera dimensionata per `devicePixelRatio`. Dal 2026-10-16 fusione `alpha` (solo granelli scuri) invece di `mix-blend-mode: overlay`, che su Iris Xe costava ~20 fps e alzava il nero. Nel tier low niente grana (telefoni economici: picchi fino a 140 ms sull'Adreno 619).
+- `frameloop="demand"` + `FrameLimiter` (cap reale a `performance.targetFps`). Dal 2026-10-16 ritmo regolare (`lib/frameScheduler.js`): un fotogramma ogni k vsync, k = frequenza ÷ target per difetto (60 Hz → 60, 90 → 90, 120 → 60, 144 → 72). La regola vecchia ("tempo dall'ultimo ≥ 90%") dava 45 a 90 Hz; il primo correttivo (a scadenze) dava 60 irregolari a 90 Hz, alternando 11 e 22 ms (Pixel 7: mediana fra 50 e 88, 1% low 44). Il p50 del benchmark misura gli intervalli: con ritmo irregolare inganna, guardare anche l'1% low.
+- `StoreCanvas` caricato con `lazy()`: JS iniziale 92 kB gzip (budget 380), chunk 3D 258 kB differito. **Niente `manualChunks`.**
+- Geometrie statiche unite per materiale (`MergeByMaterial`), corpi illuminanti a istanze. Costo misurato nella zona più densa: 31 draw call su tier low (budget 60), 40 su high (budget 120).
+- Memoria GPU (Fase 6): le cache condivise (`materials.js`, `garments.js`, ombra blob in `canvasText.js`) si registrano in `lib/gpuCaches.js` e si liberano solo quando l'ultimo Canvas si smonta, con rilascio differito di un turno e annullato da un rimontaggio (StrictMode-safe). Texture per montaggio (hotspot, marcature, parete del brand) liberate nel cleanup del loro effetto. Il contesto lo distrugge R3F allo smontaggio.
+- Errore della scena 3D (contesto WebGL non creato, modulo 3D non scaricato): `SceneErrorBoundary` attorno al Canvas mostra l'overlay "Riprova" invece di una pagina vuota; dopo 3 errori di fila senza un fotogramma, la pagina di WebGL non disponibile. L'overlay è l'ultima trappola del focus: Tab ed ESC non arrivano a schede o menu sotto.
+- Perdita del contesto WebGL: `preventDefault`, overlay `ContextLostOverlay` con "Riprova"; se il browser lo restituisce, rimontaggio automatico. Il rimontaggio cambia `key` al Canvas, il player riprende da `usePlayerStore.resumePose`, un Focus in corso si chiude. I canvas sostituiti sono in un `WeakSet`: la loro perdita forzata allo smontaggio non riapre l'overlay.
+- HUD prestazioni `?perf=1` (anche in produzione) e benchmark `?bench=1` (percorso in `storeConfig.benchmark`, ~40 s, run ripetibili, riga pronta per `docs/PERF.md`). Campionatore in `lib/perf.js` alimentato da `PerfProbe` dentro il Canvas: fps = render reali, intervalli > 250 ms scartati. Durante il benchmark `benchRunning` blocca l'input (non la simulazione) e un velo copre la scena. Commit della build in `__BUILD_COMMIT__` (vite `define`, da `VERCEL_GIT_COMMIT_SHA` o git).
+- Tier (Fase 6, dopo la prima misura reale): `high` solo con GPU dedicata riconosciuta nella stringa del renderer (`DISCRETE_GPU` in `deviceProfile.js`); le integrate vanno in `medium`. Su telefono (2026-10-16): GPU economiche (`BUDGET_MOBILE_GPU`: Adreno < 650, Mali G31/G51/G52/G57/G68/T, PowerVR GE/GM) → `low` anche con 8 core: un Honor con Adreno 619 finiva in medium e faceva 9,7 fps. Verificato da `npm run test:device` con le stringhe dei dispositivi misurati.
+- Misure reali (docs/PERF.md): Pixel (PowerVR, medium) 60,2 / 49,8 → **superata**; Vivobook (Iris Xe) in high per errore 31,6 / 14,9, in medium corretto 37,2 / 16,5 → **fallita**. Il benchmark riporta anche il dettaglio per tratto. Diagnosi chiusa: il costo principale era la grana overlay (vedi Fase 6 sotto). Parametri di confronto `&fx=0`, `&grain=overlay|alpha`, `&warm=0`, `&tier=`.
+- Scatti al primo uso (indagine 2026-10-16, `docs/PERF.md`), corretti col via dell'utente: linea del percorso unica e permanente (cambia solo la geometria), anello del tap e hotspot disegnati nel riscaldamento (`userData.warmup`: `GpuWarmup` li rende visibili per quel solo fotogramma), hotspot sempre montati e nascosti (anche in Focus), marcatore del Focus `transparent` (riusa lo shader dell'anello). Verificato: dopo il riscaldamento 2 cammini + Focus col marcatore = 0 compilazioni shader, 8 upload di buffer.
+- Misure dopo le correzioni (47844b8): Vivobook 57,1 / 39,2, max 77 ms, 3 fotogrammi > 50 ms in ~40 s (soglia 58 / 45 non raggiunta di poco); iPhone 58,8 / 55,6, max 36 ms, 0 > 50 ms (superata). Nebbia: l'utente ha confermato "senza nebbia".
+- Benchmark: per tratto anche fotogramma max e n oltre 50 ms; riga "Scatti" (max, > 50 ms, > 250 ms a pagina visibile, nel peggior run).
+- **Nebbia:** fino alla Fase 6 non era mai disegnata (agganciata a un gruppo). Ora `LightingRig` la mette su `scene.fog`, ma `environment.fog.enabled` è `false` per scelta dell'utente (2026-10-16). Anteprima con `?fog=1` (anche in produzione).
+- Nero dei capi: su telefono reale "un pelo grigio", **accettato dall'utente per ora** (2026-10-15).
+- Luce: **faretti dei prodotti bianco caldo; il colore d'atmosfera solo su pareti (wall-wash) e accenti.** Esposizione in config (`performance.toneMappingExposure: 0.85`).
+
+**Navigazione e interazione**
+- Collisioni solo cerchio-contro-box (`colliders`), mai sulle mesh. Convenzione di rotazione identica a `Object3D.rotation.y` di three.
+- Grafo di 16 waypoint (centro + due corridoi laterali a x = ±10.35). Percorso: diretto se libero, altrimenti Dijkstra da ogni nodo visibile + string pulling. Ogni segmento è libero da collider con margine `player.radius`.
+- Desktop: due modi scelti all'ingresso (2026-10-17, `useAppStore.controlMode`, ricordato in `localStorage`): **tastiera e mouse** (WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo; è il default) o **solo mouse** (come su telefono: trascina = guarda con `lookSensitivity.mouseDrag`, click = vai/esamina; niente cursore catturato, niente mirino né invito al lock).
+- Indietro del browser (2026-10-17, `state/backButton.js`): ogni livello aperto (scheda della pila, menu, Focus) ha una voce di cronologia; Indietro chiude il livello in cima, chiudere coi bottoni del sito toglie la voce (`history.go` con i ritorni propri ignorati). A nessun livello aperto Indietro lascia il sito, di proposito.
+- Avviso del capo vicino (in basso) = bottone (comando `activate`): apre Focus o Lookbook anche da dietro l'espositore o senza guardarlo.
+- Click su muro, colonna o punto non raggiungibile: si va al punto raggiungibile più vicino sulla linea verso il player (`nearestReachable`, passo 15 cm); l'avviso "c'è un muro" resta solo se non ce n'è nessuno.
+- Margine invisibile di 0,2 m per lato attorno agli espositori (`DISPLAY_CLEARANCE`, collider allargati con `guarded()`).
+- Indicatore a terra davanti a ogni espositore (`pois[].floorMarker`, stile `navigation.hotspot.floor`): ellisse del marchio sul pavimento (sopra la pedana, `floorHeightAt`), visibile quando l'hotspot lo è, toccabile/cliccabile come l'hotspot. I27: dentro il negozio e fuori dai collider.
+- Durante la dissolvenza del teletrasporto l'input è bloccato e allo scambio il percorso si annulla. Il navigatore, se il player è appoggiato a un collider (box allargato ad angoli vivi), riprova da un punto libero a 10–35 cm (`plan` → `planFrom`).
+- Mobile: tap = vai/avvicinati; trascinamento = guarda (soglie `navigation.input`); barra "Vai a" solo verso waypoint `safeForTeleport`.
+- Focus Mode: macchina a stati `idle → entering → focused → exiting → idle`, interrompibile in ogni stato. La luce "studio" nasce dal contrasto (gli altri faretti scendono), non da più luce sul capo.
+- Inquadratura del Focus (2026-10-16): il pannello dichiara il suo rettangolo (`useAppStore.focusPanelRect`); `FocusCameraRig` inquadra il capo nella parte di schermo libera (sopra il pannello in verticale, a sinistra in orizzontale e su desktop) con `camera.setViewOffset`, senza muovere la camera. Fov e spostamento si ricalcolano a ogni fotogramma (pannello che compare, altro capo, telefono ruotato); all'uscita fov del player per lo schermo di quel momento e `clearViewOffset`. Calcoli in `lib/framing.js` (`fovForAspect`, condiviso col player), provati con la camera di three in `npm run test:framing`.
+- Schermo basso: variante Tailwind `short` = `@media (max-height: 520px) and (orientation: landscape)` (conta l'altezza: un telefono in orizzontale è largo come un tablet; una finestra bassa ma stretta resta col layout verticale). La minimappa usa ancora `[@media(max-height:520px)]` senza orientamento, di proposito. In `short` il pannello del Focus sta sempre a destra (anche sotto i 640 px di larghezza) e scorre se è più alto dello schermo. Schede a tutto schermo con intestazione compatta; scheda prodotto con immagine misurata sull'altezza (`--sheet-frame-h`, `placeholders.productFrame`) ferma a sinistra e, a destra, prima colori, taglie e acquisto; pannello del Focus compatto.
+- `viewport-fit=cover` tolto (2026-10-16): nessun elemento usava `env(safe-area-inset-*)`, quindi in orizzontale marchio e pannelli potevano finire sotto la Dynamic Island. Safari ora tiene la pagina nell'area sicura e colora le fasce col fondo nero.
+- Schede (Fase 5): pila `dialogs` in `useAppStore`, una sola finestra visibile (`DialogHost`, z `dialog` = 45, sopra menu e Focus). Si aprono da: "Scheda completa" nel Focus, capi del menu, "Apri la Brand Story" nel menu, hotspot `poi-look-01`, pannello della parete del brand (tap o click col mirino), capi del Lookbook. ESC/Indietro tolgono un livello, Chiudi/fondo tutti; riaprire una voce già nella pila torna lì invece di accumulare.
+- Con una scheda aperta `blocked()` è vero; all'apertura tasti, velocità e percorso si azzerano e il Pointer Lock si rilascia; alla chiusura non si riprende da solo.
+- `useFocusTrap` (schede e menu): pila globale di trappole, solo l'ultima risponde; ESC catturato in fase di cattura sulla finestra con `stopPropagation`, così non chiude anche il menu o il Focus sotto. Il focus torna a chi ha aperto.
+- Hosting: integrazione Git di Vercel; ogni push sul branch produce una Preview. GitHub Pages disattivato (dichiarato dall'utente, non verificabile dal container).
+

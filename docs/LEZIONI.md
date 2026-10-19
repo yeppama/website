@@ -1,0 +1,71 @@
+# LEZIONI — lezioni apprese ed edge case
+
+> Spostato parola per parola da `CONTEXT.md` §4 il 2026-10-19. Leggere la sezione pertinente prima di toccare rendering, navigazione, UX, foto o test.
+
+## 4. Lezioni apprese & edge case
+
+**Rendering**
+- `color` + `map` con lo stesso colore = colore al quadrato (pavimento nero, griglia invisibile). Con una mappa il colore va a bianco.
+- Il dispose della cache GPU su unmount React rompe tutto in StrictMode (texture distrutte, materiali ancora referenziati). Risolto in Fase 6 legandolo al Canvas con rilascio differito (`gpuCaches.js`).
+- `<primitive object>` non viene liberato da R3F: la linea del percorso lasciava geometria e materiale a ogni tap. E un `<Ping key={id}>` rimontato a ogni tap lasciava l'anello vecchio in scena (causa interna a R3F non isolata): ora un solo anello riusato. Misurato: 33 → 81 geometrie in 24 spostamenti prima, stabile dopo.
+- `gl.info.memory` cresce legittimamente la prima volta che un oggetto viene disegnato: i test di perdita vanno fatti dopo un riscaldamento, e a pochi fps un hotspot può comparire solo al secondo giro.
+- Ripristino del contesto: smontare il Canvas vecchio forza un'altra perdita di contesto, che arriva dopo il rimontaggio. Va ignorata (canvas ritirati).
+- In SwiftShader il p50 reale è ~10–14 fps: il test del limitatore usa un tetto di 10, non 20.
+- `manualChunks` su three lo metteva fra i `modulepreload`, annullando il lazy import. E un componente del bundle iniziale che importa `materials.js` trascina dentro tutto three: le utilità 2D stanno in `noise.js`.
+- Senza `frameloop="demand"`, `invalidate()` non fa nulla: il "limitatore" girava a 120 fps su schermi a 120 Hz.
+- Con oggetti vicino alle luci, i valori tarati per pareti vuote sovraespongono: un nero (albedo 0.004) diventa mezzotono o caramello. Si misura sulla scena vera (felpa ≤ ~51/255, pedana ~229/255).
+- Faretti di colore saturo sui prodotti ne falsano il colore. Prodotti in bianco caldo, colore sulle pareti.
+- Il fov in three è **verticale**: in verticale su telefono va allargato (regola `minHorizontal`), sia per il player sia per il Focus.
+- Gli eventi di input possono arrivare fra due fotogrammi: `camera.updateMatrixWorld()` prima di ogni raycast.
+
+**Navigazione**
+- La convenzione di rotazione dei collider era speculare rispetto a three (corretta in fase 3). Va testata contro le matrici di three, non a ragionamento.
+- Grafo troppo rado: il 2% del pavimento era invisibile da ogni nodo → corridoi laterali. Considerare tutti i nodi visibili, non i 3 più vicini.
+- Tagliare `dt` a frame lenti porta la simulazione al rallentatore: si recupera il tempo a sotto-passi.
+- L'invariante I16 ha trovato un collegamento che attraversava il plinto: ogni nuovo collider va validato contro i collegamenti del grafo.
+- Uscendo dal Focus dopo un avvicinamento, la rotazione verso l'espositore va applicata prima di salvare la posa di ritorno.
+
+**UX**
+- Test verdi non dicono che la resa è giusta: in Fase 5 la galleria del Lookbook tagliava l'immagine 16:9 e le miniature troncavano l'etichetta, con 34/34. Guardare sempre gli screenshot.
+- Immagini di ratio diversi in una cornice fissa: `h-full` + `aspect-ratio` sfora se l'immagine è più larga della cornice; scegliere in JS fra `w-full` e `h-full` confrontando i ratio.
+- Su telefono nome e prezzo vanno sopra la galleria, o un 4:5 a tutta larghezza li spinge sotto la piega.
+- Mai istruzioni per comandi che non esistono: l'utente ha creduto rotto il touch. Feature flag + I15.
+- L'onboarding deve scorrere: su un telefono in orizzontale (~390 px) "Entra" era irraggiungibile.
+- Telefono in orizzontale (segnalato dall'utente il 2026-10-16): il pannello del Focus copriva il capo e la scheda mostrava solo un'immagine più alta dello schermo. Le verifiche della Fase 6 controllavano che i bottoni fossero nello schermo, non che il capo fosse visibile: ora `e2e-landscape.mjs` proietta il capo e controlla che non cada sotto il pannello. Ruotare il telefono durante il Focus lasciava il fov del vecchio orientamento anche dopo l'uscita: corretto.
+- Telefono in orizzontale (844×390): la minimappa larga `sm:w-44` (alta 264 px) spingeva la barra "Vai a" fuori dallo schermo. Ora `[@media(max-height:520px)]:w-16`. Trovato dalla verifica responsive della Fase 6, non a occhio.
+- Un testo lungo (l'avviso di rendering software) allargava l'HUD prestazioni su mezza scena: pannelli informativi a larghezza fissa.
+- Prompt fissi in percentuale e prompt nel flusso si sovrappongono: stessa colonna, impilati.
+- Una barra a scorrimento con l'ultima voce tagliata sembra un difetto: griglia a colonne uguali, corpo `clamp()`, verificata a 320/360/390/430 px.
+- Tasti premuti all'apertura del menu o alla perdita di focus: azzerarli, o il player cammina da solo.
+
+**Navigazione (correzioni del 2026-10-17)**
+- Ciò che si disegna a terra (anello del tocco, linea del percorso, indicatori) a y ≈ 0,02 finiva **sotto le pedane** (alte 6 cm): i test dicevano "visibile" perché controllavano `visible`, non l'occlusione. Visto solo nello screenshot. Ora l'altezza viene da `floorHeightAt`.
+- Contro un manichino il player scivola lungo il margine e passa fra i due manichini: un test di collisione va fatto su tutte le posizioni della camminata, col modello della fisica (`circleOverlapsCollider`, angoli arrotondati), non col box ad angoli vivi.
+
+**Demo e foto (2026-10-17)**
+- Higgsfield col piano gratuito: GPT Image bloccato ("Requires basic plan"), modelli realistici 1–1,5 crediti, Z Image 0,15; al massimo ~4 generazioni contemporanee (429) e 1 sola rimozione dello sfondo per volta (1 credito l'una).
+- Le immagini generate stanno su `d8j0ntlcm91z4.cloudfront.net`: host aggiunto dall'utente agli host consentiti il 2026-10-17.
+- Scontorno locale con soglia 40: le ombre morbide del fondo finivano nel capo (striscia grigia sulla felpa, ombra a terra sul pantalone). Con 100 sono fondo; guardare sempre le texture su un fondo colorato.
+- Z Image non segue sempre il testo: il pantalone da tuta è uscito con bande arancioni invece che tono su tono. Si corregge il testo, non si rigenera.
+- `ImageDraw.floodfill` non scrive su un'immagine nata da un array numpy (memoria condivisa): serve `.copy()`. Senza, lo scontorno restituiva il capo grande quanto la foto.
+- Cambiare la mappa di un materiale con un'altra non ricompila lo shader: i capi 3D nascono con una mappa trasparente 1×1 e prendono la foto all'arrivo, senza scatti dopo il riscaldamento.
+
+**Test e processo**
+- Le richieste dirette di Playwright (`ctx.request`) non passano dal proxy del container: le verifiche di rete si fanno dal browser (`page.goto`, `fetch` nella pagina).
+- Una pagina che risponde 200 non è per forza quella attesa: la "cassa" Shopify era la pagina `/password`. Controllare l'indirizzo d'arrivo.
+- Script Python che riscrivono file: `open(p,'w')` svuota il file prima di `write()`. Una virgola in coda ha reso il contenuto una tupla, `write()` è fallito e `storeConfig.js` è rimasto vuoto (ripristinato da git). Controllare la dimensione del file dopo ogni riscrittura.
+- Un comando interrotto o rifiutato dall'utente può aver già applicato una parte delle modifiche: prima di ogni commit leggere `git diff`, non fidarsi di `git add -A`. In Fase 6 una riduzione d'intensità fermata dall'utente è finita nel commit `7945fa8` senza che venisse dichiarata.
+- In questo container il desktop rende a 1–2 fps: i test aspettano **condizioni**, mai millisecondi fissi; dopo uno spostamento forzato aspettano che la camera abbia raggiunto il player.
+- Il sistema di luci del Focus riporta le intensità al config ogni fotogramma: modificarle a mano dal test non ha effetto.
+- I test devono leggere i valori di taratura dal config, non ricopiarli.
+- Selettori per etichetta ambigui (stesso testo in menu e barra): restringere al contenitore.
+- Heredoc bash non quotati espandono i `${…}` dei template JS: usare `<<'EOF'`.
+- **Committare solo dopo aver letto l'esito**: una catena `… | tail && git commit` committa anche con test rossi.
+- Il Pointer Lock funziona nel Chromium headless di questo ambiente.
+- Il `fetch` di Node ignora `HTTPS_PROXY`: senza `NODE_USE_ENV_PROXY=1` nel container fallisce (ENOTFOUND). `check.mjs` si rilancia da solo con la variabile se trova un proxy.
+- Da quando il container raggiunge il negozio di sviluppo, il test "Shopify irraggiungibile" taglia la rete da sé (`page.route(...).abort`): un test che dipende dalla rete chiusa smette di provare qualcosa quando la rete si apre.
+- Shopify con `@inContext(language: IT)` su un negozio senza italiano risponde nella lingua predefinita, senza errore (verificato).
+- `pkill -f "port 4173"` uccide anche la shell che lo esegue (exit 144), perché la sua riga contiene la stessa stringa: è innocuo se è l'unico comando, ma poi va controllato con `curl` che il server sia davvero fermo.
+- Un workflow con molti agenti può fermarsi per il limite di utilizzo della sessione: il primo controllo completo ha finito 2 agenti su 14. Dichiararlo, non presentare la parte fatta come completa.
+- Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch).
+
