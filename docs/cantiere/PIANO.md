@@ -109,4 +109,12 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
      su una GPU dedicata è da misurare (non eseguito: nel container non c'è).
    - Verifiche: `e2e-cantiere.mjs` 36 (6 nuove: low senza Bloom, high col Bloom, Focus e uscita col
      Bloom, `&bloom=0`, costo). Screenshot `bloom-neon.png`, `bloom-spento-neon.png`.
+- **Correzioni del 2026-10-19 (fase A, "procedi pure" dopo la proposta):**
+   - Zoom per capo sul rack: `focusCamera.perItem` (distanza, altezze, fov, `moveMs`); la camera arriva
+     davanti al capo selezionato e scivola sul successivo con le frecce. Posa in `lib/focusItems.js`,
+     controllata da I19 (camera fuori dai collider per ogni capo). Lo zoom mostra le faccette dei GLB
+     ridotti (80–136 KB): se disturba, si riduce meno.
+   - Catene coi pantaloni spostate sulla parete sud (x −3,0 e −1,8), girate verso la sala, con faretto,
+     indicatori a terra e Focus nuovi: in mezzo alla stanza il player restava chiuso fra catene e muro
+     nord. Il varco fra catena e muro ora è più stretto del player (verificato). Grafo: rack ↔ neon.
 3. Luci, prestazioni, prova sui telefoni (iPhone, Pixel, Honor): da fare, servono le misure dell'utente.

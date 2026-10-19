@@ -9,6 +9,7 @@
  */
 
 import { pointInCollider, segmentHitsCollider, inAnyArea } from '../lib/geometry.js'
+import { focusItemPose } from '../lib/focusItems.js'
 
 const ids = (list) => new Set(list.map((item) => item.id))
 
@@ -161,6 +162,17 @@ export function validateStoreConfig(config) {
       if (pointInCollider([fx, fz], c, 0.15)) fail('I19', `display ${d.id}: camera di Focus dentro il collider ${c.id}`)
     }
     if (!inAnyArea([fx, fz], config.navigation.walkableAreas)) fail('I19', `display ${d.id}: camera di Focus fuori dal negozio`)
+    // Focus per capo: ogni camera, una per capo, con le stesse regole.
+    if (d.focusCamera.perItem) {
+      if (!(d.length > 0)) fail('I19', `display ${d.id}: perItem senza "length"`)
+      d.productIds.forEach((pid, i) => {
+        const [ex, , ez] = focusItemPose(d, i).eye
+        for (const c of config.colliders) {
+          if (pointInCollider([ex, ez], c, 0.15)) fail('I19', `display ${d.id}: camera di Focus del capo ${pid} dentro il collider ${c.id}`)
+        }
+        if (!inAnyArea([ex, ez], config.navigation.walkableAreas)) fail('I19', `display ${d.id}: camera di Focus del capo ${pid} fuori dal negozio`)
+      })
+    }
   }
 
   // I20 — ogni prodotto ha una forma segnaposto per la sua categoria e almeno una variante colore.

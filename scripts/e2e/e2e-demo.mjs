@@ -45,6 +45,23 @@ ok('il contenuto della demo ha foto per tutti i capi', storeConfig.products.ever
   const meshes = await page.evaluate(() => { const s = new Set(); window.__scene.traverse((o) => { if (o.material?.userData?.photoUrl) s.add(o.material.userData.photoUrl) }); return [...s] })
   ok('capi 3D: tutte le foto arrivano sulle loro mesh', loaded, `${meshes.length} foto`)
   ok('capi 3D: una foto per ogni capo esposto', meshes.length >= storeConfig.products.length, meshes.join(', '))
+  // Manichino: la foto solo sul davanti (z locale ≥ 0). Prima il retro la riceveva specchiata e
+  // passando dietro si vedeva il fronte (segnalato dall'utente il 2026-10-19).
+  const shells = await page.evaluate(() => {
+    const out = []
+    window.__scene.traverse((o) => {
+      if (!o.isMesh || !o.material?.userData?.photoUrl || o.material.side === 2) return
+      const g = o.geometry, pos = g.attributes.position
+      if (!g.attributes.uv || !g.attributes.normal) return
+      let back = 0
+      for (let i = 0; i < pos.count; i++) if (g.attributes.normal.getZ(i) < -0.5) back++
+      out.push({ name: o.material.userData.photoUrl.split('/').pop(), vertices: pos.count, back })
+    })
+    return out
+  })
+  const mannequinIds = storeConfig.displays.filter((d) => d.kind === 'mannequin').map((d) => d.id)
+  const wornTops = storeConfig.products.filter((p) => mannequinIds.includes(p.displayId) && storeConfig.garments.shapeByCategory[p.category] === 'top' && p.model3d?.texture)
+  ok('manichino: la foto del capo non è più sul retro', wornTops.length === 0 || (shells.length > 0 && shells.every((x) => x.back === 0)), JSON.stringify(shells))
 
   await page.evaluate((id) => window.__stores.app.getState().openDialog('product', id), product.id)
   const img = page.locator('[data-testid="product-media"] img').first()

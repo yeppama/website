@@ -2,7 +2,8 @@
  * Allestimento "cantiere" (docs/cantiere/PIANO.md, fasi 1 e 2), aperto con ?allestimento=cantiere:
  * stanza e capi 3D caricati, camminata e collisioni, Focus su rack, catena e tavolo, scheda
  * del capo, Lookbook dai pannelli luminosi, "Vai a", minimappa, Indietro del browser,
- * indicatore a terra; Bloom vero solo sul tier high (fase 2). Il negozio senza parametro resta quello di prima (le altre suite).
+ * indicatore a terra; Bloom vero solo sul tier high (fase 2); zoom per capo sul rack e catene
+ * contro la parete sud senza sacche (2026-10-19). Il negozio senza parametro resta quello di prima (le altre suite).
  *   node scripts/e2e/e2e-cantiere.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
@@ -16,6 +17,7 @@ const fromEnv = existsSync(envFile) ? readFileSync(envFile, 'utf8').match(/^VITE
 if (fromEnv) process.env.VITE_CONTENT ??= fromEnv
 const { storeConfig } = await import('../../src/config/storeConfig.js')
 const { circleOverlapsCollider } = await import('../../src/lib/geometry.js')
+const { focusItemPose } = await import('../../src/lib/focusItems.js')
 
 const [BASE, OUT] = process.argv.slice(2)
 const C = storeConfig.copy
@@ -128,6 +130,38 @@ ok('minimappa della stanza 10 × 8', await page.getByText(new RegExp(`${W}×${D}
   ok('contro il tavolo di blocchi il player si ferma', !circleOverlapsCollider(p, table, R - 0.02), p.map((v) => v.toFixed(2)).join(', '))
 }
 
+// ── Catene contro la parete sud: nessuna sacca fra capo e muro ───────────────
+{
+  // Il player non deve poter entrare fra una catena e il muro (prima restava chiuso lì):
+  // il varco fra il collider della catena e il muro sud è più stretto del player.
+  const wallFace = storeConfig.environment.floor.size[1] / 2
+  for (const d of storeConfig.displays.filter((x) => x.kind === 'chain')) {
+    const c = storeConfig.colliders.find((x) => x.id === d.colliderId)
+    const behind = [d.position[0], (c.center[2] + wallFace) / 2 + 0.2]
+    const free = []
+    for (let z = c.center[2]; z <= wallFace - R + 0.001; z += 0.02) {
+      const p = [d.position[0], z]
+      if (!storeConfig.colliders.some((k) => circleOverlapsCollider(p, k, R))) free.push(z.toFixed(2))
+    }
+    ok(`${d.label}: contro la parete sud, nessun punto libero fra catena e muro`, free.length === 0, free.length ? `liberi a z = ${free.join(', ')}` : `catena a z = ${d.position[2]}, ${behind[1].toFixed(2)} occupato`)
+  }
+  // E il tocco "dietro la catena" porta comunque in un punto da cui si riparte.
+  const d = storeConfig.displays.find((x) => x.kind === 'chain')
+  await place(page, wp('wp-c-chains')[0], wp('wp-c-chains')[2], 0, 0); await sync(page)
+  await page.evaluate(([x, z]) => window.__stores.player.getState().issue({ type: 'goto', point: [x, z] }), [d.position[0], 3.95])
+  // A 1–2 fps il comando parte al fotogramma dopo: prima aspettare che parta, poi che finisca.
+  await waitUntil(page, () => Boolean(window.__player.route), null, 10000)
+  await waitUntil(page, () => !window.__player.route, null, 30000)
+  const before = await page.evaluate(() => [window.__player.pos.x, window.__player.pos.z])
+  const look = wp('wp-c-look')
+  await page.evaluate(([x, z]) => window.__stores.player.getState().issue({ type: 'goto', point: [x, z] }), [look[0], look[2]])
+  const back = await waitUntil(page, ([x, z]) => Math.hypot(window.__player.pos.x - x, window.__player.pos.z - z) < 0.5, [look[0], look[2]], 90000)
+  ok('dopo un tocco dietro le catene il player riparte (fino al Lookbook)', back, `fermo a ${before.map((v) => v.toFixed(2)).join(', ')} dopo il tocco`)
+  await place(page, -2.4, 0.6, Math.PI, 0); await sync(page)
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: `${OUT}/catene-parete-sud.png` })
+}
+
 // ── Focus, scheda del capo ─────────────────────────────────────────────────
 for (const d of storeConfig.displays) {
   const focused = await focusOn(page, d.id)
@@ -135,10 +169,18 @@ for (const d of storeConfig.displays) {
   ok(`Focus su ${d.label}`, focused && s.displayId === d.id, JSON.stringify(s))
   await page.waitForTimeout(800)
   await page.screenshot({ path: `${OUT}/focus-${d.id}.png` })
+  // Focus per capo (perItem): la camera arriva davanti al capo selezionato e lo segue.
+  const camAt = (eye) => waitUntil(page, ([x, y, z]) => window.__camera.position.distanceTo({ x, y, z }) < 0.08, eye, 30000)
+  if (d.focusCamera.perItem) ok(`${d.label}: zoom sul primo capo`, await camAt(focusItemPose(d, 0).eye))
   if (d.productIds.length > 1) {
     await page.getByRole('button', { name: C.focus.next }).click()
     const moved = await waitUntil(page, () => window.__stores.app.getState().focus.productIndex === 1, null, 5000)
     ok(`${d.label}: si passa al capo successivo`, moved)
+    if (d.focusCamera.perItem) {
+      ok(`${d.label}: la camera scivola sul secondo capo`, await camAt(focusItemPose(d, 1).eye))
+      await page.waitForTimeout(500)
+      await page.screenshot({ path: `${OUT}/focus-${d.id}-capo-2.png` })
+    }
   }
   const index = (await app(page)).index
   await page.getByRole('button', { name: new RegExp(C.focus.details) }).click()

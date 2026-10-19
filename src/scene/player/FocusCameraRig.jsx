@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useAppStore } from '../../state/useAppStore.js'
 import { fovForAspect, freeRegion, focusFraming } from '../../lib/framing.js'
+import { focusItemPose } from '../../lib/focusItems.js'
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const lerp = (a, b, t) => a + (b - a) * t
@@ -19,6 +20,10 @@ const lerp = (a, b, t) => a + (b - a) * t
  * orizzontale e su desktop. Fov e centro di proiezione si ricalcolano a ogni
  * fotogramma, quindi seguono il pannello che compare, cambia altezza o il telefono
  * che ruota. All'uscita si torna al fov del player per lo schermo di quel momento.
+ *
+ * Con `focusCamera.perItem` (rack del cantiere) la camera si avvicina al capo selezionato
+ * invece di inquadrare tutto l'espositore, e scivola sul capo successivo con le frecce
+ * (posa in lib/focusItems.js).
  */
 export default function FocusCameraRig({ config, reducedMotion }) {
   const { camera, size } = useThree()
@@ -30,6 +35,22 @@ export default function FocusCameraRig({ config, reducedMotion }) {
   // Una camera d'appoggio: il suo lookAt orienta già −z verso il bersaglio.
   const helper = useMemo(() => new THREE.PerspectiveCamera(), [])
   const displays = useMemo(() => new Map(config.displays.map((d) => [d.id, d])), [config])
+
+  // Posa del Focus: quella dell'espositore, o quella del capo `index` se l'espositore lo prevede.
+  const poseFor = (displayId, index) => {
+    const d = displays.get(displayId)
+    const fc = d.focusCamera
+    const it = fc.perItem
+    if (!it) {
+      helper.position.set(...fc.position)
+      helper.lookAt(...fc.target)
+      return { pos: helper.position.clone(), quat: helper.quaternion.clone(), fc }
+    }
+    const { eye, target } = focusItemPose(d, index)
+    helper.position.set(...eye)
+    helper.lookAt(...target)
+    return { pos: helper.position.clone(), quat: helper.quaternion.clone(), fc: { ...fc, fov: it.fov } }
+  }
 
   const framingFor = (fc) => {
     const { width, height } = sizeRef.current
@@ -54,13 +75,19 @@ export default function FocusCameraRig({ config, reducedMotion }) {
 
   useEffect(() => useAppStore.subscribe((s, prev) => {
     const f = s.focus
-    if (f.state === prev.focus.state) return
+    // Altro capo sullo stesso espositore: con `perItem` la camera ci scivola sopra.
+    if (f.state === prev.focus.state) {
+      const fc = f.displayId && displays.get(f.displayId)?.focusCamera
+      if (fc?.perItem && (f.state === 'focused' || f.state === 'entering') && f.productIndex !== prev.focus.productIndex) {
+        focusPose.current = poseFor(f.displayId, f.productIndex)
+        tr.current = { kind: 'enter', from: snapshot(), start: performance.now(), duration: reducedMotion ? 0 : fc.perItem.moveMs }
+      }
+      return
+    }
 
     if (f.state === 'entering') {
       const fc = displays.get(f.displayId).focusCamera
-      helper.position.set(...fc.position)
-      helper.lookAt(...fc.target)
-      focusPose.current = { pos: helper.position.clone(), quat: helper.quaternion.clone(), fc }
+      focusPose.current = poseFor(f.displayId, f.productIndex ?? 0)
       tr.current = { kind: 'enter', from: snapshot(), start: performance.now(), duration: reducedMotion ? 0 : fc.enterMs }
     }
 

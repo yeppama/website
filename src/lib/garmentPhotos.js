@@ -109,10 +109,37 @@ export function getPhotoPatchGeometry(photo, crop, w, d) {
 }
 
 /**
- * Proiezione frontale su una geometria già fatta (il capo indossato del manichino):
- * x e y del vertice diventano coordinate nella foto, dentro il ritaglio `crop` del
- * riquadro del capo. Il retro riceve la stessa foto specchiata: un busto si guarda
- * soprattutto di fronte, e una seconda foto per capo raddoppierebbe la memoria.
+ * Metà davanti (`side` = 'front', z ≥ 0) o dietro ('back') di una geometria: triangoli scelti
+ * dal baricentro, geometria non indicizzata. Il capo del manichino si divide così perché il
+ * davanti porta la foto e il retro la stoffa: due mesh con un materiale ciascuna, che
+ * MergeByMaterial sa unire (un materiale doppio no).
+ */
+export function getHalfGeometry(source, side) {
+  const key = `half:${source.uuid}:${side}`
+  if (geometries.has(key)) return geometries.get(key)
+  const all = source.index ? source.toNonIndexed() : source.clone()
+  const pos = all.attributes.position
+  const keep = []
+  for (let t = 0; t < pos.count; t += 3) {
+    const z = pos.getZ(t) + pos.getZ(t + 1) + pos.getZ(t + 2)
+    if ((z >= 0) === (side === 'front')) keep.push(t, t + 1, t + 2)
+  }
+  const g = new THREE.BufferGeometry()
+  for (const [name, attr] of Object.entries(all.attributes)) {
+    const out = new Float32Array(keep.length * attr.itemSize)
+    keep.forEach((v, i) => { for (let k = 0; k < attr.itemSize; k++) out[i * attr.itemSize + k] = attr.array[v * attr.itemSize + k] })
+    g.setAttribute(name, new THREE.BufferAttribute(out, attr.itemSize))
+  }
+  all.dispose()
+  geometries.set(key, g)
+  return g
+}
+
+/**
+ * Proiezione frontale su una geometria già fatta (il davanti del capo indossato del
+ * manichino): x e y del vertice diventano coordinate nella foto, dentro il ritaglio `crop`
+ * del riquadro del capo. Solo il davanti: fino al 2026-10-19 il retro riceveva la stessa foto
+ * specchiata, e passando dietro al manichino si vedeva il fronte (segnalato dall'utente).
  */
 export function projectPhotoFront(source, photo, crop) {
   const key = `front:${source.uuid}:${photo.texture}:${crop.join(',')}`
@@ -124,8 +151,7 @@ export function projectPhotoFront(source, photo, crop) {
   const pos = g.attributes.position
   const uv = g.attributes.uv
   for (let i = 0; i < pos.count; i++) {
-    let s = (pos.getX(i) - min.x) / (max.x - min.x)
-    if (pos.getZ(i) < 0) s = 1 - s
+    const s = (pos.getX(i) - min.x) / (max.x - min.x)
     const t = (pos.getY(i) - min.y) / (max.y - min.y)
     uv.setXY(i, u0 + s * (u1 - u0), v0 + t * (v1 - v0))
   }

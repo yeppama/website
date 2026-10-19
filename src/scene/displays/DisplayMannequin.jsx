@@ -1,6 +1,6 @@
 import { getTorsoGeometry, getWornShellGeometry } from '../../lib/garments.js'
 import { useMat, useFabric, Cord, garmentPhoto, usePhotoMaterial } from './parts.jsx'
-import { projectPhotoFront } from '../../lib/garmentPhotos.js'
+import { projectPhotoFront, getHalfGeometry } from '../../lib/garmentPhotos.js'
 
 /**
  * Manichino: busto da sartoria su asta e base circolare, con il capo indossato.
@@ -15,13 +15,13 @@ export default function DisplayMannequin({ display, products, garments, material
   const product = products[0]
   const fabric = useFabric(product, garments, materials)
   const isTop = garments.shapeByCategory[product.category] === 'top'
-  // Con la foto, il capo indossato la porta proiettata sul davanti; maniche e
-  // cappuccio restano nel colore della variante.
+  // Con la foto, il capo indossato la porta proiettata sul davanti; retro, maniche e
+  // cappuccio restano nel colore della variante (da dietro non si vede il fronte).
   const photo = isTop ? garmentPhoto(product) : null
   const photoMaterial = usePhotoMaterial(photo, garments, false)
-  const shell = photo
-    ? projectPhotoFront(getWornShellGeometry(), photo, garments.photo.shellCrop[product.category] ?? garments.photo.shellCrop.default)
-    : getWornShellGeometry()
+  const front = photo
+    ? projectPhotoFront(getHalfGeometry(getWornShellGeometry(), 'front'), photo, garments.photo.shellCrop[product.category] ?? garments.photo.shellCrop.default)
+    : null
 
   return (
     <group>
@@ -34,7 +34,9 @@ export default function DisplayMannequin({ display, products, garments, material
 
       <group position={[0, TORSO_BASE, 0]} scale={[1, 1, 0.62]}>
         <mesh geometry={getTorsoGeometry()} material={body} castShadow receiveShadow />
-        {isTop && <mesh geometry={shell} material={photoMaterial ?? fabric} castShadow receiveShadow />}
+        {isTop && !front && <mesh geometry={getWornShellGeometry()} material={fabric} castShadow receiveShadow />}
+        {isTop && front && <mesh geometry={front} material={photoMaterial} castShadow receiveShadow />}
+        {isTop && front && <mesh geometry={getHalfGeometry(getWornShellGeometry(), 'back')} material={fabric} castShadow receiveShadow />}
       </group>
 
       {/* Maniche: il busto non ha braccia, il capo sì. Pendono leggermente
