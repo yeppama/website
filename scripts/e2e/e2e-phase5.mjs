@@ -170,11 +170,13 @@ const enterFocus = (page, displayId) => page.evaluate((id) => {
 
   // Click col mirino sul pannello della parete del brand → Lookbook, cursore liberato.
   // Fuori dal raggio d'attivazione dell'hotspot: a decidere è il pannello, non il POI.
-  await place(page, 0, -10.8, 0); await sync(page); await page.waitForTimeout(300)
+  // A ~7 m dal pannello (dal config: la parete di fondo si è spostata nella fase C).
+  const [, py, pz] = storeConfig.environment.brandWall.panel.center
+  const standZ = pz + 7
+  await place(page, 0, standZ, 0); await sync(page); await page.waitForTimeout(300)
   await page.mouse.click(640, 360)
   await waitUntil(page, () => document.pointerLockElement?.tagName === 'CANVAS', null, 5000)
-  const [, py, pz] = storeConfig.environment.brandWall.panel.center
-  await page.evaluate(([eye, py, pz]) => { window.__player.pitch = -Math.atan2(eye - py, -10.8 - pz) }, [storeConfig.navigation.player.eyeHeight, py, pz])
+  await page.evaluate(([eye, py, pz, sz]) => { window.__player.pitch = -Math.atan2(eye - py, sz - pz) }, [storeConfig.navigation.player.eyeHeight, py, pz, standZ])
   await sync(page); await page.waitForTimeout(300)
   const poiActive = await page.evaluate(() => window.__stores.player.getState().activePoiId)
   await page.mouse.click(640, 360)

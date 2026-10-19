@@ -71,6 +71,14 @@ ok('il contenuto della demo ha foto per tutti i capi', storeConfig.products.ever
     return { lights, bars }
   })
   ok('negozio: punti luce arancioni presenti, nessuna luce vera in più sul tier low', storeConfig.environment.accentLights.length > 0 && accent.bars >= 1 && accent.lights === 0, JSON.stringify(accent))
+  // Fase C (2026-10-19): grafica alle pareti caricata, stampe della campagna comprese (contenuto demo).
+  const urls = storeConfig.environment.wallArt.map((x) => x.url)
+  const art = await page.evaluate((urls) => {
+    const found = new Set()
+    window.__scene.traverse((o) => { const src = o.material?.map?.image?.src; if (src && o.material.map.image.naturalWidth) for (const u of urls) if (src.endsWith(u)) found.add(u) })
+    return [...found]
+  }, urls)
+  ok('negozio: grafica alle pareti caricata (manifesti, murale, stampe della campagna)', art.length === urls.length && storeConfig.environment.wallArt.some((x) => x.kind === 'print'), `${art.length}/${urls.length}`)
   ok('manichino: la foto del capo non è più sul retro', wornTops.length === 0 || (shells.length > 0 && shells.every((x) => x.back === 0)), JSON.stringify(shells))
 
   await page.evaluate((id) => window.__stores.app.getState().openDialog('product', id), product.id)

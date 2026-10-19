@@ -44,7 +44,8 @@
 
 **Navigazione e interazione**
 - Collisioni solo cerchio-contro-box (`colliders`), mai sulle mesh. Convenzione di rotazione identica a `Object3D.rotation.y` di three.
-- Grafo di 16 waypoint (centro + due corridoi laterali a x = ±10.35). Percorso: diretto se libero, altrimenti Dijkstra da ogni nodo visibile + string pulling. Ogni segmento è libero da collider con margine `player.radius`.
+- Negozio A (fase C, 2026-10-19): 24 × 24 m, parete di fondo a z = −6 (era 24 × 36, fondo a −18), `floor.center` [0, 6]. Ingresso, Nuovi Arrivi e Archivio non si sono mossi; Lookbook e Brand Wall avanzati di 12 m.
+- Grafo di 14 waypoint (centro + due corridoi laterali a x = ±10.35, 4 nodi per lato dalla fase C). Percorso: diretto se libero, altrimenti Dijkstra da ogni nodo visibile + string pulling. Ogni segmento è libero da collider con margine `player.radius`.
 - Desktop: due modi scelti all'ingresso (2026-10-17, `useAppStore.controlMode`, ricordato in `localStorage`): **tastiera e mouse** (WASD/frecce, Shift corsa, Pointer Lock **solo su click esplicito**, mai riattivato da solo; è il default) o **solo mouse** (come su telefono: trascina = guarda con `lookSensitivity.mouseDrag`, click = vai/esamina; niente cursore catturato, niente mirino né invito al lock).
 - Indietro del browser (2026-10-17, `state/backButton.js`): ogni livello aperto (scheda della pila, menu, Focus) ha una voce di cronologia; Indietro chiude il livello in cima, chiudere coi bottoni del sito toglie la voce (`history.go` con i ritorni propri ignorati). A nessun livello aperto Indietro lascia il sito, di proposito.
 - Avviso del capo vicino (in basso) = bottone (comando `activate`): apre Focus o Lookbook anche da dietro l'espositore o senza guardarlo.

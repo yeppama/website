@@ -14,11 +14,12 @@ export default function Minimap() {
   const pose = usePlayerStore((s) => s.pose)
   const activeZoneId = usePlayerStore((s) => s.zoneId)
   const [w, d] = environment.floor.size
+  const [fx, fz] = environment.floor.center ?? [0, 0]
   const pad = 2
 
   const project = useMemo(
-    () => (x, z) => [((x + w / 2) / w) * 100, ((z + d / 2) / d) * 100],
-    [w, d],
+    () => (x, z) => [((x - fx + w / 2) / w) * 100, ((z - fz + d / 2) / d) * 100],
+    [w, d, fx, fz],
   )
 
   const [cx, cz] = project(pose.x, pose.z)

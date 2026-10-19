@@ -10,6 +10,8 @@ import BrandWall from './environment/BrandWall.jsx'
 import FloorLabels from './environment/FloorLabels.jsx'
 import GroundShadows from './environment/GroundShadows.jsx'
 import CantiereRoom from './environment/CantiereRoom.jsx'
+import WallArt from './environment/WallArt.jsx'
+import Props from './environment/Props.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 import LightFixtures from './lighting/LightFixtures.jsx'
 import SelectiveBloom from './lighting/SelectiveBloom.jsx'
@@ -219,6 +221,10 @@ function SceneContents({ config, tier, bloom }) {
             copy={config.copy}
           />
           <FloorLabels zones={environment.zones} />
+          {environment.wallArt?.length > 0 && (
+            <WallArt items={environment.wallArt} frameMaterialId={environment.wallArtFrameMaterialId} printTint={environment.wallArtPrintTint} materials={lighting.materials} />
+          )}
+          <Props props={environment.props} materials={lighting.materials} />
         </>
       )}
       <Architecture environment={environment} materials={lighting.materials} />

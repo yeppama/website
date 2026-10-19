@@ -111,13 +111,16 @@ async function open(tag, { mode = null, viewport = { width: 1280, height: 720 },
   // ── 4. Muro ──
   await place(page, 0, 12, 0, 0); await sync(page)
   await page.evaluate(() => window.__stores.app.setState({ notice: null }))
-  const wall = await project(page, [8, 1.2, -17.8])  // lontano dal pannello del Lookbook
+  // Muro di fondo dal config (fase C: da z = −18 a −6), lontano dal pannello del Lookbook.
+  const northWall = storeConfig.colliders.find((c) => c.id === 'col-wall-n')
+  const wallFace = northWall.center[2] + northWall.size[2] / 2
+  const wall = await project(page, [8, 1.2, wallFace + 0.02])
   await page.mouse.click(wall.x, wall.y)
   const toWall = await waitUntil(page, () => Boolean(window.__stores.player.getState().route), null, 5000)
   const end = await page.evaluate(() => window.__stores.player.getState().route?.points.at(-1))
   const notice = await page.evaluate(() => window.__stores.app.getState().notice?.text ?? null)
   ok('click su un muro: si va al punto libero più vicino lì davanti, senza "c\'è un muro"',
-    toWall && end && end[1] < -15 && notice !== C.hints.wall, `arrivo ${end?.map((v) => v.toFixed(2))} · avviso ${notice}`)
+    toWall && end && end[1] < wallFace + 2.8 && notice !== C.hints.wall, `arrivo ${end?.map((v) => v.toFixed(2))} · avviso ${notice}`)
   await ctx.close()
 }
 

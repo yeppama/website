@@ -27,7 +27,8 @@ const placement = {
 
 function build({ productsOn, poiLabel, mainLookbookId }) {
   return {
-    performance: { toneMappingExposure: 1.0 },
+    // 1.0 fino al 2026-10-19; 1.15 su richiesta dell'utente ("ancora troppo cupo").
+    performance: { toneMappingExposure: 1.15 },
 
     camera: {
       defaultShotId: 'shot-c-entrance',
@@ -260,7 +261,7 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
     ],
 
     lighting: {
-      ambient: { intensity: 0.45, color: '#ffffff' },
+      ambient: { intensity: 0.6, color: '#ffffff' },
       hemisphere: { skyColor: '#ffffff', groundColor: '#2a2a2a', intensity: 0.6 },
       spots: [
         { id: 'spot-c-rack', priority: 1, position: [-3.0, 3.8, -0.9], targetPosition: [-4.25, 1.3, -0.9],

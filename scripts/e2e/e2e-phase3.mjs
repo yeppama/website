@@ -63,15 +63,17 @@ const project = (page, [x, y, z]) => page.evaluate(([x, y, z]) => {
   const p1 = await pos(page)
   ok('desktop: W fa avanzare dritto verso l\'interno', walked && Math.abs(p1.x) < 0.2, `Δz = ${(p0.z - p1.z).toFixed(2)} m, deriva laterale ${Math.abs(p1.x).toFixed(3)} m`)
 
-  await place(page, 0, -14)
+  // Il fondo del negozio dal config (fase C, 2026-10-19: era z = −17, ora −5): limite dell'area calpestabile.
+  const backZ = storeConfig.navigation.walkableAreas[0].bounds[0][1]
+  await place(page, 0, backZ + 3)
   await startTrace(page)
   await page.keyboard.down('ShiftLeft'); await page.keyboard.down('KeyW')
-  await waitUntil(page, () => window.__player.pos.z < -16.9, null, 30000)
+  await waitUntil(page, (z) => window.__player.pos.z < z + 0.1, backZ, 30000)
   await page.waitForTimeout(3000)
   await page.keyboard.up('KeyW'); await page.keyboard.up('ShiftLeft')
   const traceWall = await stopTrace(page)
   const pw = await pos(page)
-  ok('desktop: correndo contro il muro nord e insistendo, non si entra mai nel muro', !traceWall.find(overlap) && pw.z >= -17.001 && pw.z < -16.9, `${traceWall.length} campioni, z finale ${pw.z.toFixed(3)}`)
+  ok('desktop: correndo contro il muro nord e insistendo, non si entra mai nel muro', !traceWall.find(overlap) && pw.z >= backZ - 0.001 && pw.z < backZ + 0.1, `${traceWall.length} campioni, z finale ${pw.z.toFixed(3)}`)
 
   await place(page, -9, 7, 0)
   await startTrace(page)
@@ -225,11 +227,13 @@ const project = (page, [x, y, z]) => page.evaluate(([x, y, z]) => {
   const yLater = (await pos(page)).yaw
   ok('mobile: uscito dal Focus la camera resta ferma (nessuna rotazione residua)', Math.abs(yLater - yAfter) < 0.002, `Δyaw ${(yLater - yAfter).toFixed(4)} rad`)
 
+  // Waypoint del Lookbook dal config (fase C, 2026-10-19: era a z = −9).
+  const lookWp = storeConfig.navigation.waypoints.find((w) => w.id === 'wp-look-01').position
   await page.getByRole('navigation', { name: /vai a/i }).getByRole('button', { name: /lookbook/i }).tap()
-  await waitUntil(page, () => Math.hypot(window.__player.pos.x, window.__player.pos.z + 9) < 0.05 && !window.__player.teleport, null, 15000)
+  await waitUntil(page, ([x, z]) => Math.hypot(window.__player.pos.x - x, window.__player.pos.z - z) < 0.05 && !window.__player.teleport, [lookWp[0], lookWp[2]], 15000)
   await page.waitForTimeout(1200)
   const pl = await pos(page)
-  ok('mobile: barra "Lookbook" → teletrasporto al waypoint sicuro', Math.hypot(pl.x, pl.z + 9) < 0.05)
+  ok('mobile: barra "Lookbook" → teletrasporto al waypoint sicuro', Math.hypot(pl.x - lookWp[0], pl.z - lookWp[2]) < 0.05, `${pl.x.toFixed(2)}, ${pl.z.toFixed(2)}`)
   await page.screenshot({ path: `${OUT}/mobile-lookbook.png` })
   await ctx.close()
 }

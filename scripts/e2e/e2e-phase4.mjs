@@ -221,7 +221,7 @@ for (const tier of ['low', 'high']) {
     })
     return { blobs, casters, calls: window.__gl.info.render.calls, tris: window.__gl.info.render.triangles, shadowMap: window.__gl.shadowMap.enabled }
   })
-  const expectedBlobs = 8 + storeConfig.displays.filter((d) => d.groundShadow).length
+  const expectedBlobs = storeConfig.environment.architecture.columns.length + storeConfig.displays.filter((d) => d.groundShadow).length
   if (tier === 'low') ok('tier low: ombre blob sotto colonne ed espositori, nessuna shadow map', r.blobs === expectedBlobs && !r.shadowMap, `${r.blobs} blob su ${expectedBlobs} attesi`)
   else ok('tier high: shadow map attiva e nessuna ombra blob', r.blobs === 0 && r.shadowMap, `${r.casters} mesh proiettano ombra`)
   const budget = storeConfig.performance.budgets.drawCalls[tier]

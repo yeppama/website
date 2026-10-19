@@ -40,7 +40,7 @@ export default function Walls({ walls, ceiling, floor, materials }) {
     <MergeByMaterial>
       {walls.map((wall) => <Wall key={wall.id} wall={wall} materials={materials} />)}
       {ceiling.visible && (
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ceiling.height, 0]} material={ceilingMaterial}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[floor.center?.[0] ?? 0, ceiling.height, floor.center?.[1] ?? 0]} material={ceilingMaterial}>
           <planeGeometry args={floor.size} />
         </mesh>
       )}
