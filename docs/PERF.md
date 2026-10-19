@@ -96,6 +96,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-19 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 1218036 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 19.1 | 30.9 | 49 / 80 | 124711 | sì · **fallita** (1% low < 40; Rack 21,0, Lookbook 24,6, Catene 30,6; max 53 ms, 2 > 50 ms) |
 | 2026-10-19 | Honor · negozio A | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.5 | 30.7 | 25.2 | 23 / 39 | 7156 | sì · superata (soglia low: p50), ma scatti: max 95 ms, 6 > 50 ms (il 16/10: 43,5, max 140 ms 4 > 50) |
 | 2026-10-19 | Honor · cantiere | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 19.0 | 43.1 | 26 / 57 | 56515 | sì · superata (max 58 ms, 1 > 50 ms) |
+| 2026-10-19 | Pixel 10 · cantiere (ombre statiche) | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 17.7 | 38.0 | 25 / 56 | 56553 | sì · fallita di poco (1% low < 40): tutto dal tratto Rack 24,6, gli altri 51–58,5; max 41 ms, 0 > 50 ms |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -293,3 +294,9 @@ Misure dell'utente sul commit `1218036` (righe sopra). Due problemi:
   (43,1). Ipotesi coerente coi dati, non dimostrata: va rimisurata.
 
 Da rimisurare dopo le correzioni: Pixel nel cantiere, Honor nel negozio A (e, per controllo, gli altri due).
+
+Rimisura dopo le correzioni (`4dd3739`, Pixel 10 nel cantiere): triangoli max 124 711 → 56 553, draw call
+49/80 → 25/56, 1% low 30,9 → 38,0, scatti oltre 50 ms 2 → 0. Resta sotto la soglia di 40 solo per il tratto
+Rack (24,6: pochi fotogrammi fra 33 e 41 ms nella prima camminata). Ipotesi verificata e **smentita**: le foto
+dei capi caricate a scena avviata. Con rete lenta simulata (1,5 Mbit/s, 150 ms) texture e programmi restano
+fermi dal riscaldamento alla fine del benchmark. Causa del tratto Rack non ancora isolata.
