@@ -83,7 +83,12 @@ export default function BenchPanel({ device, ready }) {
     gpu: device.renderer ?? '—',
     browser: browserLabel(),
     commit: __BUILD_COMMIT__,
-    tier: fxDisabled ? `${device.tier} ${t.fxOff}` : `${device.tier} · ${t.grain} ${grainBlend}`,
+    tier: [
+      fxDisabled ? `${device.tier} ${t.fxOff}` : `${device.tier} · ${t.grain} ${grainBlend}`,
+      // Confronti di StoreCanvas (&shadows=0, &accent=0): la riga dice cosa era spento.
+      new URLSearchParams(window.location.search).get('shadows') === '0' && t.shadowsOff,
+      new URLSearchParams(window.location.search).get('accent') === '0' && t.accentOff,
+    ].filter(Boolean).join(' · '),
     dpr: usePerfStore.getState().dpr,
     viewport: `${window.innerWidth}×${window.innerHeight}`,
     real: software ? t.realNo : `(${t.realYes})`,

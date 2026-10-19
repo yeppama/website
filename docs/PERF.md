@@ -97,6 +97,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-19 | Honor · negozio A | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.5 | 30.7 | 25.2 | 23 / 39 | 7156 | sì · superata (soglia low: p50), ma scatti: max 95 ms, 6 > 50 ms (il 16/10: 43,5, max 140 ms 4 > 50) |
 | 2026-10-19 | Honor · cantiere | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 19.0 | 43.1 | 26 / 57 | 56515 | sì · superata (max 58 ms, 1 > 50 ms) |
 | 2026-10-19 | Pixel 10 · cantiere (ombre statiche) | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 17.7 | 38.0 | 25 / 56 | 56553 | sì · fallita di poco (1% low < 40): tutto dal tratto Rack 24,6, gli altri 51–58,5; max 41 ms, 0 > 50 ms |
+| 2026-10-19 | Pixel 10 · cantiere, tier forzato low | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | low · grana alpha (esperimento) | 1.0 | 411×777 | 3 | 60.2 | 17.5 | 54.9 | 26 / 57 | 56555 | sì · Rack 52,4 (24,6 in medium) |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -300,3 +301,8 @@ Rimisura dopo le correzioni (`4dd3739`, Pixel 10 nel cantiere): triangoli max 12
 Rack (24,6: pochi fotogrammi fra 33 e 41 ms nella prima camminata). Ipotesi verificata e **smentita**: le foto
 dei capi caricate a scena avviata. Con rete lenta simulata (1,5 Mbit/s, 150 ms) texture e programmi restano
 fermi dal riscaldamento alla fine del benchmark. Causa del tratto Rack non ancora isolata.
+
+Esperimento (Pixel 10, cantiere, `&tier=low`): 1% low 54,9, tratto Rack 24,6 → 52,4. Il costo è in ciò che il
+medium aggiunge al low: ombre reali (2), luci arancioni vere (2, fase B), DPR 1,5 invece di 1, antialias.
+Per separarli, con `?bench=1` (o `perf`/`debug`): `&shadows=0` spegne le ombre reali, `&accent=0` le luci
+arancioni vere; la riga copiata dal benchmark lo dichiara nella colonna Tier.

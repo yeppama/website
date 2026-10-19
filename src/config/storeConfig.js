@@ -745,6 +745,8 @@ export const storeConfig = {
       title: 'Benchmark',
       seconds: 's',
       fxOff: '(grana off)',
+      shadowsOff: 'ombre off',
+      accentOff: 'luci arancioni off',
       grain: 'grana',
       segments: 'Tratti (p50 / 1% low · fotogramma max · n oltre 50 ms)',
       stutter: 'Scatti (peggior run)',

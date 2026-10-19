@@ -273,8 +273,16 @@ function SceneContents({ config, tier, bloom }) {
 }
 
 export default function StoreCanvas({ config, device, onStage, onContextLost, onContextRestored }) {
-  const tier = config.performance.tiers[device.tier]
   const params = debugParams()
+  // Confronti sul dispositivo vero (fase 3, 2026-10-19): con ?perf=1, ?bench=1 o ?debug=,
+  // `&shadows=0` spegne le ombre reali e `&accent=0` le luci arancioni vere, lasciando il resto
+  // del tier com'è. Servono a capire quale costo pesa su un telefono, non cambiano il sito.
+  const compare = params.get('perf') || params.get('bench') || params.get('debug')
+  const tier = {
+    ...config.performance.tiers[device.tier],
+    ...(compare && params.get('shadows') === '0' ? { maxShadowCasters: 0 } : {}),
+    ...(compare && params.get('accent') === '0' ? { maxAccentLights: 0 } : {}),
+  }
   // In modalità debug il target fps è sovrascrivibile, per verificare che il limite funzioni.
   const targetFps = params.get('debug') && Number(params.get('fps')) > 0
     ? Number(params.get('fps'))

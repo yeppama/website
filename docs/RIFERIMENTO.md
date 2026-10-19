@@ -93,5 +93,5 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 30 
 ```
 
 **Parametri di debug** (attivi solo con `?debug=`): `?debug=top|front|<id inquadratura>|<id espositore>` (camera fissa), `&colliders=1` (collider + grafo), `&tier=low|medium|high`, `&fps=N`. Espone `window.__player`, `__nav`, `__camera`, `__stores`, `__scene`, `__gl`, `__remountScene()`, `__benchResult`.
-**Parametri anche in produzione:** `?allestimento=cantiere` (secondo allestimento), `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&bloom=1|0` (cantiere), `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
+**Parametri anche in produzione:** `?allestimento=cantiere` (secondo allestimento), `?perf=1` (HUD prestazioni), `?bench=1` (benchmark); con entrambi `&tier=`, `&bloom=1|0` (cantiere), `&shadows=0` (niente ombre reali), `&accent=0` (niente luci arancioni vere), `&fx=0`, `&grain=overlay|alpha`, `&warm=0`. `?fog=1|0` anteprima della nebbia. `?commerce=mock` negozio di prova (`&mockerror=1` fornitore in errore). `?commerce=shopify` negozio Shopify di sviluppo.
 
