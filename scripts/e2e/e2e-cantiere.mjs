@@ -259,15 +259,15 @@ for (const d of storeConfig.displays) {
     let layer = 0, halos = 0, halosShown = 0
     window.__scene.traverse((o) => {
       if (o.isMesh && o.layers.isEnabled(1)) layer++
-      if (o.isMesh && o.material?.blending === 2 && o.geometry?.type === 'PlaneGeometry' && o.material.map && !o.layers.isEnabled(1)) {
+      if (o.isMesh && o.material?.blending === 2 && o.material.map && !o.layers.isEnabled(1)) {
         halos++; if (o.visible) halosShown++
       }
     })
     return { layer, halos, halosShown, calls: window.__gl.info.render.calls }
   })
   const spec = storeConfig.environment.cantiere.bloom
-  // Neon, 4 bordi per pannello e la mesh unica delle barre LED d'accento.
-  const expected = 1 + storeConfig.environment.cantiere.lightboxes.zs.length * 4 + (storeConfig.environment.accentLights?.length ? 1 : 0)
+  // Neon, i bordi dei pannelli (una mesh unica dalla fase 3) e la mesh unica delle barre LED d'accento.
+  const expected = 1 + 1 + (storeConfig.environment.accentLights?.length ? 1 : 0)
   const low = await bloomState(page)
   ok(`tier low: niente Bloom, alone finto (Bloom solo su ${spec.tiers.join(', ')})`, low.layer === 0 && low.halosShown === low.halos && low.halos > 0, JSON.stringify(low))
 
@@ -308,6 +308,41 @@ for (const d of storeConfig.displays) {
   ok('costo del Bloom misurato (draw call stessa vista, con e senza)', h.calls > o.calls, `${o.calls} → ${h.calls} draw call (SwiftShader, non è velocità)`)
   await off.screenshot({ path: `${OUT}/bloom-spento-neon.png` })
   await oc.close()
+}
+
+// ── Rimontaggi del Canvas (fase 3): le risorse GPU restano quelle della prima scena ──
+{
+  // Come e2e-phase6 per il negozio: nel negozio A `useTexture` lasciava texture in più dopo un
+  // rimontaggio (docs/LEZIONI.md). Qui si controlla il cantiere, che le sue immagini le carica così.
+  const c = await browser.newContext({ viewport: { width: 960, height: 600 } })
+  const pg = await c.newPage()
+  pg.on('pageerror', (e) => errors.push(`[rimontaggi] ${e.message}`))
+  await pg.goto(`${BASE}?allestimento=cantiere&debug=x&tier=low&commerce=off`, { waitUntil: 'networkidle' })
+  await pg.getByRole('button', { name: /^entra$/i }).click({ timeout: 90000 })
+  await pg.waitForFunction(() => window.__player && window.__warmedUp, null, { timeout: 90000 })
+  const gpu = () => pg.evaluate(() => {
+    const ids = new Set(); window.__scene.traverse((o) => { if (o.geometry) ids.add(o.geometry.uuid) })
+    const m = window.__gl.info.memory
+    return `geo ${m.geometries} · tex ${m.textures} · prog ${window.__gl.info.programs.length} · oggetti ${ids.size}`
+  })
+  const frames = () => pg.evaluate(() => window.__gl.info.render.frame)
+  // La prima scena: si aspetta che le risorse smettano di crescere.
+  let fresh = await gpu()
+  for (let t = 0; t < 30; t++) { await pg.waitForTimeout(1000); const m = await gpu(); if (m === fresh) break; fresh = m }
+  const notes = []
+  for (let i = 1; i <= 4; i++) {
+    await pg.evaluate(() => { window.__oldGl = window.__gl; window.__remountScene() })
+    await waitUntil(pg, () => window.__gl && window.__gl !== window.__oldGl && window.__player, null, 30000)
+    const f0 = await frames()
+    await waitUntil(pg, (a) => window.__gl.info.render.frame > a + 2, f0, 30000)
+    // In rendering software la scena rimontata impiega secondi a disegnare tutto: si aspetta una
+    // condizione (le risorse tornano quelle della prima), non un tempo. Una perdita non ci torna mai.
+    let m = await gpu()
+    for (let t = 0; t < 30 && m !== fresh; t++) { await pg.waitForTimeout(1000); m = await gpu() }
+    if (m !== fresh) notes.push(`ciclo ${i}: ${m}`)
+  }
+  ok('rimontaggi del Canvas: ogni scena ha le risorse GPU della prima', notes.length === 0, notes.length ? `prima: ${fresh}; ${notes.join('; ')}` : fresh)
+  await c.close()
 }
 
 const unexpected = [...new Set(errors)]

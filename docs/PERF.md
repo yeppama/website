@@ -22,6 +22,25 @@ mai come prestazione. Il benchmark lo dichiara da solo nell'ultima colonna.
 
 Durante la navigazione normale, `?perf=1` mostra lo stesso HUD senza il percorso guidato.
 
+### Fase 3 del cantiere (preparata il 2026-10-19): misure dell'utente
+
+Stesso protocollo, su **entrambi** i negozi, con l'anteprima di `sviluppo` (link nel report di fine fase):
+
+| Dispositivo | Negozio A | Cantiere B |
+|---|---|---|
+| iPhone (tier medium) | `/?bench=1` | `/?allestimento=cantiere&bench=1` |
+| Pixel (tier medium) | `/?bench=1` | `/?allestimento=cantiere&bench=1` |
+| Honor, Adreno 619 (tier low) | `/?bench=1` | `/?allestimento=cantiere&bench=1` |
+| PC con scheda video dedicata (tier high, Bloom) | `/?bench=1` | `/?allestimento=cantiere&bench=1`, poi `…&bloom=0` per il costo del Bloom |
+
+Oltre alle righe, servono due giudizi a occhio, dal telefono: luminosità ("ancora cupo / giusto /
+troppo chiaro", in entrambi i negozi) e se il nero dei capi resta nero. Con questi si tarano
+esposizione (`performance.toneMappingExposure`, cantiere in `src/layouts/cantiere.js`), luci
+ambiente e il numero di luci arancioni vere per tier (`performance.tiers.*.maxAccentLights`).
+Soglie: quelle sotto (§5.1); il cantiere ha gli stessi budget di draw call del negozio.
+Nel container (SwiftShader, non è velocità): cantiere 56 draw call sul tier low (budget 60) e 79 sul
+medium (budget 80) nella vista più densa, dopo l'unione di bordi, cornici, aloni e tubi.
+
 ## Cosa significano le colonne
 
 | Colonna | Significato |

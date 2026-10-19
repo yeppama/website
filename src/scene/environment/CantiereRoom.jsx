@@ -1,7 +1,8 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
-import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { BLOOM_LAYER } from '../lighting/SelectiveBloom.jsx'
+import { useSharedTextures } from '../../lib/sharedTextures.js'
 
 /**
  * Stanza dell'allestimento "cantiere" (docs/cantiere/PIANO.md), tutta da
@@ -11,14 +12,38 @@ import { BLOOM_LAYER } from '../lighting/SelectiveBloom.jsx'
  * tavolo) sono in scene/displays; binari e corpi illuminanti li disegnano Architecture e
  * LightFixtures, come nel negozio. Le collisioni restano solo sui box di `colliders`.
  *
- * Le texture le carica useTexture: la scena aspetta (Suspense) che ci siano tutte.
+ * Le texture le carica useSharedTextures (lib/sharedTextures.js): la scena aspetta (Suspense) che
+ * ci siano tutte. Le mesh con una texture della cache hanno `dispose={null}` (vedi lì).
  * Con `bloom` (fase 2: Bloom vero, solo GPU dedicata) neon e bordi dei pannelli vanno sul layer
  * del bagliore e l'alone finto disegnato nelle texture sparisce: lo fa SelectiveBloom.
  */
 const onBloomLayer = (o) => o?.layers.enable(BLOOM_LAYER)
 
+/**
+ * Più pezzi con lo stesso materiale in una geometria sola: una draw call invece di una per pezzo
+ * (fase 3, 2026-10-19: il cantiere superava il budget, 66 draw call su 60 nel tier low).
+ * `parts`: [{ geometry, position, quaternion?, rotationY? }]. Le geometrie di partenza si liberano.
+ */
+function useMerged(build, deps) {
+  const geometry = useMemo(() => {
+    const list = build().map(({ geometry: g, position, quaternion, rotationY = 0 }) => {
+      const q = quaternion ?? new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationY)
+      const m = new THREE.Matrix4().compose(new THREE.Vector3(...position), q, new THREE.Vector3(1, 1, 1))
+      const out = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(m)
+      g.dispose()
+      return out
+    })
+    const merged = mergeGeometries(list, false)
+    list.forEach((g) => g.dispose())
+    merged.computeBoundingSphere()
+    return merged
+  }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => () => geometry.dispose(), [geometry])
+  return geometry
+}
+
 function useTiled(url, repeat) {
-  const tex = useTexture(url)
+  const [tex] = useSharedTextures([url])
   const [rx, ry] = repeat
   const tiled = useMemo(() => {
     const t = tex.clone()
@@ -142,7 +167,7 @@ function Neon({ C, bloom }) {
 
 function Decal({ map, center, size, rotationY = 0, rotationZ = 0 }) {
   return (
-    <mesh position={center} rotation={[0, rotationY, rotationZ]} receiveShadow>
+    <mesh position={center} rotation={[0, rotationY, rotationZ]} receiveShadow dispose={null}>
       <planeGeometry args={size} />
       <meshStandardMaterial map={map} transparent alphaTest={0.05} roughness={0.95} polygonOffset polygonOffsetFactor={-1} />
     </mesh>
@@ -151,9 +176,8 @@ function Decal({ map, center, size, rotationY = 0, rotationZ = 0 }) {
 
 /** Poster e adesivi: immagini su piani appena staccati dal muro. */
 function Posters({ C }) {
-  const posterMaps = useTexture(C.posters.map((p) => p.url))
-  const stickerMaps = useTexture(C.stickers.map((s) => C.stickerUrl(s.name)))
-  for (const m of [...posterMaps, ...stickerMaps]) m.colorSpace = THREE.SRGBColorSpace
+  const posterMaps = useSharedTextures(C.posters.map((p) => p.url))
+  const stickerMaps = useSharedTextures(C.stickers.map((s) => C.stickerUrl(s.name)))
   return (
     <group>
       {C.posters.map((p, i) => <Decal key={p.url} map={posterMaps[i]} center={p.center} size={p.size} rotationY={p.rotationY} />)}
@@ -169,8 +193,7 @@ function Posters({ C }) {
 /** Pannelli luminosi del Lookbook sulla parete est: foto fuori dal tone mapping, bordo e alone arancioni. */
 function Lightboxes({ C, bloom }) {
   const { x, y, zs, size, photos } = C.lightboxes
-  const maps = useTexture(photos)
-  for (const m of maps) m.colorSpace = THREE.SRGBColorSpace
+  const maps = useSharedTextures(photos)
   const orange = C.palette.orange
   const halo = useCanvasTexture((c) => {
     c.width = c.height = 256
@@ -184,29 +207,35 @@ function Lightboxes({ C, bloom }) {
   const [w, h] = size
   const edge = 0.025
   const edges = [[0, h / 2 + edge / 2, w + edge * 2, edge], [0, -h / 2 - edge / 2, w + edge * 2, edge], [w / 2 + edge / 2, 0, edge, h], [-w / 2 - edge / 2, 0, edge, h]]
+  // I pannelli guardano −x (rotazione −90°): uno spostamento locale (lx, ly, lz) va nel mondo a
+  // (x + lz·sin(−90°)…) — lo fa la matrice di useMerged con la stessa rotazione dei pannelli.
+  const rot = -Math.PI / 2
+  const at = (z, [lx, ly, lz]) => [x + lz * Math.sin(rot) + lx * Math.cos(rot), y + ly, z + lz * Math.cos(rot) - lx * Math.sin(rot)]
+  // Bordi, cornici e aloni dei tre pannelli: una mesh ciascuno invece di 12, 3 e 3.
+  const edgeGeo = useMerged(() => zs.flatMap((z) => edges.map(([ex, ey, ew, eh]) => (
+    { geometry: new THREE.PlaneGeometry(ew, eh), position: at(z, [ex, ey, 0.034]), rotationY: rot }))), [x, y, zs.join(), w, h])
+  const frameGeo = useMerged(() => zs.map((z) => (
+    { geometry: new THREE.BoxGeometry(w + 0.08, h + 0.08, 0.06), position: at(z, [0, 0, 0]), rotationY: rot })), [x, y, zs.join(), w, h])
+  const haloGeo = useMerged(() => zs.map((z) => (
+    { geometry: new THREE.PlaneGeometry(w * 1.9, h * 2.1), position: at(z, [0, 0, -0.03]), rotationY: rot })), [x, y, zs.join(), w, h])
   return (
     <group>
+      {!bloom && (
+        <mesh geometry={haloGeo}>
+          <meshBasicMaterial map={halo} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+        </mesh>
+      )}
+      <mesh geometry={frameGeo}>
+        <meshStandardMaterial color={C.palette.steel} metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh geometry={edgeGeo} ref={bloom ? onBloomLayer : undefined}>
+        <meshBasicMaterial color={orange} toneMapped={false} />
+      </mesh>
       {zs.map((z, i) => (
-        <group key={z} position={[x, y, z]} rotation={[0, -Math.PI / 2, 0]}>
-          <mesh position={[0, 0, -0.03]} visible={!bloom}>
-            <planeGeometry args={[w * 1.9, h * 2.1]} />
-            <meshBasicMaterial map={halo} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
-          </mesh>
-          <mesh>
-            <boxGeometry args={[w + 0.08, h + 0.08, 0.06]} />
-            <meshStandardMaterial color={C.palette.steel} metalness={0.7} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, 0.032]}>
-            <planeGeometry args={[w, h]} />
-            <meshBasicMaterial map={maps[i]} color={C.lightboxes.tint} toneMapped={false} />
-          </mesh>
-          {edges.map(([ex, ey, ew, eh], k) => (
-            <mesh key={k} position={[ex, ey, 0.034]} ref={bloom ? onBloomLayer : undefined}>
-              <planeGeometry args={[ew, eh]} />
-              <meshBasicMaterial color={orange} toneMapped={false} />
-            </mesh>
-          ))}
-        </group>
+        <mesh key={z} position={at(z, [0, 0, 0.032])} rotation={[0, rot, 0]} dispose={null}>
+          <planeGeometry args={[w, h]} />
+          <meshBasicMaterial map={maps[i]} color={C.lightboxes.tint} toneMapped={false} />
+        </mesh>
       ))}
     </group>
   )
@@ -359,14 +388,16 @@ function CautionTape({ tape }) {
   )
 }
 
+// Cono e cartello senza ombra proiettata (fase 3): piccoli, e nel tier medium ogni oggetto che
+// proietta ombra si ridisegna una volta per faretto con ombra.
 function Cone({ position, color }) {
   return (
     <group position={[position[0], 0, position[1]]}>
-      <mesh position={[0, 0.02, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.02, 0]} receiveShadow>
         <boxGeometry args={[0.4, 0.04, 0.4]} />
         <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
-      <mesh position={[0, 0.39, 0]} castShadow>
+      <mesh position={[0, 0.39, 0]}>
         <cylinderGeometry args={[0.035, 0.17, 0.7, 24]} />
         <meshStandardMaterial color={color} roughness={0.5} />
       </mesh>
@@ -379,15 +410,14 @@ function Cone({ position, color }) {
 }
 
 function Sign({ sign }) {
-  const map = useTexture(sign.url)
-  map.colorSpace = THREE.SRGBColorSpace
+  const [map] = useSharedTextures([sign.url])
   return (
     <group position={sign.center} rotation={[sign.tilt, 0, 0]}>
-      <mesh castShadow receiveShadow>
+      <mesh receiveShadow>
         <boxGeometry args={[sign.size[0], sign.size[1], 0.012]} />
         <meshStandardMaterial color="#bdbab2" metalness={0.6} roughness={0.5} />
       </mesh>
-      <mesh position={[0, 0, 0.007]}>
+      <mesh position={[0, 0, 0.007]} dispose={null}>
         <planeGeometry args={sign.size} />
         <meshStandardMaterial map={map} roughness={0.6} metalness={0.2} />
       </mesh>
@@ -397,21 +427,21 @@ function Sign({ sign }) {
 
 /** Tubi a soffitto: cilindri da un punto all'altro. */
 function Pipes({ pipes, color }) {
+  // Tutti i tubi in una mesh (fase 3: una draw call invece di una per tubo).
+  const geometry = useMerged(() => pipes.map((p) => {
+    const a = new THREE.Vector3(...p.from)
+    const b = new THREE.Vector3(...p.to)
+    const dir = b.clone().sub(a)
+    return {
+      geometry: new THREE.CylinderGeometry(p.radius, p.radius, dir.length(), 12),
+      position: a.clone().add(b).multiplyScalar(0.5).toArray(),
+      quaternion: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()),
+    }
+  }), [pipes])
   return (
-    <group>
-      {pipes.map((p, i) => {
-        const a = new THREE.Vector3(...p.from)
-        const b = new THREE.Vector3(...p.to)
-        const dir = b.clone().sub(a)
-        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize())
-        return (
-          <mesh key={i} position={a.clone().add(b).multiplyScalar(0.5)} quaternion={q}>
-            <cylinderGeometry args={[p.radius, p.radius, dir.length(), 12]} />
-            <meshStandardMaterial color={color} metalness={0.9} roughness={0.2} />
-          </mesh>
-        )
-      })}
-    </group>
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color={color} metalness={0.9} roughness={0.2} />
+    </mesh>
   )
 }
 

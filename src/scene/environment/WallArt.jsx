@@ -1,13 +1,13 @@
 import { useLayoutEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { useMat } from '../displays/parts.jsx'
-import { getWallTexture } from '../../lib/wallTextures.js'
+import { getSharedTexture } from '../../lib/sharedTextures.js'
 
 /**
  * Grafica alle pareti (fase C, 2026-10-19), da `environment.wallArt`: manifesti e murali
  * (`kind: 'image'`, piani appena staccati dal muro, trasparenza della foto rispettata) e stampe
  * della campagna in cornice (`kind: 'print'`, foto del Lookbook del contenuto: se il contenuto
- * non ce l'ha, il config non la elenca). Texture condivise in lib/wallTextures.js.
+ * non ce l'ha, il config non la elenca). Texture condivise in lib/sharedTextures.js.
  *
  * I materiali nascono qui e passano alla mesh come proprietà: un materiale scritto in JSX, allo
  * smontaggio, viene liberato da React Three Fiber insieme alla sua `map`, cioè la texture
@@ -36,7 +36,7 @@ function Art({ item, material, frame }) {
 export default function WallArt({ items, frameMaterialId, printTint, materials }) {
   const frame = useMat(frameMaterialId, materials)
   const own = useMemo(() => items.map((item) => {
-    const map = getWallTexture(item.url)
+    const map = getSharedTexture(item.url)
     return item.kind === 'print'
       ? new THREE.MeshBasicMaterial({ map, color: printTint, toneMapped: false })
       : new THREE.MeshStandardMaterial({ map, transparent: true, alphaTest: 0.05, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -1 })

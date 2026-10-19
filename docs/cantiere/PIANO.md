@@ -130,4 +130,16 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
      del cantiere le barre ricevono il Bloom.
    - Draw call (tier medium, SwiftShader, 5 viste per negozio): negozio +2; cantiere +4…+6 (manifesti,
      nastro, stencil). Ingresso del cantiere 87, sopra il budget di 80 del tier medium (era già 81).
-3. Luci, prestazioni, prova sui telefoni (iPhone, Pixel, Honor): da fare, servono le misure dell'utente.
+3. **In corso (2026-10-19, "Approvato, procedi alla fase 3"): preparata, in attesa delle misure dell'utente.**
+   - Draw call nel budget (SwiftShader, vista più densa): tier low 66 → 56 (budget 60), medium 89 → 79
+     (budget 80). Bordi dei pannelli 12 → 1 mesh, cornici e aloni 3 → 1, tubi 3 → 1 (`useMerged` in
+     `CantiereRoom.jsx`); cono e cartello senza ombra proiettata.
+   - Immagini del cantiere e del negozio da una cache sola registrata in `gpuCaches`
+     (`lib/sharedTextures.js`, che sospende la scena come `useTexture`); mesh con texture condivise
+     `dispose={null}`. Nuova verifica in `e2e-cantiere.mjs`: 4 rimontaggi del Canvas con le risorse
+     della prima scena (con drei: texture 44 → 45, programmi 17 → 15).
+   - Benchmark di entrambi i negozi provato fino in fondo dopo gli spostamenti (catene, negozio 24 × 24).
+   - Protocollo delle misure in `docs/PERF.md` ("Fase 3 del cantiere"): bench su iPhone, Pixel, Honor e
+     PC con scheda dedicata (anche `&bloom=0`), più il giudizio a occhio su luminosità e neri.
+   - Da fare quando arrivano le misure: tarare luci ed esposizione, numero di luci arancioni per tier,
+     eventuali tagli sul tier low.
