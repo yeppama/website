@@ -19,5 +19,8 @@ export default defineConfig({
     // fra i modulepreload dell'entry, annullando il lazy import di StoreCanvas.
     // Lasciando decidere al grafo, three segue il suo import dinamico.
     chunkSizeWarningLimit: 1000,
+    // Seconda pagina: la prova dell'allestimento "cantiere" (docs/cantiere/PIANO.md), separata
+    // dal sito; il suo codice non entra nel bundle della pagina principale.
+    rollupOptions: { input: { main: 'index.html', cantiere: 'prova-cantiere.html' } },
   },
 })

@@ -47,12 +47,30 @@ piano Higgsfield a pagamento, oppure un altro servizio da foto a 3D (Meshy, Trip
 foto fronte della demo, più le viste laterali e del retro di `PROMPT-IMMAGINI.md` §D. Il GLB che arriva
 passa dalla stessa riduzione.
 
-## Da decidere
+## Scelte dell'utente (2026-10-18)
 
-1. Arancione: `#F98E30` del marchio (consigliato) o `#FF5500` del prompt.
-2. Bloom vero: mai, o solo sui computer con scheda video dedicata (consigliato).
-3. Da dove partire: immagine di prova (stanza + neon + pannelli, consigliata) o direttamente la fase 1.
-4. Da dove arrivano gli altri modelli 3D.
+1. Arancione del marchio `#F98E30`.
+2. Bloom vero solo sui computer con scheda video dedicata; alone finto per tutti gli altri.
+3. Modelli 3D con Higgsfield (piano basic, 70 crediti): fatti tutti e 7 i capi (SAM 3D, 1 credito l'uno;
+   il cargo al secondo tentativo), ridotti con `scripts/cantiere/reduce-glb.sh` a 80–136 KB l'uno.
+4. Primo passo: immagine di prova.
+5. Pannelli del Lookbook orizzontali 16:9 (le foto di campagna sono arrivate orizzontali).
+
+## Immagine di prova (2026-10-19)
+
+Pagina separata `prova-cantiere.html` (src/prototype/cantiere/), nella stessa build del sito ma col suo
+bundle: la pagina principale non scarica nulla in più (precarica solo React, come prima). Stanza 10×8×4,
+texture di Gemini, neon con alone finto, rete metallica, 2 pareti di poster, adesivi, cartello, 3 pannelli
+luminosi, tavolo di blocchi (istanze) con pile di capi piegati, rack di tubi con 5 capi GLB, 2 pantaloni GLB
+appesi a catene (anelli in istanza), cono, tubi e binari a soffitto, 6 faretti. Camera che gira attorno
+(OrbitControls) con 7 viste preimpostate: è una pagina per guardare, non il negozio.
+
+Misurato in SwiftShader (non vale come misura di velocità): 44–91 draw call e 60–85 mila triangoli
+secondo la vista, ombre comprese. Screenshot: `prova-cantiere.jpg`.
+
+Imparato: un capo GLB sdraiato su un tavolo sembra gonfio (il modello nasce dal capo indossato): sul
+tavolo pile di capi piegati. Le normali calcolate sul modello ridotto davano un capo a faccette (vertici
+divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
 
 ## Fasi
 
