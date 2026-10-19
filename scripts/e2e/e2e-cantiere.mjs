@@ -1,8 +1,8 @@
 /**
- * Allestimento "cantiere" (docs/cantiere/PIANO.md, fase 1), aperto con ?allestimento=cantiere:
+ * Allestimento "cantiere" (docs/cantiere/PIANO.md, fasi 1 e 2), aperto con ?allestimento=cantiere:
  * stanza e capi 3D caricati, camminata e collisioni, Focus su rack, catena e tavolo, scheda
  * del capo, Lookbook dai pannelli luminosi, "Vai a", minimappa, Indietro del browser,
- * indicatore a terra. Il negozio senza parametro resta quello di prima (le altre suite).
+ * indicatore a terra; Bloom vero solo sul tier high (fase 2). Il negozio senza parametro resta quello di prima (le altre suite).
  *   node scripts/e2e/e2e-cantiere.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
@@ -200,6 +200,59 @@ for (const d of storeConfig.displays) {
   await tel.waitForTimeout(500)
   await tel.screenshot({ path: `${OUT}/telefono-vai-a-catene.png` })
   await phone.close()
+}
+
+// ── Bloom (fase 2): vero solo sul tier della GPU dedicata, alone finto per gli altri ──
+{
+  const bloomState = (pg) => pg.evaluate(() => {
+    let layer = 0, halos = 0, halosShown = 0
+    window.__scene.traverse((o) => {
+      if (o.isMesh && o.layers.isEnabled(1)) layer++
+      if (o.isMesh && o.material?.blending === 2 && o.geometry?.type === 'PlaneGeometry' && o.material.map && !o.layers.isEnabled(1)) {
+        halos++; if (o.visible) halosShown++
+      }
+    })
+    return { layer, halos, halosShown, calls: window.__gl.info.render.calls }
+  })
+  const spec = storeConfig.environment.cantiere.bloom
+  const expected = 1 + storeConfig.environment.cantiere.lightboxes.zs.length * 4
+  const low = await bloomState(page)
+  ok(`tier low: niente Bloom, alone finto (Bloom solo su ${spec.tiers.join(', ')})`, low.layer === 0 && low.halosShown === low.halos && low.halos > 0, JSON.stringify(low))
+
+  const enter = async (query) => {
+    const c = await browser.newContext({ viewport: { width: 1280, height: 720 } })
+    const pg = await c.newPage()
+    pg.on('pageerror', (e) => errors.push(`[bloom] ${e.message}`))
+    pg.on('console', (m) => { if (m.type() === 'error') errors.push(`[bloom] ${m.text()}`) })
+    await pg.goto(`${BASE}?allestimento=cantiere&debug=x&commerce=off${query}`, { waitUntil: 'networkidle' })
+    await pg.getByRole('radio', { name: new RegExp(C.onboarding.desktop.modes.mouse.title) }).click()
+    await pg.getByRole('button', { name: /^entra$/i }).click({ timeout: 90000 })
+    await pg.waitForFunction(() => window.__player && window.__warmedUp, null, { timeout: 90000 })
+    return [c, pg]
+  }
+  const [hc, high] = await enter('&tier=high')
+  await place(high, 0, 2.6, 0, 0.05); await sync(high)
+  await waitUntil(high, () => window.__gl.info.render.calls > 0)
+  const h = await bloomState(high)
+  ok('tier high (GPU dedicata): Bloom vero su neon e bordi dei pannelli, alone finto spento', h.layer === expected && h.halosShown === 0, JSON.stringify(h))
+  // Il Focus sposta l'inquadratura con setViewOffset: il Bloom deve seguirlo senza errori.
+  const rack = storeConfig.displays.find((d) => d.kind === 'pipeRack')
+  ok('tier high: Focus sul rack col Bloom attivo', await focusOn(high, rack.id))
+  await high.screenshot({ path: `${OUT}/bloom-focus-rack.png` })
+  ok('tier high: uscita dal Focus col Bloom attivo', await exitFocus(high))
+  await place(high, 0, 2.6, 0, 0.05); await sync(high)
+  await high.waitForTimeout(500)
+  await high.screenshot({ path: `${OUT}/bloom-neon.png` })
+  await hc.close()
+
+  const [oc, off] = await enter('&tier=high&bloom=0')
+  await place(off, 0, 2.6, 0, 0.05); await sync(off)
+  await waitUntil(off, () => window.__gl.info.render.calls > 0)
+  const o = await bloomState(off)
+  ok('tier high con &bloom=0: alone finto, come gli altri tier', o.layer === 0 && o.halosShown === o.halos, JSON.stringify(o))
+  ok('costo del Bloom misurato (draw call stessa vista, con e senza)', h.calls > o.calls, `${o.calls} → ${h.calls} draw call (SwiftShader, non è velocità)`)
+  await off.screenshot({ path: `${OUT}/bloom-spento-neon.png` })
+  await oc.close()
 }
 
 const unexpected = [...new Set(errors)]

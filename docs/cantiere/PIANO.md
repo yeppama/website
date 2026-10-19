@@ -93,5 +93,20 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
    - Verifiche: `scripts/e2e/e2e-cantiere.mjs` (30), `npm run test:content` controlla le invarianti di
      ogni contenuto in ogni allestimento. Screenshot: `scripts/e2e/shots-cantiere.mjs`.
    - Misurato in SwiftShader (non è velocità): 49–91 draw call, 42–69 mila triangoli secondo la vista.
-2. Bloom vero solo su GPU dedicata (scelta 2), alone finto per gli altri: da fare.
+2. **Fatta (2026-10-19, "Approvato, procedi alla fase 2").** Bloom vero solo sul tier `high`, che è
+   già "GPU dedicata riconosciuta" (`DISCRETE_GPU` in `deviceProfile.js`); su `medium` e `low` l'alone
+   finto di sempre.
+   - `scene/lighting/SelectiveBloom.jsx`: la scena si disegna a schermo come prima (stesso tone mapping,
+     stesso antialias); a metà risoluzione si fa una maschera (scena in nero per le occlusioni, poi solo
+     gli oggetti sul layer 1), la si sfoca con `UnrealBloomPass` di three e la si somma sopra. Nessuna
+     dipendenza nuova (+3 kB gzip nel chunk 3D). Sul layer 1: il neon e i bordi dei 3 pannelli.
+   - Col Bloom il neon usa `neon.bloomLayers` (solo il tubo) e l'alone dei pannelli è spento.
+     Parametri in `cantiere.bloom` (`tiers`, `strength` 1,0, `radius` 0,4, `resolutionScale` 0,5).
+     `&bloom=1|0` con `?perf=1`, `?bench=1` o `?debug=` lo forza per confrontare.
+   - Il negozio non ha `cantiere.bloom`: il suo codice di rendering non cambia.
+   - Costo misurato in SwiftShader (non è velocità): stessa vista sul neon 84 → 153 draw call, perché
+     la maschera ridisegna la scena. Oltre il budget di 120 del tier high scritto per il negozio;
+     su una GPU dedicata è da misurare (non eseguito: nel container non c'è).
+   - Verifiche: `e2e-cantiere.mjs` 36 (6 nuove: low senza Bloom, high col Bloom, Focus e uscita col
+     Bloom, `&bloom=0`, costo). Screenshot `bloom-neon.png`, `bloom-spento-neon.png`.
 3. Luci, prestazioni, prova sui telefoni (iPhone, Pixel, Honor): da fare, servono le misure dell'utente.

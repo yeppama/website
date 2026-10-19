@@ -87,7 +87,14 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
           floor: { url: `${A}cemento-pavimento.webp`, metersPerTile: 3, tint: '#8c8c8c' },
           mesh: { url: `${A}rete-metallica.webp`, metersPerTile: 1.2 },
         },
-        neon: { text: 'INTO', width: 3.2, height: 1.1, center: [0, 2.35, -3.82] },
+        // Strati del tubo [sfocatura, opacità, spessore, colore] (null = l'arancione). `layers` con
+        // l'alone finto; `bloomLayers` solo il tubo, quando il bagliore lo fa il Bloom vero.
+        neon: { text: 'INTO', width: 3.2, height: 1.1, center: [0, 2.35, -3.82],
+          layers: [[90, 0.55, 26, null], [40, 0.8, 18, null], [12, 1, 12, '#ffd2a8'], [0, 1, 5, '#fff6ee']],
+          bloomLayers: [[30, 0.9, 20, null], [10, 1, 13, null], [0, 1, 9, '#ffd2a8'], [0, 1, 4, '#fff6ee']] },
+        // Bloom vero (fase 2, scelta 2 dell'utente): solo sui tier elencati, cioè GPU dedicata.
+        // Maschera e sfocatura a `resolutionScale` dello schermo (scene/lighting/SelectiveBloom.jsx).
+        bloom: { tiers: ['high'], strength: 1.0, radius: 0.4, threshold: 0, resolutionScale: 0.5 },
         neonLight: { position: [0, 2.3, -3.3], color: '#f98e30', intensity: 6, distance: 6 },
         meshPanel: { center: [0, 2.3, -3.95], size: [4.4, 2.4] },
         posters: [

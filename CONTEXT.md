@@ -26,7 +26,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 |---|---|---|
 | Dove | indirizzo dell'anteprima, senza parametri | stesso indirizzo + `?allestimento=cantiere` (anche in produzione; nella build `VITE_LAYOUT=cantiere`) |
 | Codice | `src/config/storeConfig.js` | `src/layouts/cantiere.js`, `scene/environment/CantiereRoom.jsx`, espositori `pipeRack`/`chain`/`blockTable`; immagini in `public/cantiere/` |
-| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify | fase 1 fatta: navigabile come il negozio, capi GLB. Da fare: Bloom su GPU dedicata (fase 2), luci e misure sui telefoni (fase 3) |
+| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify | fasi 1–2 fatte: navigabile come il negozio, capi GLB, Bloom vero solo su GPU dedicata (tier high). Da fare: luci e misure sui telefoni (fase 3) |
 | Documenti | `docs/PIANO-DEMO.md`, `docs/demo/` | `docs/cantiere/PIANO.md`, `docs/cantiere/PROMPT-IMMAGINI.md` |
 
 - **Requisito dell'utente: entrambe le versioni devono restare accessibili** dallo stesso link. Nessuna modifica può rompere o nascondere una delle due; ogni verifica si fa su tutte e due (`e2e-cantiere.mjs` per B, le suite del negozio per A).
@@ -37,7 +37,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 - **Fasi 0–7** chiuse; produzione su `main` (opzione A, segnaposto dichiarati, `noindex`).
 - **Fase 8:** 8a (carrello, fornitore finto) e 8b (Shopify di sviluppo, ordine di prova #1001 pagato) chiuse; preparazione 8c/8d fatta (modello Excel del catalogo, import, controllo dal vivo, pagine legali). **8c in attesa del catalogo del cliente.** Piano: `docs/PLAN-8.md`.
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono, aggiornamento di `docs/codice/` (oggi superato).
-- **Cantiere:** fase 1 fatta (2026-10-19): secondo allestimento navigabile, pagina di prova `prova-cantiere.html` tolta. Prossimo: fasi 2–3 su comando (`docs/cantiere/PIANO.md`).
+- **Cantiere:** fasi 1–2 fatte (2026-10-19). Fase 2: Bloom vero sul tier high, alone finto altrove; non misurato su una GPU dedicata vera (costo in SwiftShader 84 → 153 draw call sulla vista del neon). Prossimo: fase 3 su comando, serve l'utente coi telefoni (`docs/cantiere/PIANO.md`).
 
 ## 5. Regole di processo (dall'utente)
 

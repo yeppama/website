@@ -12,6 +12,7 @@ import GroundShadows from './environment/GroundShadows.jsx'
 import CantiereRoom from './environment/CantiereRoom.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 import LightFixtures from './lighting/LightFixtures.jsx'
+import SelectiveBloom from './lighting/SelectiveBloom.jsx'
 import ColliderDebug from './debug/ColliderDebug.jsx'
 import PlayerController from './player/PlayerController.jsx'
 import Hotspots from './player/Hotspots.jsx'
@@ -185,7 +186,7 @@ function FirstFrameSignal({ onStage }) {
   return null
 }
 
-function SceneContents({ config, tier }) {
+function SceneContents({ config, tier, bloom }) {
   const { environment, lighting } = config
   const showColliders = debugParams().get('debug') && debugParams().get('colliders') === '1'
   // ?fog=1 / ?fog=0: anteprima della nebbia senza cambiare il config.
@@ -199,7 +200,7 @@ function SceneContents({ config, tier }) {
   return (
     <>
       {/* L'allestimento del cantiere ha la sua stanza; il resto della scena è lo stesso. */}
-      {environment.cantiere ? <CantiereRoom environment={environment} /> : (
+      {environment.cantiere ? <CantiereRoom environment={environment} bloom={Boolean(bloom)} /> : (
         <>
           <Floor floor={environment.floor} materials={lighting.materials} />
           <Walls
@@ -240,6 +241,7 @@ function SceneContents({ config, tier }) {
         ceiling={environment.ceiling}
         materials={lighting.materials}
       />
+      {bloom && <SelectiveBloom bloom={bloom} />}
       {showColliders && <ColliderDebug colliders={config.colliders} navigation={config.navigation} />}
     </>
   )
@@ -252,6 +254,13 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
   const targetFps = params.get('debug') && Number(params.get('fps')) > 0
     ? Number(params.get('fps'))
     : config.performance.targetFps
+
+  // Bloom vero solo se l'allestimento lo prevede per questo tier (cantiere: GPU dedicata).
+  // Con ?perf=1, ?bench=1 o ?debug=, `&bloom=1|0` lo forza per confrontare.
+  const bloomSpec = config.environment.cantiere?.bloom
+  const bloomParam = (params.get('perf') || params.get('bench') || params.get('debug')) && params.get('bloom')
+  const bloom = bloomSpec && (bloomParam === '1' || (bloomParam !== '0' && bloomSpec.tiers.includes(device.tier)))
+    ? bloomSpec : null
 
   const debugKey = params.get('debug')
   // Pose fisse di verifica: pianta, inquadrature della Fase 2, pose di Focus degli espositori.
@@ -306,7 +315,7 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
       {/* Pronto e riscaldamento dopo la scena: con texture e capi 3D da caricare (cantiere)
           partono solo quando sono arrivati, così l'onboarding copre anche quell'attesa. */}
       <Suspense fallback={null}>
-        <SceneContents config={config} tier={tier} />
+        <SceneContents config={config} tier={tier} bloom={bloom} />
         <FirstFrameSignal onStage={onStage} />
         <GpuWarmup enabled={!((params.get('perf') || params.get('bench') || params.get('debug')) && params.get('warm') === '0')} />
       </Suspense>

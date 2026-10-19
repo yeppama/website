@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
+import { BLOOM_LAYER } from '../lighting/SelectiveBloom.jsx'
 
 /**
  * Stanza dell'allestimento "cantiere" (docs/cantiere/PIANO.md), tutta da
@@ -11,7 +12,11 @@ import * as THREE from 'three'
  * LightFixtures, come nel negozio. Le collisioni restano solo sui box di `colliders`.
  *
  * Le texture le carica useTexture: la scena aspetta (Suspense) che ci siano tutte.
+ * Con `bloom` (fase 2: Bloom vero, solo GPU dedicata) neon e bordi dei pannelli vanno sul layer
+ * del bagliore e l'alone finto disegnato nelle texture sparisce: lo fa SelectiveBloom.
  */
+const onBloomLayer = (o) => o?.layers.enable(BLOOM_LAYER)
+
 function useTiled(url, repeat) {
   const tex = useTexture(url)
   const [rx, ry] = repeat
@@ -99,8 +104,9 @@ function FloorBox({ box, color }) {
 /**
  * Neon del marchio: il tubo disegnato su texture con l'alone dentro (bagliore finto), fuori dal
  * tone mapping; dietro, la rete metallica e una luce arancione che bagna la parete.
+ * Col Bloom vero la texture ha solo il tubo (`bloomLayers`): il bagliore lo fa il Bloom.
  */
-function Neon({ C }) {
+function Neon({ C, bloom }) {
   const { text, width, height, center } = C.neon
   const color = C.palette.orange
   const tex = useCanvasTexture((c) => {
@@ -110,12 +116,12 @@ function Neon({ C }) {
     const g = c.getContext('2d')
     g.font = `900 ${Math.round(h * 0.62)}px Archivo, "Arial Black", sans-serif`
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'
-    for (const [blur, alpha, lw, stroke] of C.neon.layers ?? [[90, 0.55, 26, color], [40, 0.8, 18, color], [12, 1, 12, '#ffd2a8'], [0, 1, 5, '#fff6ee']]) {
+    for (const [blur, alpha, lw, stroke] of bloom ? C.neon.bloomLayers : C.neon.layers) {
       g.shadowColor = color; g.shadowBlur = blur; g.globalAlpha = alpha
-      g.strokeStyle = stroke; g.lineWidth = lw
+      g.strokeStyle = stroke ?? color; g.lineWidth = lw
       g.strokeText(text, w / 2, h / 2)
     }
-  }, [text, width, height, color])
+  }, [text, width, height, color, bloom])
   const { mesh } = C.textures
   const meshMap = useTiled(mesh.url, [C.meshPanel.size[0] / mesh.metersPerTile, C.meshPanel.size[1] / mesh.metersPerTile])
   const L = C.neonLight
@@ -125,7 +131,7 @@ function Neon({ C }) {
         <planeGeometry args={C.meshPanel.size} />
         <meshStandardMaterial map={meshMap} transparent alphaTest={0.25} metalness={0.8} roughness={0.4} side={THREE.DoubleSide} />
       </mesh>
-      <mesh position={center}>
+      <mesh position={center} ref={bloom ? onBloomLayer : undefined}>
         <planeGeometry args={[width, height]} />
         <meshBasicMaterial map={tex} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
@@ -161,7 +167,7 @@ function Posters({ C }) {
 }
 
 /** Pannelli luminosi del Lookbook sulla parete est: foto fuori dal tone mapping, bordo e alone arancioni. */
-function Lightboxes({ C }) {
+function Lightboxes({ C, bloom }) {
   const { x, y, zs, size, photos } = C.lightboxes
   const maps = useTexture(photos)
   for (const m of maps) m.colorSpace = THREE.SRGBColorSpace
@@ -182,7 +188,7 @@ function Lightboxes({ C }) {
     <group>
       {zs.map((z, i) => (
         <group key={z} position={[x, y, z]} rotation={[0, -Math.PI / 2, 0]}>
-          <mesh position={[0, 0, -0.03]}>
+          <mesh position={[0, 0, -0.03]} visible={!bloom}>
             <planeGeometry args={[w * 1.9, h * 2.1]} />
             <meshBasicMaterial map={halo} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
           </mesh>
@@ -195,7 +201,7 @@ function Lightboxes({ C }) {
             <meshBasicMaterial map={maps[i]} color={C.lightboxes.tint} toneMapped={false} />
           </mesh>
           {edges.map(([ex, ey, ew, eh], k) => (
-            <mesh key={k} position={[ex, ey, 0.034]}>
+            <mesh key={k} position={[ex, ey, 0.034]} ref={bloom ? onBloomLayer : undefined}>
               <planeGeometry args={[ew, eh]} />
               <meshBasicMaterial color={orange} toneMapped={false} />
             </mesh>
@@ -326,7 +332,7 @@ function Pipes({ pipes, color }) {
   )
 }
 
-export default function CantiereRoom({ environment }) {
+export default function CantiereRoom({ environment, bloom = false }) {
   const C = environment.cantiere
   const [W, D] = environment.floor.size
   const H = environment.ceiling.height
@@ -334,9 +340,9 @@ export default function CantiereRoom({ environment }) {
     <group>
       <Shell W={W} D={D} H={H} C={C} />
       <FloorBox box={C.floorBox} color={C.palette.orange} />
-      <Neon C={C} />
+      <Neon C={C} bloom={bloom} />
       <Posters C={C} />
-      <Lightboxes C={C} />
+      <Lightboxes C={C} bloom={bloom} />
       <LooseBlocks C={C} />
       <Chains C={C} />
       <Cone position={C.cone} color={C.palette.orange} />
