@@ -13,6 +13,7 @@ import CantiereRoom from './environment/CantiereRoom.jsx'
 import LightingRig from './lighting/LightingRig.jsx'
 import LightFixtures from './lighting/LightFixtures.jsx'
 import SelectiveBloom from './lighting/SelectiveBloom.jsx'
+import AccentLights from './lighting/AccentLights.jsx'
 import ColliderDebug from './debug/ColliderDebug.jsx'
 import PlayerController from './player/PlayerController.jsx'
 import Hotspots from './player/Hotspots.jsx'
@@ -221,6 +222,7 @@ function SceneContents({ config, tier, bloom }) {
         </>
       )}
       <Architecture environment={environment} materials={lighting.materials} />
+      <AccentLights items={environment.accentLights ?? []} style={lighting.accent} tier={tier} bloom={Boolean(bloom)} />
       <Displays config={config} />
       <GroundShadows
         objects={[

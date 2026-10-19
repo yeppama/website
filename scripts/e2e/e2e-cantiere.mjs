@@ -81,6 +81,15 @@ const hanging = new Set(storeConfig.displays.filter((d) => d.kind !== 'blockTabl
 const glbProducts = storeConfig.products.filter((p) => hanging.has(p.displayId) && p.model3d?.glb).length
 ok('capi 3D caricati su rack e catene (uno per capo col GLB)', scene.glb === glbProducts, `${scene.glb} mesh GLB, ${glbProducts} capi col GLB (contenuto ${process.env.VITE_CONTENT ?? 'into'})`)
 ok('stanza con le texture (pareti, pavimento, poster, pannelli)', scene.textured >= 10, `${scene.textured} mesh con texture`)
+// Fase B (2026-10-19): niente catena a terra, catene lungo la parete sud, punti luce arancioni.
+{
+  const env = storeConfig.environment
+  const lights = await page.evaluate(() => { let n = 0; window.__scene.traverse((o) => { if (o.isPointLight) n++ }); return n })
+  const links = await page.evaluate(() => { let n = 0; window.__scene.traverse((o) => { if (o.isInstancedMesh && o.geometry.type === 'TorusGeometry') n += o.count }); return n })
+  const south = env.cantiere.chains.filter((c) => c.from[2] > env.floor.size[1] / 2 - 0.3).length
+  ok('catene: nessuna a terra, almeno 4 di contorno lungo la parete sud', !env.cantiere.floorChain && south >= 4, `${south} sulla parete sud, ${links} anelli in scena`)
+  ok('tier low: punti luce arancioni senza luci vere in più (solo il neon)', env.accentLights.length > 0 && lights === 1, `${env.accentLights.length} barre, ${lights} luci puntiformi`)
+}
 const spawn = await page.evaluate(() => [window.__player.pos.x, window.__player.pos.z])
 const entrance = wp(storeConfig.environment.entrance.waypointId)
 ok('si entra dall\'ingresso del cantiere', Math.hypot(spawn[0] - entrance[0], spawn[1] - entrance[2]) < 0.3, spawn.map((v) => v.toFixed(2)).join(', '))
@@ -257,7 +266,8 @@ for (const d of storeConfig.displays) {
     return { layer, halos, halosShown, calls: window.__gl.info.render.calls }
   })
   const spec = storeConfig.environment.cantiere.bloom
-  const expected = 1 + storeConfig.environment.cantiere.lightboxes.zs.length * 4
+  // Neon, 4 bordi per pannello e la mesh unica delle barre LED d'accento.
+  const expected = 1 + storeConfig.environment.cantiere.lightboxes.zs.length * 4 + (storeConfig.environment.accentLights?.length ? 1 : 0)
   const low = await bloomState(page)
   ok(`tier low: niente Bloom, alone finto (Bloom solo su ${spec.tiers.join(', ')})`, low.layer === 0 && low.halosShown === low.halos && low.halos > 0, JSON.stringify(low))
 
@@ -277,6 +287,9 @@ for (const d of storeConfig.displays) {
   await waitUntil(high, () => window.__gl.info.render.calls > 0)
   const h = await bloomState(high)
   ok('tier high (GPU dedicata): Bloom vero su neon e bordi dei pannelli, alone finto spento', h.layer === expected && h.halosShown === 0, JSON.stringify(h))
+  const accentLit = Math.min(storeConfig.performance.tiers.high.maxAccentLights, storeConfig.environment.accentLights.filter((x) => x.light).length)
+  const highLights = await high.evaluate(() => { let n = 0; window.__scene.traverse((o) => { if (o.isPointLight) n++ }); return n })
+  ok('tier high: luci arancioni vere accese fino al limite del tier', highLights === 1 + accentLit, `${highLights} luci puntiformi (neon + ${accentLit})`)
   // Il Focus sposta l'inquadratura con setViewOffset: il Bloom deve seguirlo senza errori.
   const rack = storeConfig.displays.find((d) => d.kind === 'pipeRack')
   ok('tier high: Focus sul rack col Bloom attivo', await focusOn(high, rack.id))

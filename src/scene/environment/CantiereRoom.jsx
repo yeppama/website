@@ -247,7 +247,7 @@ function LooseBlocks({ C }) {
   )
 }
 
-/** Catene di contorno: appese al soffitto e una a terra, una sola InstancedMesh. */
+/** Catene di contorno: appese al soffitto (e, se c'è, una a terra), una sola InstancedMesh. */
 function Chains({ C }) {
   const { link, color } = C.chain
   const matrices = useMemo(() => {
@@ -256,6 +256,8 @@ function Chains({ C }) {
       const n = Math.round(c.length / link)
       for (let i = 0; i < n; i++) list.push(matrixOf([c.from[0], c.from[1] - i * link, c.from[2]], [0, i % 2 ? Math.PI / 2 : 0, 0]))
     }
+    // Catena a terra facoltativa (tolta il 2026-10-19: vista dall'alto sembrava una rete).
+    if (!C.floorChain) return list
     const { from, to, sag } = C.floorChain
     const n = Math.round(Math.hypot(to[0] - from[0], to[1] - from[1]) / link)
     const ang = Math.atan2(to[1] - from[1], to[0] - from[0])
@@ -273,6 +275,87 @@ function Chains({ C }) {
       <torusGeometry args={[0.04, 0.009, 6, 12]} />
       <meshStandardMaterial color={color} metalness={0.9} roughness={0.2} />
     </Instances>
+  )
+}
+
+/** Stencil a spruzzo sul pavimento: la scritta con l'ellisse del marchio, bordi sfrangiati. */
+function FloorStencil({ stencil, color }) {
+  const { text, center, size, rotation, opacity } = stencil
+  const tex = useCanvasTexture((c) => {
+    const w = 1024
+    const h = Math.round((1024 * size[1]) / size[0])
+    c.width = w; c.height = h
+    const g = c.getContext('2d')
+    g.fillStyle = color; g.strokeStyle = color
+    g.lineWidth = h * 0.07
+    g.beginPath(); g.ellipse(w / 2, h / 2, w * 0.46, h * 0.4, 0, 0, Math.PI * 2); g.stroke()
+    g.font = `900 ${Math.round(h * 0.46)}px Archivo, "Arial Black", sans-serif`
+    g.textAlign = 'center'; g.textBaseline = 'middle'
+    g.fillText(text, w / 2, h / 2 + h * 0.03)
+    // Spruzzo: puntini attorno, poi la vernice consumata.
+    for (let i = 0; i < 900; i++) {
+      g.globalAlpha = Math.random() * 0.5
+      g.beginPath(); g.arc(w / 2 + (Math.random() - 0.5) * w, h / 2 + (Math.random() - 0.5) * h, Math.random() * 3, 0, Math.PI * 2); g.fill()
+    }
+    g.globalCompositeOperation = 'destination-out'
+    for (let i = 0; i < 2200; i++) {
+      g.globalAlpha = Math.random() * 0.7
+      g.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 9, 2 + Math.random() * 5)
+    }
+  }, [text, size[0], size[1], color])
+  return (
+    <mesh position={[center[0], 0.007, center[1]]} rotation={[-Math.PI / 2, 0, rotation]}>
+      <planeGeometry args={size} />
+      <meshStandardMaterial map={tex} transparent opacity={opacity} depthWrite={false} roughness={0.7} polygonOffset polygonOffsetFactor={-2} />
+    </mesh>
+  )
+}
+
+/** Nastro da cantiere teso fra due punti: strisce oblique e scritta che si ripetono. */
+function CautionTape({ tape }) {
+  const { text, width, color, runs } = tape
+  const tex = useCanvasTexture((c) => {
+    c.width = 1024; c.height = 64
+    const g = c.getContext('2d')
+    g.fillStyle = color; g.fillRect(0, 0, 1024, 64)
+    g.fillStyle = '#111111'
+    for (let x = -64; x < 1024; x += 64) {
+      g.beginPath(); g.moveTo(x, 64); g.lineTo(x + 24, 64); g.lineTo(x + 56, 0); g.lineTo(x + 32, 0); g.closePath(); g.fill()
+    }
+    g.fillStyle = color; g.fillRect(150, 10, 724, 44)
+    g.fillStyle = '#111111'
+    g.font = '800 34px Archivo, "Arial Black", sans-serif'
+    g.textAlign = 'center'; g.textBaseline = 'middle'
+    g.fillText(text.trim(), 512, 33)
+  }, [text, color])
+  // Un tratto per segmento, con la sua ripetizione della texture (copie liberate allo smontaggio).
+  const pieces = useMemo(() => runs.map((r) => {
+    const a = new THREE.Vector3(...r.from)
+    const b = new THREE.Vector3(...r.to)
+    const len = a.distanceTo(b)
+    // Il piano del nastro: lungo il segmento, in verticale, leggermente cadente al centro.
+    const mid = a.clone().add(b).multiplyScalar(0.5)
+    mid.y -= 0.04
+    const yaw = Math.atan2(-(b.z - a.z), b.x - a.x)
+    const pitch = Math.atan2(b.y - a.y, Math.hypot(b.x - a.x, b.z - a.z))
+    const map = tex.clone()
+    map.wrapS = THREE.RepeatWrapping
+    map.repeat.set(len / (width * 16), 1)
+    map.needsUpdate = true
+    return { len, mid, yaw, pitch, map }
+  }), [runs, tex, width])
+  useLayoutEffect(() => () => pieces.forEach((p) => p.map.dispose()), [pieces])
+  return (
+    <group>
+      {pieces.map(({ len, mid, yaw, pitch, map }, i) => {
+        return (
+          <mesh key={i} position={mid} rotation={[0, yaw, pitch, 'YXZ']}>
+            <planeGeometry args={[len, width]} />
+            <meshStandardMaterial map={map} side={THREE.DoubleSide} roughness={0.6} />
+          </mesh>
+        )
+      })}
+    </group>
   )
 }
 
@@ -346,6 +429,8 @@ export default function CantiereRoom({ environment, bloom = false }) {
       <LooseBlocks C={C} />
       <Chains C={C} />
       <Cone position={C.cone} color={C.palette.orange} />
+      {C.floorStencil && <FloorStencil stencil={C.floorStencil} color={C.palette.orange} />}
+      {C.tape && <CautionTape tape={C.tape} />}
       <Sign sign={C.sign} />
       <Pipes pipes={C.pipes} color={C.palette.pipe} />
     </group>

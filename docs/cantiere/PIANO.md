@@ -117,4 +117,17 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
    - Catene coi pantaloni spostate sulla parete sud (x −3,0 e −1,8), girate verso la sala, con faretto,
      indicatori a terra e Focus nuovi: in mezzo alla stanza il player restava chiuso fra catene e muro
      nord. Il varco fra catena e muro ora è più stretto del player (verificato). Grafo: rack ↔ neon.
+- **Fase B (2026-10-19, "Approvato, procedi alla fase B"):**
+   - Tolta la catena a terra (dal telefono sembrava una rete); 5 catene dal soffitto lungo la parete sud,
+     con un collider sottile davanti (`col-c-chains-s`) perché il player non ci passi attraverso.
+   - Grafica: 3 manifesti e un murale da Higgsfield (`gpt_image_2_5`, 0,25 crediti l'uno, 1 credito in
+     tutto; nessuna scritta), murale con bordi sfumati in trasparenza; stencil "INTO" a terra e nastro
+     "ATTENZIONE · LAVORI IN CORSO" fra il cono e i muri disegnati da codice (scritte esatte), con
+     collider sull'angolo chiuso. Sorgenti in `media-sorgenti/cantiere/` (fuori da git).
+   - Punti luce arancioni (comuni ai due negozi): `environment.accentLights` + `lighting.accent`,
+     `scene/lighting/AccentLights.jsx`. Barre LED e aloni in 2 mesh unite; luci vere solo sulle voci con
+     `light`, fino a `tiers.*.maxAccentLights` (high 3, medium 2, low 0), lontano dai capi. Sul tier high
+     del cantiere le barre ricevono il Bloom.
+   - Draw call (tier medium, SwiftShader, 5 viste per negozio): negozio +2; cantiere +4…+6 (manifesti,
+     nastro, stencil). Ingresso del cantiere 87, sopra il budget di 80 del tier medium (era già 81).
 3. Luci, prestazioni, prova sui telefoni (iPhone, Pixel, Honor): da fare, servono le misure dell'utente.

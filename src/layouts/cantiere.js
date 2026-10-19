@@ -77,6 +77,14 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
         panel: { lookbookId: mainLookbookId, center: [4.93, 1.75, 0], size: [6.4, 1.1], axis: 'x', materialId: 'mat-sign-panel' },
       },
       fog: { enabled: false, color: '#0e0e0e', near: 12, far: 30 },
+      // Punti luce arancioni (2026-10-19). Le luci vere solo sulla parete del murale, lontano dai capi.
+      accentLights: [
+        { id: 'led-c-s', center: [2.6, 3.15, 3.93], length: 3.6, axis: 'x', facing: [0, 0, -1], light: { intensity: 3, distance: 4 } },
+        { id: 'led-c-e', center: [4.94, 1.9, 3.3], length: 2.6, axis: 'y', facing: [-1, 0, 0], light: { intensity: 2.5, distance: 3.5 } },
+        { id: 'led-c-w', center: [-4.94, 3.25, -0.9], length: 3.8, axis: 'z', facing: [1, 0, 0] },
+        { id: 'led-c-n-w', center: [-2.45, 2.3, -3.94], length: 2.2, axis: 'y', facing: [0, 0, 1] },
+        { id: 'led-c-n-e', center: [2.42, 2.3, -3.94], length: 2.2, axis: 'y', facing: [0, 0, 1] },
+      ],
 
       // Tutto ciò che la stanza del cantiere disegna (scene/environment/CantiereRoom.jsx).
       cantiere: {
@@ -100,7 +108,17 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
         posters: [
           { url: `${A}poster-collage-01.webp`, center: [-4.97, 1.75, 2.4], size: [2.6, 1.45], rotationY: Math.PI / 2 },
           { url: `${A}poster-collage-02.webp`, center: [-3.75, 1.6, -3.97], size: [2.2, 1.23], rotationY: 0 },
+          // Fase B (2026-10-19), immagini da Higgsfield senza scritte: tre manifesti e il murale.
+          { url: `${A}poster-03.webp`, center: [-4.97, 1.7, -3.35], size: [0.8, 1.19], rotationY: Math.PI / 2 },
+          { url: `${A}poster-04.webp`, center: [4.2, 2.15, -3.97], size: [0.85, 1.27], rotationY: 0 },
+          { url: `${A}poster-05.webp`, center: [4.97, 1.5, -3.55], size: [0.7, 1.04], rotationY: -Math.PI / 2 },
+          { url: `${A}murale.webp`, center: [2.6, 1.65, 3.96], size: [3.6, 2.01], rotationY: Math.PI },
         ],
+        // Stencil a spruzzo sul pavimento e nastro da cantiere fra il cono e i muri (disegnati da codice:
+        // le scritte restano esatte). Testi da far confermare al cliente prima di un lancio.
+        floorStencil: { text: 'INTO', center: [2.6, -1.0], size: [1.5, 0.75], rotation: 0.25, opacity: 0.8 },
+        tape: { text: 'ATTENZIONE · LAVORI IN CORSO · ', width: 0.075, color: '#f98e30',
+          runs: [{ from: [3.6, 0.72, 2.7], to: [4.6, 0.86, 3.96] }, { from: [3.6, 0.72, 2.7], to: [4.96, 0.82, 1.95] }] },
         stickerUrl: (name) => `${A}adesivo-${name}.webp`,
         stickers: [
           { name: 'into', center: [2.75, 1.45, -3.96], width: 0.34, rotationZ: 0.12 },
@@ -123,11 +141,17 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
         blocks: { size: [0.39, 0.19, 0.19], color: '#8a8984',
           items: [[3.0, -3.55, 0], [3.42, -3.55, 0], [3.2, -3.55, 1], [-4.5, 2.95, 0], [-4.5, 3.4, 0.3], [1.3, -2.6, 0.7]] },
         chain: { link: 0.07, color: '#5a5148' },
+        // Catene di contorno dal soffitto. Quelle lungo la parete sud accompagnano le due coi
+        // pantaloni (2026-10-19: tolta la catena a terra, sembrava una rete).
         chains: [
           { from: [1.9, 4, -0.9], length: 1.1 },
           { from: [-2.6, 4, 2.2], length: 0.9 },
+          { from: [-4.35, 4, 3.86], length: 2.3 },
+          { from: [-3.6, 4, 3.86], length: 1.3 },
+          { from: [-2.45, 4, 3.86], length: 2.8 },
+          { from: [-1.25, 4, 3.86], length: 1.7 },
+          { from: [-0.6, 4, 3.86], length: 2.5 },
         ],
-        floorChain: { from: [0.95, -0.55], to: [2.3, 0.9], sag: 0.35 },
         pipes: [
           { from: [-5, 3.72, -1.6], to: [5, 3.72, -1.6], radius: 0.07 },
           { from: [-5, 3.6, 1.4], to: [5, 3.6, 1.4], radius: 0.05 },
@@ -151,6 +175,10 @@ function build({ productsOn, poiLabel, mainLookbookId }) {
       { id: 'col-c-cone', center: [3.6, 0.4, 2.7], size: [0.45, 0.8, 0.45], rotationY: 0 },
       { id: 'col-c-blocks-w', center: [-4.5, 0.3, 3.2], size: [0.6, 0.6, 0.9], rotationY: 0 },
       { id: 'col-c-block', center: [1.3, 0.2, -2.6], size: [0.45, 0.4, 0.45], rotationY: 0 },
+      // Davanti alle catene della parete sud: il player non ci passa attraverso.
+      { id: 'col-c-chains-s', center: [-2.6, 1.0, 3.78], size: [4.6, 2.0, 0.44], rotationY: 0 },
+      // L'angolo chiuso dal nastro fra il cono e i muri.
+      { id: 'col-c-tape', center: [4.3, 0.4, 3.3], size: [1.4, 0.8, 1.4], rotationY: 0 },
     ],
 
     navigation: {

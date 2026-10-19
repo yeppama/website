@@ -61,6 +61,16 @@ ok('il contenuto della demo ha foto per tutti i capi', storeConfig.products.ever
   })
   const mannequinIds = storeConfig.displays.filter((d) => d.kind === 'mannequin').map((d) => d.id)
   const wornTops = storeConfig.products.filter((p) => mannequinIds.includes(p.displayId) && storeConfig.garments.shapeByCategory[p.category] === 'top' && p.model3d?.texture)
+  // Punti luce arancioni del negozio (2026-10-19): barre in una sola mesh, nessuna luce vera sul tier low.
+  const accent = await page.evaluate(() => {
+    let lights = 0, bars = 0
+    window.__scene.traverse((o) => {
+      if (o.isPointLight) lights++
+      if (o.isMesh && o.material?.isMeshBasicMaterial && !o.material.map && o.material.color.getHexString() === 'f98e30' && o.geometry.attributes.position.count >= 36 * 2) bars++
+    })
+    return { lights, bars }
+  })
+  ok('negozio: punti luce arancioni presenti, nessuna luce vera in più sul tier low', storeConfig.environment.accentLights.length > 0 && accent.bars >= 1 && accent.lights === 0, JSON.stringify(accent))
   ok('manichino: la foto del capo non è più sul retro', wornTops.length === 0 || (shells.length > 0 && shells.every((x) => x.back === 0)), JSON.stringify(shells))
 
   await page.evaluate((id) => window.__stores.app.getState().openDialog('product', id), product.id)

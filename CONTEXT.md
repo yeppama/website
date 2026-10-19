@@ -26,7 +26,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 |---|---|---|
 | Dove | indirizzo dell'anteprima, senza parametri | stesso indirizzo + `?allestimento=cantiere` (anche in produzione; nella build `VITE_LAYOUT=cantiere`) |
 | Codice | `src/config/storeConfig.js` | `src/layouts/cantiere.js`, `scene/environment/CantiereRoom.jsx`, espositori `pipeRack`/`chain`/`blockTable`; immagini in `public/cantiere/` |
-| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify; retro del manichino corretto (2026-10-19) | fasi 1–2 fatte + zoom per capo sul rack e catene sulla parete sud (2026-10-19). Bloom vero solo su GPU dedicata. Da fare: luci e misure sui telefoni (fase 3) |
+| Stato | completo e navigabile, contenuto demo con foto, prezzi da Shopify; retro del manichino corretto, punti luce arancioni (2026-10-19) | fasi 1–2 fatte + zoom per capo, catene e grafica streetwear sulla parete sud, punti luce arancioni (2026-10-19). Bloom vero solo su GPU dedicata. Da fare: luci e misure sui telefoni (fase 3) |
 | Documenti | `docs/PIANO-DEMO.md`, `docs/demo/` | `docs/cantiere/PIANO.md`, `docs/cantiere/PROMPT-IMMAGINI.md` |
 
 - **Requisito dell'utente: entrambe le versioni devono restare accessibili** dallo stesso link. Nessuna modifica può rompere o nascondere una delle due; ogni verifica si fa su tutte e due (`e2e-cantiere.mjs` per B, le suite del negozio per A).
@@ -38,7 +38,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 - **Fase 8:** 8a (carrello, fornitore finto) e 8b (Shopify di sviluppo, ordine di prova #1001 pagato) chiuse; preparazione 8c/8d fatta (modello Excel del catalogo, import, controllo dal vivo, pagine legali). **8c in attesa del catalogo del cliente.** Piano: `docs/PLAN-8.md`.
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono, aggiornamento di `docs/codice/` (oggi superato).
 - **Cantiere:** fasi 1–2 fatte (2026-10-19). Fase 2: Bloom vero sul tier high, alone finto altrove; non misurato su una GPU dedicata vera (costo in SwiftShader 84 → 153 draw call sulla vista del neon). Prossimo: fase 3 su comando, serve l'utente coi telefoni (`docs/cantiere/PIANO.md`).
-- **Correzioni richieste il 2026-10-19:** fase A fatta (manichino, zoom rack, catene). In coda, una alla volta su comando: **B** più grafica streetwear nel cantiere (immagini con Higgsfield), **C** negozio A più piccolo e più pieno ("riduciamo un po' e riempiamo").
+- **Correzioni richieste il 2026-10-19:** fasi A (manichino, zoom rack, catene) e B (catene e grafica del cantiere, punti luce arancioni nei due negozi) fatte. In coda, su comando: **C** negozio A più piccolo e più pieno ("riduciamo un po' e riempiamo"), con la sua grafica streetwear.
 
 ## 5. Regole di processo (dall'utente)
 

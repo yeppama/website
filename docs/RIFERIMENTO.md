@@ -14,7 +14,7 @@ src/lib/           focusItems.js (posa del Focus per capo) · geometry.js · col
 src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova) · shopify.js (Storefront API)
 src/lib/sanitizeHtml.js   filtro dell'HTML esterno (pagine legali del venditore)
 src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js · useLegalStore.js
-src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ (anche SelectiveBloom.jsx, Bloom del cantiere) · displays/ · player/ · debug/
+src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ · lighting/ (anche SelectiveBloom.jsx, Bloom del cantiere; AccentLights.jsx, punti luce arancioni da environment.accentLights) · displays/ · player/ · debug/
 src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · legal/ · perf/ · bench/ · primitives/ · fx/ · fallback/
 scripts/           generate-theme.js · test-navigation.mjs · test-framing.mjs · test-catalog.mjs · export-shopify-csv.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs · e2e/e2e-landscape.mjs
 scripts/catalog/   schema.mjs (colonne del modello) · make-template.mjs · importer.mjs · import.mjs · shopify-csv.mjs · check.mjs
@@ -76,8 +76,8 @@ npm run test:device                    # scelta del tier da stringhe GPU reali, 
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 22 test
 npm run test:framing                   # inquadratura del Focus contro la camera di three e limitatore di fps, 9 test
-# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, catene senza sacche, Focus con zoom per capo, Lookbook dai pannelli, Vai a, Indietro, Bloom per tier), 41 verifiche
-# e2e-demo.mjs (VITE_CONTENT=demo): foto, capi 3D, manichino senza foto sul retro, prezzi dal fornitore, 13 verifiche
+# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, catene senza sacche, punti luce per tier, Focus con zoom per capo, Lookbook dai pannelli, Vai a, Indietro, Bloom per tier), 44 verifiche
+# e2e-demo.mjs (VITE_CONTENT=demo): foto, capi 3D, manichino senza foto sul retro, punti luce, prezzi dal fornitore, 14 verifiche
 # shots-cantiere.mjs <base> <out> <pose…>: screenshot a tier high; QUERY="&bloom=0" SUFFIX=-x per confronto
 # e2e-navfix.mjs: Indietro del browser, solo mouse, avviso da dietro, click sul muro, margine, indicatore a terra (18 verifiche)
 # e2e-landscape.mjs: Focus e schede su 5 formati bassi (anche Safari con le barre, 852×330, e 568×320), verticale e desktop; rotazione durante il Focus

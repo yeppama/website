@@ -110,6 +110,18 @@ Stesso stile delle foto della demo: notte, flash diretto, grana da pellicola, ne
 > steel chain, a black hoodie with orange drawcords in the background, hard direct flash, deep shadows,
 > 35mm film grain, no faces, no logos, no readable text.
 
+## E. Fase B (2026-10-19): generate con Higgsfield, non con Gemini
+
+Modello `gpt_image_2_5`, 0,25 crediti l'una. Stile comune in coda a ogni prompt: "Gritty, high contrast, film grain".
+Nessuna scritta in nessuna immagine: le scritte (stencil, nastro) le disegna il codice.
+
+| File | Prompt (riassunto) |
+|---|---|
+| `poster-03.webp` 2:3 | wheatpaste, griglia halftone nera su carta con un grande cerchio arancione #F98E30, NO text |
+| `poster-04.webp` 2:3 | wheatpaste, foto b/n di una rete da cantiere di notte col flash e una fascia arancione, NO text |
+| `poster-05.webp` 2:3 | wheatpaste, foto b/n di un cono arancione su asfalto bagnato di notte, NO text |
+| `murale.webp` 16:9 | murale graffiti astratto su cemento, frecce e colature nero/bianco/arancione, NO letters |
+
 ## D. Foto per i modelli 3D dei capi (solo se si sceglie di farli con un altro servizio)
 
 I servizi che trasformano una foto in un modello 3D vogliono **un capo solo, intero, fondo uniforme,

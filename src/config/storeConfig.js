@@ -73,9 +73,10 @@ export const storeConfig = {
     targetFps: 60,
     toneMappingExposure: 0.85,
     tiers: {
-      high:   { dprRange: [1, 2],    maxShadowCasters: 2, shadowMapSize: 1024, envMapResolution: 256, antialias: true },
-      medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  envMapResolution: 128, antialias: true },
-      low:    { dprRange: [0.75, 1], maxShadowCasters: 0, shadowMapSize: 256,  envMapResolution: 64,  antialias: false },
+      // maxAccentLights: luci vere arancioni accese dai punti luce d'accento (scene/lighting/AccentLights.jsx).
+      high:   { dprRange: [1, 2],    maxShadowCasters: 2, shadowMapSize: 1024, envMapResolution: 256, antialias: true,  maxAccentLights: 3 },
+      medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  envMapResolution: 128, antialias: true,  maxAccentLights: 2 },
+      low:    { dprRange: [0.75, 1], maxShadowCasters: 0, shadowMapSize: 256,  envMapResolution: 64,  antialias: false, maxAccentLights: 0 },
     },
     // HUD prestazioni (Fase 6): finestra delle statistiche e frequenza di aggiornamento.
     // Si attiva con ?perf=1 (anche in produzione) e durante il benchmark (?bench=1).
@@ -322,9 +323,22 @@ export const storeConfig = {
     // Spenta per scelta dell'utente (2026-10-16): le Fasi 2–6 sono state approvate
     // senza, perché fino alla Fase 6 non veniva disegnata. Anteprima con ?fog=1.
     fog: { enabled: false, color: '#060606', near: 26, far: 72 },
+    // Punti luce arancioni (2026-10-19, "troppo cupi"): barre LED sui muri lontano dai capi.
+    // Le prime voci con `light` accendono anche una luce vera, fino a tier.maxAccentLights.
+    accentLights: [
+      { id: 'led-w-deep', center: [-11.86, 2.1, -12], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [1, 0, 0], light: { intensity: 30, distance: 11 } },
+      { id: 'led-e-deep', center: [11.86, 2.1, -12], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [-1, 0, 0], light: { intensity: 30, distance: 11 } },
+      { id: 'led-n-w', center: [-6.5, 2.1, -17.86], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [0, 0, 1], light: { intensity: 24, distance: 10 } },
+      { id: 'led-n-e', center: [6.5, 2.1, -17.86], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [0, 0, 1] },
+      { id: 'led-w-mid', center: [-11.86, 2.1, -4], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [1, 0, 0] },
+      { id: 'led-e-mid', center: [11.86, 2.1, -4], length: 3.0, axis: 'y', thickness: 0.08, haloSpread: 1.0, facing: [-1, 0, 0] },
+      { id: 'led-door', center: [0, 3.3, 17.86], length: 3.4, axis: 'x', thickness: 0.07, haloSpread: 0.7, facing: [0, 0, -1] },
+    ],
   },
 
   lighting: {
+    // Aspetto comune dei punti luce d'accento (environment.accentLights di ogni allestimento).
+    accent: { color: '#f98e30', thickness: 0.045, haloBack: 0.03, haloSpread: 0.55, lightOffset: 0.35, lightDecay: 2 },
     ambient:    { intensity: 0.95, color: '#8d9298' },
     hemisphere: { skyColor: '#343840', groundColor: '#0d0d0f', intensity: 0.6 },
     // Ordinati per `priority`: il tier taglia dalla coda oltre maxShadowCasters.
