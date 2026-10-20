@@ -143,5 +143,7 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
      PC con scheda dedicata (anche `&bloom=0`), più il giudizio a occhio su luminosità e neri.
    - Prime misure dell'utente (Pixel 10, Honor; `docs/PERF.md`): Pixel nel cantiere **fallita** (1% low
      30,9), Honor nel negozio A con scatti (25,2, era 43,5). Corretti: ombre calcolate una volta
-     (`lib/staticShadows.js`), grafica del negozio A caricata prima di entrare. Da rimisurare; mancano
-     iPhone, PC con scheda dedicata e il giudizio su luminosità e neri.
+     (`lib/staticShadows.js`), grafica del negozio A caricata prima di entrare. Rimisura Pixel: 38,0; col
+     confronto `&shadows=0` / `&accent=0` (52,6 / 52,4 nel tratto Rack) il cantiere sul medium spegne le luci
+     arancioni vere (`performance.tiers.medium` dell'allestimento). Mancano: conferma sul Pixel, Honor nel
+     negozio A, iPhone, PC con scheda dedicata, giudizio su luminosità e neri.

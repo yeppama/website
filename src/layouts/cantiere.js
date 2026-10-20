@@ -28,7 +28,10 @@ const placement = {
 function build({ productsOn, poiLabel, mainLookbookId }) {
   return {
     // 1.0 fino al 2026-10-19; 1.15 su richiesta dell'utente ("ancora troppo cupo").
-    performance: { toneMappingExposure: 1.15 },
+    // `tiers`: correzioni ai tier comuni, solo per questo allestimento. Sul medium niente luci
+    // arancioni vere (restano barre e aloni): con le 2 ombre il Pixel 10 scendeva a 1% low 38,0 nel
+    // tratto Rack; togliendo le une o le altre, 52,4–52,6 (docs/PERF.md, 2026-10-20).
+    performance: { toneMappingExposure: 1.15, tiers: { medium: { maxAccentLights: 0 } } },
 
     camera: {
       defaultShotId: 'shot-c-entrance',

@@ -98,6 +98,8 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-19 | Honor · cantiere | ANGLE (Qualcomm, Adreno (TM) 619, OpenGL ES 3.2) | Chrome 155 | 1218036 | low · grana alpha | 1.0 | 423×856 | 3 | 59.9 | 19.0 | 43.1 | 26 / 57 | 56515 | sì · superata (max 58 ms, 1 > 50 ms) |
 | 2026-10-19 | Pixel 10 · cantiere (ombre statiche) | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | medium · grana alpha | 1.5 | 411×777 | 3 | 59.9 | 17.7 | 38.0 | 25 / 56 | 56553 | sì · fallita di poco (1% low < 40): tutto dal tratto Rack 24,6, gli altri 51–58,5; max 41 ms, 0 > 50 ms |
 | 2026-10-19 | Pixel 10 · cantiere, tier forzato low | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | low · grana alpha (esperimento) | 1.0 | 411×777 | 3 | 60.2 | 17.5 | 54.9 | 26 / 57 | 56555 | sì · Rack 52,4 (24,6 in medium) |
+| 2026-10-20 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 3ad601c | medium · grana alpha · ombre off | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 54.6 | 26 / 57 | 56555 | sì · Rack 52,6 |
+| 2026-10-20 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 3ad601c | medium · grana alpha · luci arancioni off | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 54.9 | 25 / 56 | 56553 | sì · Rack 52,4 |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -306,3 +308,9 @@ Esperimento (Pixel 10, cantiere, `&tier=low`): 1% low 54,9, tratto Rack 24,6 →
 medium aggiunge al low: ombre reali (2), luci arancioni vere (2, fase B), DPR 1,5 invece di 1, antialias.
 Per separarli, con `?bench=1` (o `perf`/`debug`): `&shadows=0` spegne le ombre reali, `&accent=0` le luci
 arancioni vere; la riga copiata dal benchmark lo dichiara nella colonna Tier.
+
+Confronto (2026-10-20, Pixel 10, cantiere, medium): togliendo le ombre reali **o** le luci arancioni vere il
+tratto Rack passa da 24,6 a 52,6 / 52,4 e l'1% low a 54,6 / 54,9. Il problema è la somma dei due costi per
+pixel. Deciso: nel cantiere il tier medium non accende luci arancioni vere (`cantiere.js`,
+`performance.tiers.medium.maxAccentLights: 0`); restano barre, aloni, ombre. Da confermare con un bench
+normale sul Pixel. Il negozio A, con le stesse luci, passava (54,6).

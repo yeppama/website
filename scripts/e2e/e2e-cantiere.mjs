@@ -307,6 +307,13 @@ for (const d of storeConfig.displays) {
   await high.screenshot({ path: `${OUT}/bloom-neon.png` })
   await hc.close()
 
+  // Tier medium del cantiere: niente luci arancioni vere (costo misurato sul Pixel 10, docs/PERF.md).
+  const [mc, med] = await enter('&tier=medium')
+  const medLights = await med.evaluate(() => { let n = 0; window.__scene.traverse((o) => { if (o.isPointLight) n++ }); return n })
+  ok('tier medium: luci arancioni vere spente nel cantiere (resta il neon), barre e aloni accesi',
+    storeConfig.performance.tiers.medium.maxAccentLights === 0 && medLights === 1, `${medLights} luci puntiformi`)
+  await mc.close()
+
   const [oc, off] = await enter('&tier=high&bloom=0')
   await place(off, 0, 2.6, 0, 0.05); await sync(off)
   await waitUntil(off, () => window.__gl.info.render.calls > 0)

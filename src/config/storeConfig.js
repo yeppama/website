@@ -849,6 +849,7 @@ storeConfig.layout = { id: layoutId }
 if (layout) {
   const L = layout.build({ productsOn, poiLabel, mainLookbookId })
   storeConfig.performance.toneMappingExposure = L.performance.toneMappingExposure
+  for (const [id, patch] of Object.entries(L.performance.tiers ?? {})) Object.assign(storeConfig.performance.tiers[id], patch)
   Object.assign(storeConfig.camera, L.camera)
   storeConfig.environment = L.environment
   storeConfig.lighting = { ...storeConfig.lighting, ...L.lighting }

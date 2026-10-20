@@ -76,7 +76,7 @@ npm run test:device                    # scelta del tier da stringhe GPU reali, 
 npm run test:commerce                  # contratto del fornitore Shopify con fetch finto, 10 test
 npm run test:catalog                   # importatore del catalogo sul modello Excel vero, 22 test
 npm run test:framing                   # inquadratura del Focus contro la camera di three e limitatore di fps, 9 test
-# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, catene senza sacche, punti luce per tier, Focus con zoom per capo, Lookbook dai pannelli, Vai a, Indietro, Bloom per tier, ombre statiche, rimontaggi del Canvas), 46 verifiche
+# e2e-cantiere.mjs: allestimento cantiere (capi GLB, collisioni, catene senza sacche, punti luce per tier, Focus con zoom per capo, Lookbook dai pannelli, Vai a, Indietro, Bloom per tier, ombre statiche, luci per tier, rimontaggi del Canvas), 47 verifiche
 # e2e-demo.mjs (VITE_CONTENT=demo): foto, capi 3D, manichino senza foto sul retro, punti luce, grafica alle pareti, prezzi dal fornitore, 15 verifiche
 # shots-cantiere.mjs <base> <out> <pose…>: screenshot a tier high; QUERY="&bloom=0" SUFFIX=-x per confronto
 # e2e-navfix.mjs: Indietro del browser, solo mouse, avviso da dietro, click sul muro, margine, indicatore a terra (18 verifiche)
