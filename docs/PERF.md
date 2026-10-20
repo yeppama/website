@@ -100,6 +100,7 @@ Il frame rate ha un tetto a `performance.targetFps` (60): su uno schermo a 120 H
 | 2026-10-19 | Pixel 10 · cantiere, tier forzato low | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 4dd3739 | low · grana alpha (esperimento) | 1.0 | 411×777 | 3 | 60.2 | 17.5 | 54.9 | 26 / 57 | 56555 | sì · Rack 52,4 (24,6 in medium) |
 | 2026-10-20 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 3ad601c | medium · grana alpha · ombre off | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 54.6 | 26 / 57 | 56555 | sì · Rack 52,6 |
 | 2026-10-20 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 3ad601c | medium · grana alpha · luci arancioni off | 1.5 | 411×777 | 3 | 60.2 | 17.5 | 54.9 | 25 / 56 | 56553 | sì · Rack 52,4 |
+| 2026-10-20 | Pixel 10 · cantiere | ANGLE (Imagination Technologies, PowerVR D-Series DXT-48-1536, OpenGL ES 3.2) | Chrome 155 | 0c7037e | medium · grana alpha | 1.5 | 411×777 | 3 | 60.2 | 17.6 | 54.1 | 26 / 56 | 56553 | sì · **superata** (max 34 ms, 0 > 50 ms; Rack 52,1, Catene 29,9, Focus rack 38,6) |
 
 <!-- Incolla qui sotto le righe copiate dal benchmark. -->
 
@@ -314,3 +315,8 @@ tratto Rack passa da 24,6 a 52,6 / 52,4 e l'1% low a 54,6 / 54,9. Il problema è
 pixel. Deciso: nel cantiere il tier medium non accende luci arancioni vere (`cantiere.js`,
 `performance.tiers.medium.maxAccentLights: 0`); restano barre, aloni, ombre. Da confermare con un bench
 normale sul Pixel. Il negozio A, con le stesse luci, passava (54,6).
+
+Conferma (2026-10-20, `0c7037e`, Pixel 10, cantiere, medium senza luci arancioni vere): **superata**, 59,9→60,2 /
+54,1, max 34 ms, nessun fotogramma oltre 50 ms. L'1% low di un singolo tratto conta pochi fotogrammi e oscilla
+fra un run e l'altro (Catene: 55,6 e 49,3 nelle misure di confronto, 29,9 in questa): il criterio resta l'1% low
+del percorso intero.

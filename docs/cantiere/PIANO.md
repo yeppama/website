@@ -145,5 +145,6 @@ divisi sulle cuciture della texture): `toCreasedNormals` a 60° lo rende liscio.
      30,9), Honor nel negozio A con scatti (25,2, era 43,5). Corretti: ombre calcolate una volta
      (`lib/staticShadows.js`), grafica del negozio A caricata prima di entrare. Rimisura Pixel: 38,0; col
      confronto `&shadows=0` / `&accent=0` (52,6 / 52,4 nel tratto Rack) il cantiere sul medium spegne le luci
-     arancioni vere (`performance.tiers.medium` dell'allestimento). Mancano: conferma sul Pixel, Honor nel
-     negozio A, iPhone, PC con scheda dedicata, giudizio su luminosità e neri.
+     arancioni vere (`performance.tiers.medium` dell'allestimento): Pixel **superata** (60,2 / 54,1). Mancano:
+     Honor nel negozio A (dopo la correzione della grafica), iPhone, PC con scheda dedicata, giudizio su
+     luminosità e neri.
