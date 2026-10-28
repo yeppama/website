@@ -10,3 +10,11 @@ src/styles/theme.generated.css
 # dati del cliente prodotti da scripts/catalog/import.mjs
 catalogo-importato/
 media-sorgenti/
+
+# Credenziali e configurazione locale: mai nel repository. Un .env è rimasto
+# tracciato dal 2026-10-17 al 2026-10-28 in un repository pubblico: quello che
+# conteneva è da considerare pubblico anche ora che il file non c'è più, perché
+# resta nella storia dei commit.
+.env
+.env.*
+!.env.example
