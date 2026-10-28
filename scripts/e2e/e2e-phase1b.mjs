@@ -1,12 +1,12 @@
 import { chromium } from 'playwright-core'
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
 
-const BASE = process.argv[2]
+const BASE = localBase(process.argv[2])
 const OUT = process.argv[3]
-const EXEC = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
 const browser = await chromium.launch({
-  executablePath: EXEC,
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 
 const problems = []

@@ -7,14 +7,15 @@
     "tokens": "node scripts/generate-theme.js",
     "predev": "npm run tokens",
     "dev": "vite",
-    "prebuild": "npm run tokens",
+    "prebuild": "npm run tokens && npm run validate:config",
     "build": "vite build",
     "preview": "vite preview",
     "test:nav": "node scripts/test-navigation.mjs",
-    "test:device": "node scripts/test-device.mjs"
+    "test:device": "node scripts/test-device.mjs",
+    "validate:config": "node scripts/validate-config.mjs",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -22,8 +23,14 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
     "playwright-core": "^1.57.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.4"

@@ -13,8 +13,9 @@ function Spot({ spot, castShadow, shadowMapSize, registry }) {
   const target = useRef()
 
   useEffect(() => {
-    registry.current.set(spot.id, { light: light.current, base: spot.intensity, color: new THREE.Color(spot.color) })
-    return () => registry.current.delete(spot.id)
+    const reg = registry.current
+    reg.set(spot.id, { light: light.current, base: spot.intensity, color: new THREE.Color(spot.color) })
+    return () => reg.delete(spot.id)
   }, [spot, registry])
 
   useEffect(() => {

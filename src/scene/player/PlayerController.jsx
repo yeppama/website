@@ -13,6 +13,17 @@ const MOVE = {
   KeyA: [0, -1], ArrowLeft: [0, -1], KeyD: [0, 1], ArrowRight: [0, 1],
 }
 const SPRINT = new Set(['ShiftLeft', 'ShiftRight'])
+// Attivazione del POI vicino da tastiera: senza, chi non usa il mouse può
+// camminare ma non esaminare niente (il click col mirino era l'unica via).
+// Solo E, non Invio: Invio è l'azione predefinita del bottone che ha il focus,
+// e intercettarlo qui spegnerebbe i comandi dell'interfaccia.
+const ACTIVATE = new Set(['KeyE'])
+// Un gesto che non ha mai ricevuto pointerup/pointercancel (notifica di sistema
+// a metà tocco, puntatore perso) bloccava ogni tocco successivo come "un solo
+// dito alla volta", fino al reload. Se il puntatore non è più catturato, il
+// gesto è morto e il nuovo tocco può prendere il suo posto.
+const abandoned = (canvas, gesture, pointerId) =>
+  gesture.id === pointerId || !canvas.hasPointerCapture?.(gesture.id)
 
 // yaw = 0 guarda verso −z, come la camera di three. Avanti = (−sin, −cos).
 const yawToward = (fromX, fromZ, toX, toZ) => Math.atan2(-(toX - fromX), -(toZ - fromZ))
@@ -44,6 +55,10 @@ export default function PlayerController({ config, device }) {
   const displayById = useMemo(() => new Map(config.displays.map((d) => [d.id, d])), [config])
   const displayByCollider = useMemo(() => new Map(config.displays.map((d) => [d.colliderId, d])), [config])
   const poiByDisplay = useMemo(() => new Map(config.pois.filter((p) => p.targetDisplayId).map((p) => [p.targetDisplayId, p])), [config])
+  // La sola sottoscrizione allo store in questo componente: serve a sapere chi
+  // comanda il fov (vedi l'effetto del campo visivo). Tutto il resto legge con
+  // getState(), per non ri-renderizzare a ogni fotogramma.
+  const focusState = useAppStore((s) => s.focus.state)
   const moveOpts = useMemo(() => ({
     radius: P.radius, colliders: config.colliders, walkableAreas: config.navigation.walkableAreas, maxStep: P.radius * 0.5,
   }), [P.radius, config])
@@ -76,7 +91,8 @@ export default function PlayerController({ config, device }) {
 
   const blocked = () => {
     const app = useAppStore.getState()
-    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle' || app.dialogs.length > 0
+    return app.phase !== APP_PHASE.EXPLORING || app.menuOpen || app.focus.state !== 'idle'
+      || app.dialogs.length > 0 || app.gpuLost
   }
   // Durante il benchmark la simulazione gira (i percorsi avanzano) ma l'input
   // dell'utente no: un tocco cambierebbe la traiettoria e falserebbe la misura.
@@ -218,12 +234,35 @@ export default function PlayerController({ config, device }) {
     }
   }
 
+  /**
+   * Attiva il POI attivo: Focus sull'espositore, apertura del Lookbook o avviso
+   * se la funzione non c'è ancora. È la stessa scala di scelte del click a
+   * cursore catturato, qui raggiungibile da tastiera.
+   */
+  const activateActivePoi = () => {
+    if (inputLocked()) return
+    const poi = pois.find((p) => p.id === usePlayerStore.getState().activePoiId)
+    if (!poi) return
+    if (poi.targetDisplayId) { enterFocusFor(displayById.get(poi.targetDisplayId)); return }
+    if (poi.targetLookbookId) { openLookbook(poi.targetLookbookId); return }
+    if (poi.requires && !config.features[poi.requires]?.enabled) {
+      notify(`${config.copy.hints.comingInPhase} ${config.features[poi.requires].availableInPhase}`)
+    }
+  }
+
   // --- Tastiera ----------------------------------------------------------------
   useEffect(() => {
     const r = rt.current
     const down = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (SPRINT.has(e.code)) { r.sprint = true; return }
+      // preventDefault solo quando il tasto viene davvero consumato.
+      if (ACTIVATE.has(e.code)) {
+        if (inputLocked()) return
+        e.preventDefault()
+        activateActivePoi()
+        return
+      }
       if (!MOVE[e.code] || inputLocked()) return
       r.keys.add(e.code)
       cancelRoute()
@@ -235,7 +274,7 @@ export default function PlayerController({ config, device }) {
     }
     // Il bug classico: un tasto premuto mentre la finestra perde il focus non
     // riceve mai il keyup, e il player cammina da solo. Si azzera tutto.
-    const release = () => { r.keys.clear(); r.sprint = false }
+    const release = () => { r.keys.clear(); r.sprint = false; r.gesture = null }
     const onVisibility = () => { if (document.hidden) release() }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
@@ -260,7 +299,7 @@ export default function PlayerController({ config, device }) {
       cancelRoute()
       if (document.pointerLockElement) document.exitPointerLock()
     }
-  }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [])
 
   // --- Pointer Lock ------------------------------------------------------------
   useEffect(() => {
@@ -283,7 +322,7 @@ export default function PlayerController({ config, device }) {
       document.removeEventListener('mousemove', onMouseMove)
       if (document.pointerLockElement === canvas) document.exitPointerLock()
     }
-  }, [gl, P, config]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gl, P, config])
 
   // --- Tap e trascinamento -----------------------------------------------------
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
@@ -388,7 +427,9 @@ export default function PlayerController({ config, device }) {
         }
         return
       }
-      if (r.gesture) return // un solo dito alla volta
+      // Un solo dito alla volta, a meno che il gesto precedente sia rimasto
+      // appeso senza il suo pointerup.
+      if (r.gesture && !abandoned(canvas, r.gesture, e.pointerId)) return
       r.gesture = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), dragging: false }
       try { canvas.setPointerCapture?.(e.pointerId) } catch { /* puntatore già rilasciato: il gesto prosegue lo stesso */ }
     }
@@ -428,7 +469,12 @@ export default function PlayerController({ config, device }) {
   }, [gl, camera, device, config]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Campo visivo: in verticale lo schermo è stretto, si allarga il fov -------
+  // La guardia su focusState evita due proprietari dello stesso valore: durante
+  // il Focus il fov è di FocusCameraRig, e un resize (telefono ruotato) ci
+  // scriveva sopra quello di camminata. Al ritorno a 'idle' l'effetto rigira e
+  // ricalcola il fov per l'orientamento corrente.
   useEffect(() => {
+    if (focusState !== 'idle') return
     const { vertical, minHorizontal, maxVertical } = P.fov
     const aspect = size.width / size.height
     const fromHorizontal = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(minHorizontal) / 2) / aspect))
@@ -436,7 +482,7 @@ export default function PlayerController({ config, device }) {
     camera.near = config.camera.near
     camera.far = config.camera.far
     camera.updateProjectionMatrix()
-  }, [camera, size, P.fov, config.camera])
+  }, [camera, size, P.fov, config.camera, focusState])
 
   // --- Esposizione per i test, solo in modalità debug ----------------------------
   useEffect(() => {

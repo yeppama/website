@@ -173,6 +173,17 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - Il Pointer Lock funziona nel Chromium headless di questo ambiente.
 - Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch).
 
+**Sicurezza e robustezza** (passata del 2026-10-28)
+- Una chiave presa dalla query string che indicizza un oggetto di config va cercata con `Object.hasOwn`: `constructor`, `__proto__`, `toString` sono chiavi valide e il valore che tornano è truthy. `?debug=constructor` mandava la camera su `new Vector3(...undefined)`.
+- Senza error boundary un errore nel render non è un difetto visibile: è una pagina nera senza messaggio. `WebGLFallback` copre solo il rilevamento "WebGL2 assente", e Suspense gestisce l'attesa, non l'errore.
+- `Number(x) > 0` non esclude `Infinity`: `?fps=Infinity` spegneva il limitatore. Serve `Number.isFinite`.
+- Gli header di sicurezza si verificano in locale solo se `vite preview` li applica: li rilegge da `vercel.json` (una sola fonte, nessuna deriva fra locale e produzione).
+- `vercel.json` è validato in modo stretto: una chiave fuori schema (per esempio un `comment` dentro un header) fa fallire il deploy. Le spiegazioni vanno in `docs/`.
+- Un `eslint-disable` senza ESLint installato è una deroga a un controllo che non esiste: ce n'erano sette. Con il linter attivo due erano inutili e il resto è verificato.
+- Intercettare `Invio` a livello di finestra spegne il bottone che ha il focus: l'attivazione del POI da tastiera usa solo `E`, e fa `preventDefault` soltanto quando consuma davvero il tasto.
+- Su Windows il working tree è CRLF (`core.autocrlf`) mentre git normalizza a LF: una patch applicata a stringhe con `
+` non trova nulla se non si normalizza prima.
+
 ## 5. Prossimi passi
 
 **Regole di processo (dall'utente):** una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi alla fase X`; a fine fase build, dev server, verifica nel browser, report che distingue eseguito / non eseguito / bloccato, poi stop. Fase 8 (e-commerce reale) solo su comando futuro.
@@ -186,3 +197,27 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - ~~Fase 7~~ — produzione su `main` (opzione A). L'URL pubblico lo verifica l'utente: dal container `*.vercel.app` non è raggiungibile.
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
+- **Passata di sicurezza e qualità (2026-10-28, fuori fase, su richiesta dell'utente).** Audit del
+  repository e correzione di quanto trovato; dettaglio e motivazioni in `docs/SICUREZZA.md`.
+  Sicurezza: CSP e header completi in `vercel.json` (HSTS, COOP, CORP sugli asset,
+  Permissions-Policy estesa), riletti da `npm run preview` così la policy si verifica in locale;
+  `?debug=constructor` (e altre chiavi di `Object.prototype`) non annerisce più la pagina;
+  `?fps=Infinity` non spegne più il limitatore; `execFileSync` al posto di `execSync` nella build;
+  `@react-three/drei` rimossa perché non importata da nessun file; `--no-sandbox` solo con
+  `CI=1`/`CHROMIUM_NO_SANDBOX=1` e bersaglio delle suite e2e validato come locale.
+  Robustezza: due error boundary (una pagina nera adesso è un avviso con "Riprova"); gesto touch
+  che restava appeso dopo un pointerup perso; `fading` e `commands` azzerati al rimontaggio della
+  scena; frustum culling ripristinato anche se il riscaldamento GPU fallisce; un solo proprietario
+  del fov durante il Focus; movimento sospeso e trappola del focus mentre l'avviso di contesto
+  perso è a schermo; POI attivabile da tastiera con E.
+  Processo: ESLint con le regole sugli hook e di accessibilità (`npm run lint`, zero problemi),
+  invarianti di config come passo di `prebuild` (`npm run validate:config`) con I23–I25 sui campi
+  che le schede dereferenziano senza guardie, CI su GitHub Actions (lint, invarianti, build, suite
+  Node, `npm audit`).
+- **Non fatto in quella passata, con motivo:** i flag di debug restano attivi in produzione (servono
+  a `?bench=1` sui dispositivi veri e alle suite e2e contro una build di produzione); la scena
+  continua a girare a pieno ritmo dietro gli overlay a schermo intero (è una taratura di prestazioni
+  da misurare su dispositivi veri, non un difetto da correggere alla cieca); lo sfondo non diventa
+  `inert` all'apertura dei modali (richiede di spostare l'HUD dentro un contenitore, e la trappola
+  del focus già copre la tastiera); `BrandWall` non carica ancora un logo da `url` — ora però
+  l'invariante I23 fa fallire la build invece di far sparire l'insegna in silenzio.

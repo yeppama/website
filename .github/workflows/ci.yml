@@ -1,0 +1,56 @@
+# Verifica automatica a ogni push e pull request: la stessa catena che CLAUDE.md
+# impone prima di un commit (build + suite Node), più il controllo delle
+# vulnerabilità note nelle dipendenze.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Invarianti di storeConfig
+        run: npm run validate:config
+
+      - name: Build di produzione
+        run: npm run build
+
+      - name: Logica di navigazione
+        run: npm run test:nav
+
+      - name: Scelta del tier per dispositivo
+        run: npm run test:device
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Fallisce solo su vulnerabilità alte o critiche: le minori non devono
+      # bloccare una pipeline che gira a ogni push.
+      - name: Vulnerabilità note nelle dipendenze
+        run: npm audit --audit-level=high --package-lock-only

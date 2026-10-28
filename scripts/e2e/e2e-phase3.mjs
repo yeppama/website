@@ -1,11 +1,12 @@
 import { chromium } from 'playwright-core'
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
 import { storeConfig } from '../../src/config/storeConfig.js'
 import { circleOverlapsCollider } from '../../src/lib/geometry.js'
 
-const BASE = process.argv[2], OUT = process.argv[3]
+const BASE = localBase(process.argv[2]), OUT = process.argv[3]
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 const results = []
 const ok = (name, cond, note = '') => results.push([cond ? 'ok' : 'FAIL', name, note])

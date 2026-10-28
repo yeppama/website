@@ -25,6 +25,12 @@ const debugParams = () => new URLSearchParams(window.location.search)
 
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
+/** Una posa che la camera può davvero usare: posizione, punto guardato e fov. */
+const isCameraPose = (pose) =>
+  Array.isArray(pose?.position) && pose.position.length === 3 &&
+  Array.isArray(pose?.target) && pose.target.length === 3 &&
+  Number.isFinite(pose?.fov)
+
 /**
  * Camera della Fase 2: inquadrature statiche da storeConfig.camera.shots.
  * Al cambio di inquadratura la camera viaggia dalla posa corrente alla nuova
@@ -152,20 +158,30 @@ function GpuWarmup({ enabled }) {
       if (!alive) return
       const culled = []
       const shown = []
-      scene.traverse((o) => {
-        if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o) }
-        // Solo gli oggetti marcati (anello del tap, linea del percorso, hotspot):
-        // gli altri nascosti, come le sorgenti di MergeByMaterial, restano tali.
-        if (o.userData.warmup && !o.visible) { o.visible = true; shown.push(o) }
-        const materials = o.material ? [].concat(o.material) : []
-        for (const m of materials) for (const v of Object.values(m)) if (v?.isTexture) gl.initTexture(v)
-      })
-      gl.compile(scene, camera)
-      gl.render(scene, camera)
-      for (const o of culled) o.frustumCulled = true
-      for (const o of shown) o.visible = false
+      // try/finally: se il contesto si perde durante il riscaldamento, o uno
+      // shader non compila, il frustum culling resta spento su tutta la scena e
+      // gli oggetti marcati restano visibili all'origine. Il ripristino non può
+      // dipendere dal fatto che compile() e render() vadano a buon fine.
+      try {
+        scene.traverse((o) => {
+          if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o) }
+          // Solo gli oggetti marcati (anello del tap, linea del percorso, hotspot):
+          // gli altri nascosti, come le sorgenti di MergeByMaterial, restano tali.
+          if (o.userData.warmup && !o.visible) { o.visible = true; shown.push(o) }
+          const materials = o.material ? [].concat(o.material) : []
+          for (const m of materials) for (const v of Object.values(m)) if (v?.isTexture) gl.initTexture(v)
+        })
+        gl.compile(scene, camera)
+        gl.render(scene, camera)
+      } finally {
+        for (const o of culled) o.frustumCulled = true
+        for (const o of shown) o.visible = false
+      }
       if (debugParams().get('debug')) window.__warmedUp = true
-    })))
+    }))).catch(() => {
+      // Il riscaldamento è un'ottimizzazione: se non riesce, la scena parte
+      // comunque, con i primi fotogrammi un po' più costosi.
+    })
     return () => { alive = false }
   }, [enabled, gl, scene, camera])
   return null
@@ -244,15 +260,30 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
   const tier = config.performance.tiers[device.tier]
   const params = debugParams()
   // In modalità debug il target fps è sovrascrivibile, per verificare che il limite funzioni.
-  const targetFps = params.get('debug') && Number(params.get('fps')) > 0
-    ? Number(params.get('fps'))
+  // Number.isFinite e non il solo > 0: ?fps=Infinity passava il controllo e
+  // disattivava il limitatore.
+  const forcedFps = Number(params.get('fps'))
+  const targetFps = params.get('debug') && Number.isFinite(forcedFps) && forcedFps > 0
+    ? forcedFps
     : config.performance.targetFps
 
   const debugKey = params.get('debug')
   // Pose fisse di verifica: pianta, inquadrature della Fase 2, pose di Focus degli espositori.
-  const debugPoseFor = (key) => config.camera.debugPoses?.[key]
-    ?? config.camera.shots.find((x) => x.id === key)
-    ?? config.displays.find((d) => d.id === key)?.focusCamera
+  //
+  // Object.hasOwn e non l'indicizzazione diretta: con ?debug=constructor (o
+  // __proto__, toString, valueOf) l'accesso restituiva un membro di
+  // Object.prototype — truthy e senza position — la camera moriva su
+  // new Vector3(...undefined) e l'albero React veniva smontato. La forma della
+  // posa è verificata comunque: una voce di config incompleta non deve
+  // portarsi via la scena.
+  const debugPoseFor = (key) => {
+    if (typeof key !== 'string' || key === '') return undefined
+    const poses = config.camera.debugPoses
+    const pose = (poses && Object.hasOwn(poses, key) ? poses[key] : undefined)
+      ?? config.camera.shots.find((x) => x.id === key)
+      ?? config.displays.find((d) => d.id === key)?.focusCamera
+    return isCameraPose(pose) ? pose : undefined
+  }
   const staticView = Boolean(debugPoseFor(debugKey))
 
   // Il modulo del motore 3D è arrivato e il componente è montato.

@@ -26,7 +26,6 @@ export default function MenuDrawer() {
   if (!open) return null
 
   const { brand } = storeConfig.meta
-  const { zones } = storeConfig.environment
   const { quickTravel } = storeConfig.navigation
   const menu = storeConfig.copy.menu
   const { features } = storeConfig
