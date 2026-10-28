@@ -6,3 +6,8 @@ dist-ssr
 .DS_Store
 npm-debug.log*
 src/styles/theme.generated.css
+
+# Credenziali e configurazione locale: mai nel repository.
+.env
+.env.*
+!.env.example
