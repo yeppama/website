@@ -83,9 +83,28 @@ export function createShopifyProvider({ products, shopify, country, language = n
     }
   }
 
+  /**
+   * L'URL della cassa finisce in window.location.assign (ui/cart/CartSheet.jsx):
+   * è l'unico valore che arriva da fuori e diventa una navigazione. Oggi la
+   * fonte è la Storefront API su HTTPS, quindi è attendibile; questo controllo
+   * serve al giorno in cui non lo fosse — un negozio compromesso, un cambio
+   * dell'API — perché un "javascript:" lì dentro verrebbe eseguito nel contesto
+   * del sito. Se l'URL non convince, il carrello resta senza cassa e il bottone
+   * non compare, invece di portare l'utente chissà dove.
+   */
+  const safeCheckoutUrl = (raw) => {
+    try {
+      const url = new URL(String(raw))
+      // Stesso negozio da cui arriva il carrello: niente domini di terzi.
+      return url.protocol === 'https:' && url.hostname === shopify.domain ? url.href : null
+    } catch {
+      return null
+    }
+  }
+
   const view = (cart) => ({
     id: cart.id,
-    checkoutUrl: cart.checkoutUrl,
+    checkoutUrl: safeCheckoutUrl(cart.checkoutUrl),
     totalQuantity: cart.totalQuantity,
     subtotal: money(cart.cost.subtotalAmount),
     lines: cart.lines.nodes.map((l) => {

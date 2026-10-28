@@ -18,16 +18,22 @@ import { createShopifyProvider } from './shopify.js'
  */
 const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 
-/** 'off' | 'mock' | 'shopify'. ?commerce=mock|shopify|off sovrascrive il config, per le prove. */
+// Gli interruttori da query string valgono solo nelle build di prova. In
+// produzione un link con ?commerce=shopify accenderebbe il carrello su un sito
+// dove gli acquisti non sono ancora aperti, e ?commerce=off li spegnerebbe per
+// chi riceve il link. Il valore lo decide vite.config.js.
+const overrideAllowed = Boolean(import.meta.env?.DEV) || import.meta.env?.VITE_COMMERCE_OVERRIDE === '1'
+
+/** 'off' | 'mock' | 'shopify'. ?commerce=mock|shopify|off sovrascrive il config nelle build di prova. */
 export function commerceMode() {
-  const forced = params.get('commerce')
+  const forced = overrideAllowed ? params.get('commerce') : null
   if (forced === 'mock' || forced === 'off' || forced === 'shopify') return forced
   return storeConfig.commerce.provider
 }
 
 /** Paese dell'acquirente. Solo in diagnosi (?debug) si può forzare con &country=XX. */
 export function commerceCountry() {
-  const forced = params.get('debug') && params.get('country')
+  const forced = overrideAllowed && params.get('debug') && params.get('country')
   return /^[A-Z]{2}$/.test(forced ?? '') ? forced : storeConfig.commerce.country
 }
 
@@ -42,7 +48,7 @@ export function getProvider() {
   if (mode === 'mock') {
     provider = createMockProvider({
       products, mock: commerce.mock, maxQuantity: commerce.maxQuantity, policyTitles: storeConfig.copy.legal.policies,
-      fail: params.get('mockerror') === '1',   // prova della gestione degli errori
+      fail: overrideAllowed && params.get('mockerror') === '1',   // prova della gestione degli errori
     })
   } else if (mode === 'shopify') {
     const env = import.meta.env ?? {}

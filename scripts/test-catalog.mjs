@@ -162,6 +162,16 @@ await test('testo HTML protetto nel CSV', async () => {
   const r = await withProduct({ description: 'Cotone <b>pesante</b> & "morbido"' })
   assert.ok(r.csv.includes('Cotone &lt;b&gt;pesante&lt;/b&gt; &amp; ""morbido""'))
 })
+await test('testo che sembra una formula: neutralizzato nel CSV, numeri intatti', async () => {
+  // Il CSV lo importa Shopify, che non esegue niente, ma prima qualcuno lo apre
+  // in Excel: lì una cella che comincia per = + @ - è una formula.
+  const r = await withProduct({ name: '=Heavy Hoodie', colors: 'Black', sizes: '@M' })
+  const apostrofo = String.fromCharCode(39)
+  assert.ok(r.csv.includes(`"${apostrofo}=Heavy Hoodie"`), 'nome non neutralizzato')
+  assert.ok(r.csv.includes(`"${apostrofo}@M"`), 'taglia non neutralizzata')
+  assert.ok(r.csv.includes('"189.00"'), 'il prezzo non deve essere toccato')
+  return 'nome e taglia con apostrofo, prezzo invariato'
+})
 
 await test('colonna facoltativa cancellata: considerata vuota, mai letta da quella accanto', async () => {
   const wb = await demoWorkbook()

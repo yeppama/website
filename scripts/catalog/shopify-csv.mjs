@@ -13,7 +13,20 @@ const BASE = ['Handle', 'Title', 'Body (HTML)', 'Vendor', 'Type', 'Tags', 'Publi
   'Variant Fulfillment Service', 'Variant Price', 'Variant Requires Shipping', 'Variant Taxable']
 const WEIGHT = ['Variant Grams', 'Variant Weight Unit']
 
-const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+// Un valore che un foglio di calcolo leggerebbe come formula. Il CSV lo importa
+// Shopify, che non esegue niente, ma prima lo apre quasi sempre una persona in
+// Excel o Numbers, e lì "=HYPERLINK(...)" o "=cmd|..." partono davvero. I nomi
+// dei capi, le taglie e i colori arrivano dal file del cliente: non sono fidati.
+// Le virgolette del CSV non bastano, perché Excel le toglie prima di valutare.
+// Un numero vero resta tale: "-5" e "-5,00" non vanno neutralizzati, o Shopify
+// importerebbe un prezzo o un peso sbagliato.
+const NUMERIC = /^-?[0-9]+([.,][0-9]+)?$/
+const FORMULA_START = /^[=+@\t\r]/
+const formulaLike = (s) => FORMULA_START.test(s) || (s.startsWith('-') && !NUMERIC.test(s))
+// L'apostrofo iniziale è la neutralizzazione che Excel e Numbers riconoscono:
+// il testo resta leggibile, la formula non parte.
+const defused = (v) => { const s = String(v ?? ''); return formulaLike(s) ? `'${s}` : s }
+const q = (v) => `"${defused(v).replace(/"/g, '""')}"`
 export const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** Descrizione + dettagli come HTML semplice, con il testo protetto. */

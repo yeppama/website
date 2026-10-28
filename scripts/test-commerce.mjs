@@ -85,6 +85,22 @@ await test('carrello: aggiunta tradotta in CartLineInput, risposta nel formato d
   assert.equal(cart.checkoutUrl, 'https://example.myshopify.com/cart/c/c1')
 })
 
+await test('cassa: un checkoutUrl non https o di un altro dominio viene scartato', async () => {
+  // L'URL finisce in window.location.assign. Oggi arriva dalla Storefront API
+  // su HTTPS, quindi è attendibile; il controllo serve al giorno in cui non lo
+  // fosse. Senza URL valido il carrello resta senza cassa e il bottone sparisce.
+  const v = variant('gid://v/1', 'M', 'Black')
+  const ostili = ['javascript:alert(1)', 'https://evil.example/cart/c/1', 'http://example.myshopify.com/cart/c/1', '']
+  for (const url of ostili) {
+    const node = { ...cartNode([{ id: 'gid://line/1', quantity: 1, v }]), checkoutUrl: url }
+    const f = fakeFetch(() => ({ data: { cartLinesAdd: { cart: node, userErrors: [] } } }))
+    const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+    const cart = await p.addLines('gid://shopify/Cart/c1', [{ variantId: 'gid://v/1', quantity: 1 }])
+    assert.equal(cart.checkoutUrl, null, `doveva scartare ${url || '(vuoto)'}`)
+  }
+  return `${ostili.length} URL scartati, quello del negozio resta`
+})
+
 await test('errori: userErrors, errori GraphQL e HTTP diventano eccezioni', async () => {
   const cases = [
     () => ({ data: { cartLinesAdd: { cart: null, userErrors: [{ message: 'Esaurito' }] } } }),

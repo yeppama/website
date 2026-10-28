@@ -41,9 +41,12 @@ function contentMode(mode) {
 // Il branch della demo ha `.env` con VITE_CONTENT=demo. Se quel file arrivasse su `main`, la
 // produzione passerebbe ai contenuti dimostrativi senza che nessuno se ne accorga: in
 // produzione Vercel (o da `main`) la build con il contenuto demo si ferma con un errore.
+// Build di produzione: Vercel in ambiente production, oppure il branch main.
+const isProduction = () =>
+  process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main'
+
 function guardProductionContent(content) {
-  const production = process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main'
-  if (production && content === 'demo') {
+  if (isProduction() && content === 'demo') {
     throw new Error(
       'VITE_CONTENT=demo in una build di produzione. Il contenuto demo vive solo sul branch della demo: ' +
       'togliere la variabile VITE_CONTENT, da Vercel o dall ambiente, e ripubblicare.',
@@ -61,6 +64,11 @@ export default defineConfig(({ mode }) => {
   define: {
     __BUILD_COMMIT__: JSON.stringify(buildCommit()),
     'import.meta.env.VITE_CONTENT': JSON.stringify(content),
+    // Interruttori da query string (?commerce=, ?debug&country=, ?mockerror=):
+    // servono alle prove e alle suite e2e, che girano contro un'anteprima.
+    // Spenti in produzione, dove un link non deve poter accendere o spegnere
+    // gli acquisti (src/commerce/index.js).
+    'import.meta.env.VITE_COMMERCE_OVERRIDE': JSON.stringify(isProduction() ? '0' : '1'),
   },
   build: {
     target: 'es2022',
