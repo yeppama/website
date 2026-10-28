@@ -181,8 +181,8 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 - `vercel.json` è validato in modo stretto: una chiave fuori schema (per esempio un `comment` dentro un header) fa fallire il deploy. Le spiegazioni vanno in `docs/`.
 - Un `eslint-disable` senza ESLint installato è una deroga a un controllo che non esiste: ce n'erano sette. Con il linter attivo due erano inutili e il resto è verificato.
 - Intercettare `Invio` a livello di finestra spegne il bottone che ha il focus: l'attivazione del POI da tastiera usa solo `E`, e fa `preventDefault` soltanto quando consuma davvero il tasto.
-- Su Windows il working tree è CRLF (`core.autocrlf`) mentre git normalizza a LF: una patch applicata a stringhe con `
-` non trova nulla se non si normalizza prima.
+- Su Windows il working tree è CRLF (`core.autocrlf`) mentre git normalizza a LF: una patch applicata a stringhe con `\n` non trova nulla se non si normalizza prima.
+- Il boundary è servito il giorno stesso: al primo caricamento della produzione, nella finestra in cui Vercel sposta l'alias sul nuovo deploy, l'import dinamico di `StoreCanvas` è fallito (`Failed to fetch dynamically imported module`). È comparso l'avviso con "Riprova"; prima sarebbe stata una pagina nera. Pochi secondi dopo lo stesso chunk rispondeva 200: guasto transitorio dello switch, non del build.
 
 ## 5. Prossimi passi
 
@@ -221,3 +221,9 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
   `inert` all'apertura dei modali (richiede di spostare l'HUD dentro un contenitore, e la trappola
   del focus già copre la tastiera); `BrandWall` non carica ancora un logo da `url` — ora però
   l'invariante I23 fa fallire la build invece di far sparire l'insegna in silenzio.
+- **In produzione dal 2026-10-28:** la passata è su `main` (PR #1, merge `9090024`) e pubblicata da
+  Vercel. Verificato sul dominio pubblico, non solo in locale: CSP, HSTS, COOP, X-Frame-Options,
+  nosniff, Referrer-Policy, X-Robots-Tag e Permissions-Policy arrivano dal server come
+  configurati, `/assets` ha cache lunga e CORP, il negozio carica e si naviga, nessuna violazione
+  CSP in console. Quando arriverà il dominio definitivo: rivalutare `includeSubDomains`
+  sull'HSTS, oggi lasciato fuori di proposito.
