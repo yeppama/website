@@ -799,7 +799,7 @@ consegna è valutabile per conto suo. F2 approfondisce l'ambiente che F1b ha abb
 | **F5** | Modali prodotto + Lookbook | **Media** | Movimento sospeso e ripristinato in modo coerente (il bug classico: chiusura modale con un tasto ancora premuto → il player parte da solo). Focus trap e accessibilità da tastiera. | Modali da `storeConfig`, movimento sospeso/ripristinato correttamente, lookbook navigabile |
 | **F6** | Performance, responsive, fallback | **Media-Alta** | Disposal GPU: i leak si vedono solo dopo molti cicli di montaggio/smontaggio. Rischio dichiarativo: non poter testare su dispositivi reali da qui (§5.4). | HUD perf, cap 60 fps, disposal verificato, fallback WebGL, `docs/PERF.md` compilato con misure reali |
 | **F7** | Build e deploy | **Bassa** | ~~Blocco di rete~~ **risolto**: integrazione Vercel attiva, Production e Preview verificate (§10.4). Da F1b in poi ogni push produce un URL pubblico | Dominio di produzione verificato da te sul tuo browser (io non raggiungo gli URL pubblicati, L12) |
-| **F8** | E-commerce reale | **Alta** | Non eseguita. Solo su tuo comando esplicito futuro. | — |
+| **F8** | E-commerce reale | **Alta** | **Non su `main`, ma costruita su `sviluppo`** (2026-10-16 → 20): piano Shopify headless, 8a carrello con provider mock, 8b provider Storefront API verificato dal vivo sul dev store dell'agenzia, import del catalogo. Qui su `main` non è mai arrivata. | — |
 
 **Percorso critico:** F2 (estetica) e F3 (navigazione). Sono le due fasi dove un errore è costoso da
 correggere dopo. Suggerisco di dedicare a entrambe un giro di revisione in più.
@@ -851,7 +851,11 @@ correggere dopo. Suggerisco di dedicare a entrambe un giro di revisione in più.
 
 ## 9. Stato
 
-**Fase 0 completata. Tutte le decisioni sono chiuse. Nessuna fase successiva è autorizzata.**
+**Fase 0 completata. Tutte le decisioni sono chiuse.**
+
+> **Questa sezione è ferma al 2026-10-15 e vale per `main`.** Le fasi da 1b a 7 sono state
+> consegnate, e su `sviluppo` esistono anche la Fase 8 e un secondo allestimento del negozio
+> ("cantiere"). Lo stato aggiornato sta lì, non qui.
 
 | | |
 |---|---|

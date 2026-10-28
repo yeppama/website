@@ -186,6 +186,19 @@ node scripts/e2e/e2e-phase6.mjs http://127.0.0.1:4173/ <cartella-output>   # 22 
 
 ## 5. Prossimi passi
 
+**Dove sta il lavoro (verificato il 2026-10-28).** Questo file descrive `main`, cioè la produzione.
+Il branch di lavoro è **`sviluppo`**: ha ~50 commit che `main` non ha, fino al 2026-10-20, e
+contiene la **Fase 8** (Shopify headless: piano, carrello mock, provider Storefront API verificato
+dal vivo, import del catalogo), un **secondo allestimento del negozio ("cantiere")** con capi 3D da
+foto reali e prezzi live, correzioni di navigazione e misure su Pixel 10. La sua documentazione è
+ristrutturata (`docs/DECISIONI.md`, `docs/LEZIONI.md`, `docs/STORIA.md`, `docs/RIFERIMENTO.md`) ed
+è la fonte aggiornata: quanto segue qui sotto si ferma al 2026-10-16.
+
+**Prima di unire `sviluppo` in `main`:** la CSP introdotta il 2026-10-28 ha `connect-src 'self'` e
+bloccherebbe le chiamate alla Storefront API di Shopify. Va allargata nello stesso commit del
+merge, altrimenti il carrello smette di funzionare mentre il sito continua a caricare. E `main`
+pubblica in automatico: unire significa pubblicare.
+
 **Regole di processo (dall'utente):** una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi alla fase X`; a fine fase build, dev server, verifica nel browser, report che distingue eseguito / non eseguito / bloccato, poi stop. Fase 8 (e-commerce reale) solo su comando futuro.
 
 - ~~Fase 5~~ — consegnata: scheda prodotto, Lookbook / Brand Story, trappola del focus, I21–I22, suite `e2e-phase5.mjs`.
