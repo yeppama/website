@@ -8,13 +8,15 @@
  */
 import { chromium } from 'playwright-core'
 
-// Il config letto qui deve essere quello della pagina: allestimento del cantiere e contenuto
-// della build (VITE_CONTENT da .env, come fa Vite).
-import { readFileSync, existsSync } from 'node:fs'
+// Il config letto qui deve essere quello della pagina: allestimento del cantiere e
+// contenuto della build. Il `.env` che portava VITE_CONTENT non è più tracciato
+// (2026-10-28) e una build locale su questo branch usa `demo`: se il contenuto qui
+// non è quello della pagina, i confronti falliscono senza un motivo evidente.
+// Per questo si passa esplicitamente e si dichiara nell'intestazione.
 process.env.VITE_LAYOUT = 'cantiere'
-const envFile = new URL('../../.env', import.meta.url)
-const fromEnv = existsSync(envFile) ? readFileSync(envFile, 'utf8').match(/^VITE_CONTENT=(\w+)/m)?.[1] : null
-if (fromEnv) process.env.VITE_CONTENT ??= fromEnv
+const contenuto = process.env.VITE_CONTENT ?? 'into'
+process.env.VITE_CONTENT = contenuto
+console.log(`cantiere: verifica contro il contenuto "${contenuto}" (VITE_CONTENT per cambiarlo)`)
 const { storeConfig } = await import('../../src/config/storeConfig.js')
 const { circleOverlapsCollider } = await import('../../src/lib/geometry.js')
 const { focusItemPose } = await import('../../src/lib/focusItems.js')
