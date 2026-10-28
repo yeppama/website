@@ -167,9 +167,15 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   await page.waitForFunction(() => window.__stores && window.__cart, null, { timeout: 20000 })
   const settled = await waitUntil(page, () => window.__cart.getState().catalogStatus === 'error', null, 30000)
   await openProduct(page, 'prod-001')
+  // Dopo l'errore il catalogo viene ritentato: lo stato fa error → loading → error,
+  // e l'avviso sparisce finché il tentativo è in volo. Leggere `isVisible()` in quella
+  // finestra faceva fallire il test con tutto a posto (visto: 3 esecuzioni identiche,
+  // due passate e una no). Si aspetta la condizione, non si legge al volo.
+  const avvisato = await waitUntil(page,
+    (t) => document.querySelector('[role="dialog"][data-dialog]')?.textContent?.includes(t) ?? false, T.unavailable)
   ok('Shopify irraggiungibile: catalogo in errore, prezzo "—", avviso, acquisto spento, nessuna eccezione',
     settled && (await page.getByTestId('product-price').textContent()).trim() === '—' &&
-    await dialog(page).getByText(T.unavailable).isVisible() && await page.getByTestId('add-to-cart').isDisabled() && errors.length === 0,
+    avvisato && await page.getByTestId('add-to-cart').isDisabled() && errors.length === 0,
     errors.join(' | '))
   ok('negozio di sviluppo: la scheda lo dichiara', await dialog(page).getByText(T.devStoreBanner).isVisible())
   await ctx.close()
