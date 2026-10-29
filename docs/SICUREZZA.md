@@ -110,11 +110,19 @@ ampio di pacchetti transitivi, cioè superficie di supply chain per niente.
 
 ### 5. Suite e2e (`scripts/e2e/launchOptions.mjs`)
 
-Le sei suite lanciavano Chromium con `--no-sandbox` sempre. Serve nei container, dove la sandbox
+Le suite lanciavano Chromium con `--no-sandbox` sempre. Serve nei container, dove la sandbox
 non si apre, ma in locale toglie una barriera fra la pagina sotto test e la macchina. Ora si
 attiva solo con `CI=1` o `CHROMIUM_NO_SANDBOX=1`, e l'URL di base passato come argomento viene
 validato: le suite girano solo contro un server locale, mai contro un indirizzo remoto. Lo stesso
 modulo tiene il percorso dell'eseguibile, sovrascrivibile con `CHROMIUM_PATH`.
+
+> **Completata il 2026-10-29.** Il 28 il modulo era stato applicato a sei script su quattordici:
+> `e2e-cantiere`, `e2e-demo`, `e2e-landscape`, `e2e-navfix`, `e2e-phase8a`, `e2e-phase8b` e i due
+> `shots-*` erano rimasti col blocco scritto a mano, cioè senza sandbox e senza controllo
+> sull'indirizzo — fra questi le due suite che si eseguono più spesso. Ora li usano tutti, e
+> `shots-cantiere` smette di ignorare `CHROMIUM_PATH`, che aveva il percorso del container scritto
+> dentro. Rieseguite dopo il cambio, con la sandbox attiva: cantiere 47/47, demo 15/15,
+> landscape 50/50, navfix 18/18, phase8a 50/50, phase8b 11/12 (la cassa vuole `STORE_PASSWORD`).
 
 ## Dipendenze (passata del 2026-10-29)
 

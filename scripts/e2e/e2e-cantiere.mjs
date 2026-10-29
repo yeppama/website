@@ -7,6 +7,7 @@
  *   node scripts/e2e/e2e-cantiere.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
 
 // Il config letto qui deve essere quello della pagina: allestimento del cantiere e
 // contenuto della build. Il `.env` che portava VITE_CONTENT non è più tracciato
@@ -21,13 +22,14 @@ const { storeConfig } = await import('../../src/config/storeConfig.js')
 const { circleOverlapsCollider } = await import('../../src/lib/geometry.js')
 const { focusItemPose } = await import('../../src/lib/focusItems.js')
 
-const [BASE, OUT] = process.argv.slice(2)
+const [RAW_BASE, OUT] = process.argv.slice(2)
+const BASE = localBase(RAW_BASE)
 const C = storeConfig.copy
 const R = storeConfig.navigation.player.radius
 const wp = (id) => storeConfig.navigation.waypoints.find((w) => w.id === id).position
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 const results = []
 const ok = (name, cond, note = '') => results.push([cond ? 'ok' : 'FAIL', name, note])

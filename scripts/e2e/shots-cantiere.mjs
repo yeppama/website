@@ -1,8 +1,10 @@
 import { chromium } from 'playwright-core'
-const [BASE, OUT, ...poses] = process.argv.slice(2)
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+const [RAW_BASE, OUT, ...poses] = process.argv.slice(2)
+const BASE = localBase(RAW_BASE)
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 const errors = []
 for (const pose of poses) {

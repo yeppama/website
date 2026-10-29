@@ -110,6 +110,14 @@ Rete del container: l'host è stato aggiunto dall'utente agli Allowed domains.
   ripulito. Il venditore le scrive su Shopify → Impostazioni → Informative; oggi c'è solo la privacy generata
   da Shopify, in inglese. `check:catalog -- --launch` le pretende tutte prima della vendita.
 
+**8b riverificata dal vivo il 2026-10-29**, da Windows contro il negozio di sviluppo (prima si era
+potuta eseguire solo dal container). `e2e-phase8b` 11 su 12: negozio raggiungibile col token
+pubblico, mercati IT/EUR e US/EUR, i 7 capi del negozio 3D tutti presenti su Shopify con taglie e
+colori coerenti, API servita 2026-10, carrello creato, aggiornato, ritrovato dopo un ricaricamento
+e svuotato, pagine legali lette dal vivo. **Non verificata la cassa:** il negozio di sviluppo è
+protetto da password e la suite lo dichiara invece di fingere; si verifica passando
+`STORE_PASSWORD` nell'ambiente.
+
 **8d eseguita il 2026-10-29, per la parte che è codice.** Le pagine legali si raggiungono dal menu e dal
 carrello (`CartSheet`, sotto "Vai al pagamento": la scheda si apre sopra il carrello e Indietro ci riporta,
 merce dentro); alla cassa ci pensa Shopify. Sulla seconda metà della Definition of Done la risposta è che

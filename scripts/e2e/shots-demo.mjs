@@ -4,11 +4,13 @@
  *   node scripts/e2e/shots-demo.mjs <base> <cartella-output> [parametri extra, es. "&commerce=mock"]
  */
 import { chromium } from 'playwright-core'
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
 
-const [BASE, OUT, EXTRA = ''] = process.argv.slice(2)
+const [RAW_BASE, OUT, EXTRA = ''] = process.argv.slice(2)
+const BASE = localBase(RAW_BASE)
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 const errors = []
 async function open(query, viewport = { width: 1280, height: 720 }, mobile = false) {
