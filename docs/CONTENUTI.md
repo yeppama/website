@@ -67,3 +67,47 @@ di più o di meno, si cambia la disposizione degli espositori (dimmi quanti).
 - **Prezzi:** reali o ancora indicativi? Se indicativi, la nota "dimostrativi" resta visibile.
 - **Dominio:** acquistato dal cliente, verrà comunicato a materiale pronto. Servirà configurarlo su Vercel (Settings → Domains) e nei DNS del registrar: istruzioni al momento.
 - **Misura su Android di fascia media:** mai fatta. Se non è possibile, resta come rischio dichiarato.
+
+## 5. Pagine legali del venditore (Fase 8d)
+
+Il sito **non scrive** questi testi: li legge da Shopify e li mostra nel menu e nel carrello, puliti
+prima di entrare nella pagina. Li scrive il venditore, col suo consulente o commercialista: sono
+obblighi suoi, non codice (`docs/PLAN-8.md` §5).
+
+Si scrivono in **Shopify → Impostazioni → Informative**. Ogni riquadro di quella pagina compare nel
+sito con l'etichetta qui sotto; quelli lasciati vuoti **non compaiono affatto**, non lasciano una
+voce vuota.
+
+Sono i sette riquadri standard di Shopify. La colonna "campo" è il nome tecnico con cui il sito lo
+chiede (verificato dal vivo sul negozio del cliente); l'etichetta esatta nell'amministrazione può
+essere scritta un po' diversamente, e Shopify la cambia di tanto in tanto: l'ordine della pagina è
+quello qui sotto.
+
+| Campo (nome tecnico) | Riquadro, all'incirca | Come appare nel sito | Stato al 2026-10-29 |
+|---|---|---|---|
+| `privacyPolicy` | Informativa sulla privacy | Privacy | **pubblicata** (quella generata da Shopify, da rileggere: è un modello) |
+| `termsOfSale` | Condizioni di vendita | Condizioni di vendita | da scrivere |
+| `refundPolicy` | Informativa sui rimborsi | Recesso, resi e rimborsi | da scrivere |
+| `shippingPolicy` | Informativa sulla spedizione | Spedizioni | da scrivere |
+| `termsOfService` | Termini di servizio | Termini del servizio | da scrivere |
+| `legalNotice` | Note legali | Note legali | da scrivere |
+| `contactInformation` | Informazioni di contatto | Contatti | da scrivere |
+
+Dove si vedono, una volta scritte: menu → "Informazioni legali", e nel carrello sotto il bottone
+"Vai al pagamento". Alla cassa ci pensa Shopify, che le mostra da sé.
+
+Come si controlla, in qualunque momento:
+
+```bash
+npm run check:catalog -- --domain <negozio>.myshopify.com --token <token pubblico>
+```
+
+Elenca quelle mancanti come avvisi. Con `--launch` diventano errori: è il controllo da passare
+prima di mettere in vendita (Fase 8e).
+
+**Cookie: non ne servono.** Il sito non scrive nessun cookie e non ha analytics né script di terze
+parti; in `localStorage` tiene solo l'id del carrello e il modo di controllo scelto da chi naviga,
+cioè quanto serve a far funzionare quello che l'utente ha chiesto. Non serve un banner di consenso,
+e una verifica automatica (`e2e-phase8a`) lo ricontrolla a ogni giro. Se un giorno si aggiungesse un
+analytics, il banner diventerebbe obbligatorio e quella verifica lo direbbe subito.
+

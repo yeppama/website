@@ -4,6 +4,7 @@ import { formatPrice } from '../../lib/format.js'
 import { commerceMode, testBanner } from '../../commerce/index.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
+import { useLegalStore } from '../../state/useLegalStore.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
@@ -31,6 +32,13 @@ export default function CartSheet({ headingId }) {
   const [checkoutNote, setCheckoutNote] = useState(null)
   const lines = cart?.lines ?? []
   const mock = commerceMode() === 'mock'
+  // Fase 8d: le pagine legali si raggiungono dal menu e dalla cassa. Qui è
+  // l'ultima schermata nostra prima di Shopify, quindi è l'ultimo punto in cui
+  // chi compra può leggere condizioni, recesso e spedizioni senza perdere il
+  // carrello: la scheda legale si apre sopra questa e Indietro riporta qui.
+  const policies = useLegalStore((s) => s.policies)
+  const loadPolicies = useLegalStore((s) => s.load)
+  useEffect(() => { loadPolicies() }, [loadPolicies])
 
   const checkout = () => {
     if (!cart?.checkoutUrl) return
@@ -102,6 +110,25 @@ export default function CartSheet({ headingId }) {
             <p className="micro mt-2">{t.taxNote}</p>
             <Button variant="primary" className="mt-4 w-full" disabled={pending} onClick={checkout}>{t.checkout}</Button>
             {checkoutNote && <p className="micro mt-3" role="status" style={{ color: 'var(--color-accent-flame)' }}>{checkoutNote}</p>}
+            {policies.length > 0 && (
+              <nav className="mt-4" aria-labelledby="cart-legal" data-testid="cart-legal">
+                <h3 id="cart-legal" className="micro mb-2">{storeConfig.copy.legal.eyebrow}</h3>
+                {/* Bersaglio alto quanto il minimo tattile: sul telefono questi
+                    sono gli ultimi comandi prima di pagare, e una riga di testo
+                    alta 20 px si sbaglia a toccare. */}
+                <ul className="flex flex-wrap gap-x-4">
+                  {policies.map((p) => (
+                    <li key={p.id}>
+                      <button type="button" onClick={() => openDialog('legal', p.id)}
+                              className="inline-flex items-center justify-center underline underline-offset-4 text-text-secondary transition-colors hover:text-text-primary"
+                              style={{ fontSize: 'var(--text-sm)', minHeight: 'var(--touch-min)', minWidth: 'var(--touch-min)' }}>
+                        {storeConfig.copy.legal.policies[p.id]}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
           </div>
         </>
       )}

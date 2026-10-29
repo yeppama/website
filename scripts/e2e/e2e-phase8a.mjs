@@ -113,6 +113,37 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   await page.waitForTimeout(300)
   ok('cassa di prova: niente navigazione, avviso esplicito', page.url() === url0 && await dialog(page).getByText(T.mockCheckout).isVisible())
 
+  // Fase 8d: dal carrello si leggono le pagine legali senza perderlo. È l'ultima
+  // schermata nostra prima della cassa di Shopify, quindi l'ultimo punto in cui
+  // chi compra può aprire condizioni, recesso e spedizioni.
+  const cartLegal = page.getByTestId('cart-legal').getByRole('button')
+  ok('carrello: le pagine legali pubblicate, nell\'ordine del config',
+    (await cartLegal.allTextContents()).map((s) => s.trim()).join(' | ') ===
+    storeConfig.commerce.policies.map((p) => C.legal.policies[p.id]).join(' | '))
+  await cartLegal.filter({ hasText: C.legal.policies.refund }).click()
+  ok('carrello: il link apre la scheda legale sopra il carrello',
+    await dialog(page).getAttribute('data-dialog') === 'legal' &&
+    (await page.evaluate(() => window.__stores.app.getState().dialogs.length)) === 3)
+  await page.keyboard.press('Escape')
+  ok('carrello: chiusa la scheda legale si torna al carrello, con la merce dentro',
+    await dialog(page).getAttribute('data-dialog') === 'cart' && (await page.getByTestId('cart-line').count()) === 1)
+
+  // Fase 8d, seconda metà della Definition of Done: "nessun cookie non tecnico
+  // senza consenso". Il sito non ne scrive nessuno — niente analytics, niente
+  // script di terze parti (la CSP non li permetterebbe) — e in localStorage
+  // tiene solo quello che serve a far funzionare quello che l'utente ha chiesto:
+  // l'id del carrello, il modo di controllo che ha scelto lui, e i carrelli del
+  // fornitore finto, che in produzione non esiste. Niente di tutto questo
+  // richiede un banner; se un giorno comparisse altro, questa verifica lo dice.
+  const storage = await page.evaluate(() => ({ cookie: document.cookie, keys: Object.keys(localStorage).sort() }))
+  // Si controlla che non ci sia niente FUORI dall'elenco, non che ci sia tutto:
+  // `into-control-mode` lo scrive solo chi sceglie il modo di controllo.
+  const allowed = new Set([storeConfig.commerce.cartStorageKey, storeConfig.commerce.mock.storageKey, 'into-control-mode'])
+  const unexpected = storage.keys.filter((k) => !allowed.has(k))
+  ok('nessun cookie scritto dal sito', storage.cookie === '', storage.cookie || 'document.cookie vuoto')
+  ok('in localStorage solo le chiavi tecniche dichiarate', unexpected.length === 0,
+    unexpected.length ? `fuori elenco: ${unexpected.join(', ')}` : storage.keys.join(', '))
+
   // ESC: torna alla scheda prodotto (pila), poi chiude.
   await page.keyboard.press('Escape')
   ok('ESC dal carrello aperto dalla scheda: si torna alla scheda', await dialog(page).getAttribute('data-dialog') === 'product')
