@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060606" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Pagina non trovata — INTO industries</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <!--
+      Pagina servita da Vercel quando l'indirizzo non esiste. È volutamente
+      autonoma: nessun bundle, nessun JavaScript, nessuna richiesta di rete
+      oltre ai due font. Se il sito fosse rotto al punto da non caricare,
+      questa pagina funzionerebbe lo stesso — ed è il suo mestiere.
+      I colori sono quelli dei token (designTokens.js): qui non possono
+      arrivare da lì, perché il CSS generato vive dentro il bundle.
+    -->
+    <style>
+      @font-face {
+        font-family: 'Archivo';
+        font-style: normal;
+        font-weight: 900;
+        font-display: swap;
+        src: url(/fonts/Archivo-900-latin.woff2) format('woff2');
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(/fonts/JetBrainsMono-400-latin.woff2) format('woff2');
+      }
+      :root { --bg: #060606; --fg: #f2f0ea; --muted: #8a9099; --flame: #f98e30; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem; font-family: 'JetBrains Mono', ui-monospace, monospace;
+      }
+      main { max-width: 34rem; }
+      .codice {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--flame); margin: 0 0 1.5rem;
+      }
+      h1 {
+        font-family: 'Archivo', system-ui, sans-serif; font-weight: 900;
+        text-transform: uppercase; line-height: 0.9; letter-spacing: -0.02em;
+        font-size: clamp(2.5rem, 12vw, 5rem); margin: 0 0 1.5rem;
+      }
+      p { color: var(--muted); font-size: 0.875rem; line-height: 1.7; margin: 0 0 2rem; }
+      a {
+        display: inline-flex; align-items: center; min-height: 44px;
+        padding: 0 1.5rem; border: 1px solid var(--flame); color: var(--flame);
+        text-decoration: none; text-transform: uppercase; letter-spacing: 0.18em;
+        font-size: 0.75rem; transition: background-color 150ms, color 150ms;
+      }
+      a:hover, a:focus-visible { background: var(--flame); color: var(--bg); }
+      a:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="codice">Errore 404</p>
+      <h1>Questo indirizzo non esiste</h1>
+      <p>
+        La pagina che cercavi non c'è, o non c'è più. Il negozio si visita da un
+        indirizzo solo: quello principale.
+      </p>
+      <a href="/">Torna al negozio</a>
+    </main>
+  </body>
+</html>

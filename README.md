@@ -59,6 +59,7 @@ Ogni push fa girare lint, invarianti, build e le suite Node su GitHub Actions
 
 `docs/CONSEGNA.md` (da dove ripartire) · `CONTEXT.md` (stato) · `docs/DECISIONI.md` ·
 `docs/RIFERIMENTO.md` · `docs/LEZIONI.md` · `docs/STORIA.md` · `PLAN.md` (piano e schema dati) ·
-`docs/PLAN-8.md` (e-commerce) · `docs/PERF.md` (prestazioni) · `docs/SICUREZZA.md` (audit, header,
+`docs/PLAN-8.md` (e-commerce) · `docs/PERF.md` (prestazioni) · `docs/LANCIO.md` (cosa manca prima di
+vendere) · `docs/SICUREZZA.md` (audit, header,
 CSP) · `docs/CONTENUTI.md` (cosa serve dal cliente) · `docs/MANUALE.md` (come funziona, per
 l'utente).

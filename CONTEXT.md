@@ -62,6 +62,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 | toccare rendering, navigazione, UX, foto o test | `docs/LEZIONI.md` (edge case già pagati) |
 | capire perché una cosa è com'è, o cosa ha deciso l'utente e quando | `docs/STORIA.md` |
 | toccare header, CSP, flag di debug o la catena di build | `docs/SICUREZZA.md` |
+| capire cosa manca prima di vendere (SEO, condivisione, legale) | `docs/LANCIO.md` |
 | lavorare su e-commerce / Shopify | `docs/PLAN-8.md` |
 | misure di prestazioni | `docs/PERF.md` |
 | contenuti da ricevere dal cliente | `docs/CONTENUTI.md` |
