@@ -75,7 +75,7 @@ await test('catalogo: un capo assente su Shopify non compare (resterà "non disp
 
 await test('carrello: aggiunta tradotta in CartLineInput, risposta nel formato del contratto', async () => {
   const v = variant('gid://v/1', 'M', 'Black')
-  const f = fakeFetch((b) => ({ data: { cartLinesAdd: { cart: cartNode([{ id: 'gid://line/1', quantity: 2, v }]), userErrors: [] } } }))
+  const f = fakeFetch(() => ({ data: { cartLinesAdd: { cart: cartNode([{ id: 'gid://line/1', quantity: 2, v }]), userErrors: [] } } }))
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
   const cart = await p.addLines('gid://shopify/Cart/c1', [{ variantId: 'gid://v/1', quantity: 2 }])
   assert.deepEqual(f.calls[0].variables.lines, [{ merchandiseId: 'gid://v/1', quantity: 2 }])

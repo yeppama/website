@@ -292,6 +292,45 @@ export function validateStoreConfig(config) {
     }
   }
 
+  // I28 — Un asset con `url` valorizzato non ha ancora nessuno che lo carichi:
+  // BrandWall.jsx usa il fallback tipografico solo quando `url` è null, e con un
+  // url valorizzato l'insegna sparirebbe in silenzio. Finché il loader non
+  // esiste, il materiale reale deve far fallire la build invece della parete.
+  for (const [id, asset] of Object.entries(config.assets.registry)) {
+    if (asset.url) {
+      fail('I28', `asset "${id}": url valorizzato, ma nessun componente carica ancora le texture da url — va implementato il caricamento (vedi BrandWall.jsx) prima di popolarlo`)
+    }
+  }
+
+  // I29 — Campi che le schede prodotto dereferenziano senza guardie
+  // (`colorways[0]`, `badges.length`, `details.map`). Un campo mancante nel
+  // materiale reale non è un difetto grafico: è un errore nel render, cioè una
+  // scheda che non si apre. Immagini, taglie e prezzo sono già in I22.
+  const nonEmptyList = (v) => Array.isArray(v) && v.length > 0
+  for (const prod of config.products) {
+    if (!nonEmptyList(prod.colorways)) fail('I29', `prodotto "${prod.id}": colorways mancante o vuoto`)
+    for (const field of ['badges', 'details', 'lookbookIds']) {
+      if (!Array.isArray(prod[field])) fail('I29', `prodotto "${prod.id}": ${field} deve essere una lista, anche vuota`)
+    }
+    for (const field of ['sku', 'name', 'category', 'collection', 'description']) {
+      if (!prod[field]) fail('I29', `prodotto "${prod.id}": ${field} mancante`)
+    }
+    if (!Number.isFinite(prod.price?.amount) || !prod.price?.currency) {
+      fail('I29', `prodotto "${prod.id}": prezzo incompleto (servono amount e currency)`)
+    }
+  }
+
+  // I30 — Lo stesso per il Lookbook: titolo, sottotitolo, stagione, paragrafi e
+  // almeno un'immagine, tutti dereferenziati da LookbookSheet.jsx.
+  for (const lb of config.lookbook) {
+    for (const field of ['title', 'subtitle', 'season']) {
+      if (!lb[field]) fail('I30', `lookbook "${lb.id}": ${field} mancante`)
+    }
+    if (!nonEmptyList(lb.body)) fail('I30', `lookbook "${lb.id}": body deve avere almeno un paragrafo`)
+    if (!nonEmptyList(lb.images)) fail('I30', `lookbook "${lb.id}": serve almeno un'immagine`)
+  }
+
+
   return errors
 }
 
@@ -303,5 +342,5 @@ export function assertStoreConfig(config) {
     console.error(`storeConfig: ${errors.length} invarianti violate\n` + errors.join('\n'))
     throw new Error(`storeConfig non valido (${errors.length} errori) — vedi console`)
   }
-  console.info('storeConfig: 27 invarianti verificate, nessun errore')
+  console.info('storeConfig: 30 invarianti verificate, nessun errore')
 }

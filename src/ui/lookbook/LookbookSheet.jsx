@@ -46,6 +46,10 @@ export default function LookbookSheet({ entry, headingId }) {
         </p>
       </header>
 
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions --
+          le frecce non servono alla sezione ma ai bottoni della galleria, che
+          hanno il focus: l'ascoltatore sta qui perché l'evento arriva per
+          bubbling da loro, non per rendere interattiva la sezione. */}
       <section aria-roledescription={t.galleryRole} aria-label={t.gallery} onKeyDown={onGalleryKey}>
         {/* Il box non cambia altezza fra un'immagine e l'altra: i ratio diversi
             stanno dentro una cornice fissa, così i bottoni non saltano. */}

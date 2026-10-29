@@ -21,7 +21,7 @@ import GrainOverlay from './ui/fx/GrainOverlay.jsx'
 import FadeOverlay from './ui/fx/FadeOverlay.jsx'
 import WebGLFallback from './ui/fallback/WebGLFallback.jsx'
 import ContextLostOverlay from './ui/fallback/ContextLostOverlay.jsx'
-import SceneErrorBoundary from './ui/fallback/SceneErrorBoundary.jsx'
+import ErrorBoundary from './ui/fallback/ErrorBoundary.jsx'
 import PerfHud from './ui/perf/PerfHud.jsx'
 import BenchPanel from './ui/bench/BenchPanel.jsx'
 
@@ -61,20 +61,17 @@ export default function App() {
     }
     // Il player riparte dalla posa in cui era; un Focus in corso si chiude,
     // perché la sua camera apparteneva alla scena che non c'è più.
-    usePlayerStore.setState({ resumePose: usePlayerStore.getState().pose, route: null, ping: null })
+    usePlayerStore.setState({
+      resumePose: usePlayerStore.getState().pose,
+      route: null,
+      ping: null,
+      fading: false,
+      commands: [],
+    })
     if (useAppStore.getState().focus.state !== 'idle') useAppStore.getState().finishFocusExit()
     useAppStore.setState({ gpuLost: false })
     setSceneKey((k) => k + 1)
   }, [])
-  // La scena è andata in errore (es. contesto WebGL non creato): si offre "Riprova"
-  // come per un contesto perso; dopo tre errori di fila la pagina di WebGL assente.
-  const sceneFailures = useRef(0)
-  const onSceneError = useCallback(() => {
-    sceneFailures.current += 1
-    if (sceneFailures.current >= 3) setPhase(APP_PHASE.UNSUPPORTED)
-    else useAppStore.setState({ gpuLost: true })
-  }, [setPhase])
-
   const onContextLost = useCallback((canvas) => {
     if (!retired.current.has(canvas)) useAppStore.setState({ gpuLost: true })
   }, [])
@@ -105,7 +102,6 @@ export default function App() {
   // Gli stadi avanzano solo in avanti: StrictMode e i rimontaggi non possono
   // far tornare indietro la barra.
   const onStage = useCallback((stage) => {
-    if (stage === 'frame') sceneFailures.current = 0   // la scena disegna: gli errori di prima non contano più
     const current = useAppStore.getState().loadStage
     if (stageOrder.indexOf(stage) > stageOrder.indexOf(current)) setLoadStage(stage)
   }, [setLoadStage])
@@ -133,20 +129,24 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full">
-      <div
-        className="absolute inset-0"
-        style={{ zIndex: 'var(--z-canvas)' }}
-        onPointerDown={() => {
-          if (exploring && !navigationOn) showNotice(storeConfig.copy.hints.notAvailable)
-        }}
-      >
-        <SceneErrorBoundary key={sceneKey} onError={onSceneError}>
+      {/* Il boundary sta FUORI dal contenitore del canvas: quel div ha uno
+          z-index, quindi crea un contesto di impilamento, e l'avviso di guasto
+          renderizzato al suo interno finirebbe sotto l'onboarding e l'HUD —
+          visibile nel DOM e invisibile a chi guarda. */}
+      <ErrorBoundary id="scene" onRetry={remountScene}>
+        <div
+          className="absolute inset-0"
+          style={{ zIndex: 'var(--z-canvas)' }}
+          onPointerDown={() => {
+            if (exploring && !navigationOn) showNotice(storeConfig.copy.hints.notAvailable)
+          }}
+        >
           <Suspense fallback={null}>
-            <StoreCanvas config={storeConfig} device={device} onStage={onStage}
+            <StoreCanvas key={sceneKey} config={storeConfig} device={device} onStage={onStage}
                          onContextLost={onContextLost} onContextRestored={remountScene} />
           </Suspense>
-        </SceneErrorBoundary>
-      </div>
+        </div>
+      </ErrorBoundary>
 
       <GrainOverlay tier={device.tier} reducedMotion={device.reducedMotion} />
       {showPerf && exploring && <PerfHud device={device} />}

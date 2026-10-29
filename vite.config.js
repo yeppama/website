@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 
 // Commit della build, riportato dal benchmark nel registro di docs/PERF.md.
 // Su Vercel arriva dall'ambiente; in locale da git.
@@ -10,6 +11,20 @@ function buildCommit() {
   // execFileSync e non execSync: nessuna shell di mezzo, quindi su Windows cmd.exe
   // non può raccogliere un git.bat dalla cartella corrente al posto di quello nel PATH.
   return git(['rev-parse', '--short', 'HEAD']) || 'locale'
+}
+
+// Gli header di sicurezza hanno una sola fonte: vercel.json. `npm run preview`
+// li rilegge da lì, così la CSP si verifica in locale sugli stessi valori che
+// vanno in produzione, e le due copie non possono divergere.
+function productionHeaders() {
+  try {
+    const { headers } = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf8'))
+    const global = headers.filter((b) => b.source === '/(.*)').flatMap((b) => b.headers)
+    return Object.fromEntries(global.map(({ key, value }) => [key, value]))
+  } catch {
+    // Senza vercel.json la preview resta utilizzabile: si perde solo la verifica.
+    return {}
+  }
 }
 
 function git(args) {
@@ -70,6 +85,7 @@ export default defineConfig(({ mode }) => {
     // gli acquisti (src/commerce/index.js).
     'import.meta.env.VITE_COMMERCE_OVERRIDE': JSON.stringify(isProduction() ? '0' : '1'),
   },
+  preview: { headers: productionHeaders() },
   build: {
     target: 'es2022',
     // Niente manualChunks: forzare three in un chunk nominato lo faceva finire

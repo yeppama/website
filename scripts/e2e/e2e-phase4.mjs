@@ -1,10 +1,11 @@
 import { chromium } from 'playwright-core'
+import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
 import { storeConfig } from '../../src/config/storeConfig.js'
 
-const BASE = process.argv[2], OUT = process.argv[3]
+const BASE = localBase(process.argv[2]), OUT = process.argv[3]
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  executablePath: chromiumPath(),
+  args: chromiumArgs(),
 })
 const results = []
 const ok = (name, cond, note = '') => results.push([cond ? 'ok' : 'FAIL', name, note])
@@ -40,7 +41,6 @@ const sync = (page) => waitUntil(page, () => {
     Math.abs(window.__camera.rotation.y - window.__player.yaw) < 0.01 && window.__stores.player.getState().pose
 }, null, 20000)
 const yawTo = (fx, fz, tx, tz) => Math.atan2(-(tx - fx), -(tz - fz))
-const spotIntensity = (page, color) => page.evaluate(() => { const out = {}; window.__scene.traverse((o) => { if (o.isSpotLight) out[o.uuid] = o }); return null })
 const lights = (page) => page.evaluate(() => { const out = []; window.__scene.traverse((o) => { if (o.isSpotLight) out.push({ x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), i: o.intensity }) }); return out })
 const spotAt = (ls, id) => { const s = storeConfig.lighting.spots.find((x) => x.id === id); return ls.find((l) => Math.abs(l.x - s.position[0]) < 0.01 && Math.abs(l.z - s.position[2]) < 0.01) }
 const project = (page, [x, y, z]) => page.evaluate(([x, y, z]) => {
@@ -160,7 +160,6 @@ const dist3 = (a, b) => Math.hypot(a.x - b[0], a.y - b[1], a.z - b[2])
 {
   const { ctx, page } = await open('mobile', { mobile: true })
   // Dall'ingresso: tap sul busto del manichino 02, lontano → cammina, poi apre il Focus.
-  const d2 = display('disp-mannequin-02')
   await page.evaluate(([yaw]) => { window.__player.yaw = yaw }, [yawTo(0, 15.5, -5.3, 6.6)])
   await sync(page); await page.waitForTimeout(300)
   const t = await project(page, [-5.3, 1.25, 6.6])

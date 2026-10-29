@@ -85,3 +85,15 @@
 - Un workflow con molti agenti può fermarsi per il limite di utilizzo della sessione: il primo controllo completo ha finito 2 agenti su 14. Dichiararlo, non presentare la parte fatta come completa.
 - Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch).
 
+**Sicurezza e robustezza** (passata del 2026-10-28, dettaglio in `SICUREZZA.md`)
+- Una chiave presa dalla query string che indicizza un oggetto di config va cercata con `Object.hasOwn`: `constructor`, `__proto__`, `toString` sono chiavi valide e il valore che tornano è truthy. `?debug=constructor` mandava la camera su `new Vector3(...undefined)`.
+- Senza error boundary un errore nel render non è un difetto visibile: è una pagina nera senza messaggio. `WebGLFallback` copre solo il rilevamento "WebGL2 assente", e Suspense gestisce l'attesa, non l'errore.
+- `Number(x) > 0` non esclude `Infinity`: `?fps=Infinity` spegneva il limitatore. Serve `Number.isFinite`.
+- Gli header di sicurezza si verificano in locale solo se `vite preview` li applica: li rilegge da `vercel.json` (una sola fonte, nessuna deriva fra locale e produzione).
+- `vercel.json` è validato in modo stretto: una chiave fuori schema (per esempio un `comment` dentro un header) fa fallire il deploy. Le spiegazioni vanno in `docs/`.
+- Un `eslint-disable` senza ESLint installato è una deroga a un controllo che non esiste: ce n'erano sette. Con il linter attivo due erano inutili e il resto è verificato.
+- Intercettare `Invio` a livello di finestra spegne il bottone che ha il focus: l'attivazione del POI da tastiera usa solo `E`, e fa `preventDefault` soltanto quando consuma davvero il tasto.
+- Un error boundary paga subito: al primo caricamento della produzione, nella finestra in cui Vercel sposta l'alias sul nuovo deploy, l'import dinamico di `StoreCanvas` è fallito (`Failed to fetch dynamically imported module`). È comparso l'avviso con "Riprova"; prima sarebbe stata una pagina nera. Pochi secondi dopo lo stesso chunk rispondeva 200: guasto transitorio dello switch dell'alias, non del build. Si ricarica.
+- Un `.env` tracciato in un repository pubblico resta nella storia: togliere il file dal tracking non annulla l'esposizione. E se la build leggeva il contenuto da lì, va riagganciata a qualcos'altro (qui: il nome del branch), o le anteprime tornano ai segnaposto in silenzio.
+- Formule nei CSV: un campo che inizia con `=`, `+`, `-` o `@` viene eseguito da Excel all'apertura. L'export del catalogo le neutralizza con un apice iniziale.
+- Su Windows il working tree è CRLF (`core.autocrlf`) mentre git normalizza a LF: una patch applicata a stringhe con `\n` non trova nulla se non si normalizza prima. E gli heredoc della shell mangiano i backslash: le patch con `\n` o `\t` vanno scritte in un file, non in un heredoc.

@@ -17,7 +17,6 @@ const browser = await chromium.launch({
 const results = []
 const ok = (name, cond, note = '') => results.push([cond ? 'ok' : 'FAIL', name, note])
 const consoleErrors = []
-const T = storeConfig.copy.cart
 const shop = storeConfig.commerce.shopify
 
 const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
@@ -45,7 +44,7 @@ const markets = await page.evaluate(async ({ domain, token, version }) => {
       body: JSON.stringify({ query: '{ localization { availableCountries { isoCode currency { isoCode } } } }' }) })
     const j = await r.json()
     return j.data.localization.availableCountries.map((c) => `${c.isoCode}/${c.currency.isoCode}`)
-  } catch (e) { return null }
+  } catch { return null }
 }, { domain: shop.domain, token: shop.storefrontToken, version: shop.apiVersion })
 const country = COUNTRY ?? storeConfig.commerce.country
 const sellsHere = markets?.some((m) => m.startsWith(`${country}/`))
@@ -103,8 +102,8 @@ if (status !== 'ready') {
   // Dal browser (passa dal proxy, a differenza delle richieste dirette di Playwright).
   const checkoutUrl = await page.evaluate(() => window.__cart.getState().cart.checkoutUrl)
   const co = await ctx.newPage()
-  const resp = await co.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => e)
-  const code = resp?.status?.() ?? String(resp)
+  // L'esito del goto non serve: quello che conta è dove si è arrivati, letto sotto da co.url().
+  await co.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {})
   await co.screenshot({ path: `${OUT}/shopify-checkout.png` }).catch(() => {})
   // I negozi di sviluppo chiedono la password del negozio prima della cassa. Se
   // arriva da STORE_PASSWORD (variabile d'ambiente, mai scritta in un file) la si

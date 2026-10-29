@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-19 · branch di lavoro **`sviluppo`** · `main` = produzione, ferma alla Fase 7.
+> Stato al 2026-10-29 · branch di lavoro **`sviluppo`** · `main` = produzione, Fase 7 + passata di sicurezza.
 > Questo file si carica a ogni sessione: contiene solo lo stato vigente. Il resto si legge quando serve (tabella in fondo).
 
 ## 1. Cos'è
@@ -38,6 +38,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 - **Fase 8:** 8a (carrello, fornitore finto) e 8b (Shopify di sviluppo, ordine di prova #1001 pagato) chiuse; preparazione 8c/8d fatta (modello Excel del catalogo, import, controllo dal vivo, pagine legali). **8c in attesa del catalogo del cliente.** Piano: `docs/PLAN-8.md`.
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono, aggiornamento di `docs/codice/` (oggi superato).
 - **Cantiere:** fasi 1–2 fatte; fase 3 in corso (protocollo in `docs/PERF.md`). Prime misure 2026-10-19: Pixel 10 nel cantiere fallita (1% low 30,9), Honor nel negozio A in regressione (25,2): corretti con ombre statiche e grafica caricata prima di entrare. Pixel nel cantiere: nel medium niente luci arancioni vere → **superata** (60,2 / 54,1, 2026-10-20). Pixel nel negozio A superata (59,9 / 54,6). Honor nel negozio A da rimisurare. Mancano iPhone, PC con scheda dedicata, giudizio su luminosità e neri.
+- **Passata di sicurezza (2026-10-28, fuori fase):** fatta su `main` (PR #1) e in produzione; poi l'audit dell'e-commerce su `sviluppo`, senza nulla di critico o alto. Il 2026-10-29 `main` è stato unito in `sviluppo`: i due rami hanno gli stessi header, le stesse guardie e gli stessi controlli. Dettaglio e motivazioni in `docs/SICUREZZA.md`.
 - **Correzioni richieste il 2026-10-19:** fasi A (manichino, zoom rack, catene), B (grafica del cantiere, punti luce arancioni) e C (negozio A 24 × 24 con grafica e arredi, più luce in entrambi) fatte. Non eseguito: prova sul telefono dell'utente.
 
 ## 5. Regole di processo (dall'utente)
@@ -48,6 +49,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 
 - **Aperti:** P1 logo vettoriale (oggi PNG 150×150 → wordmark tipografico di riserva) · P3 conferma tagline "We're just looking for somewhere" (ora visibile come titolo nella Brand Story: va confermata prima di un lancio) · dati prodotto reali · testi e immagini reali del Lookbook (oggi segnaposto dichiarati).
 - **In attesa di riscontro dall'utente:** misura su un Android di fascia media (tier low, soglia p50 ≥ 40), mai fatta · checklist mobile della fase 5 (scheda prodotto e Lookbook su un telefono vero, in verticale e in orizzontale) · checklist mobile della fase 4 (telefono in orizzontale, tap-avvicinamento-Focus, resa del nero) e sensibilità del trascinamento (`navigation.player.lookSensitivity.mobileDrag`).
+- **Prima di unire `sviluppo` in `main`:** la CSP di `vercel.json` ha `connect-src` con l'host del negozio di sviluppo. Col negozio del cliente va aggiornata **nello stesso commit** del token nuovo, altrimenti il carrello smette di funzionare in silenzio. E `main` pubblica in automatico: unire significa pubblicare.
 - Piccole incongruenze del codice ancora aperte: elenco in `docs/STORIA.md` (voce "Piccole incongruenze trovate scrivendo `docs/codice/`").
 
 ## 7. Dove leggere cosa
@@ -59,6 +61,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 | cercare un file, una funzione, un comando di test, un parametro di debug | `docs/RIFERIMENTO.md` |
 | toccare rendering, navigazione, UX, foto o test | `docs/LEZIONI.md` (edge case già pagati) |
 | capire perché una cosa è com'è, o cosa ha deciso l'utente e quando | `docs/STORIA.md` |
+| toccare header, CSP, flag di debug o la catena di build | `docs/SICUREZZA.md` |
 | lavorare su e-commerce / Shopify | `docs/PLAN-8.md` |
 | misure di prestazioni | `docs/PERF.md` |
 | contenuti da ricevere dal cliente | `docs/CONTENUTI.md` |

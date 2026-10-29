@@ -629,7 +629,7 @@ export const storeConfig = {
           { text: 'WASD o frecce per muoverti · Shift per correre',   requires: 'navigation' },
           { text: 'ESC per liberare il cursore',                      requires: 'navigation' },
           { text: 'Menu → Vai a per spostarti subito',                requires: 'navigation' },
-          { text: 'Click su un espositore per esaminarlo',            requires: 'focusMode' },
+          { text: 'Click o E su un espositore per esaminarlo',        requires: 'focusMode' },
         ],
         // Con "Solo mouse": niente tastiera né cursore catturato, come su telefono.
         mouseLines: [
@@ -802,6 +802,14 @@ export const storeConfig = {
       contextLost: {
         title: 'Contesto grafico perso',
         body: 'Il browser ha interrotto il rendering 3D: succede se la GPU si resetta o se la pagina resta a lungo in background.',
+        retry: 'Riprova',
+      },
+      // Mostrato dall'error boundary: un errore lanciato nel render, non il
+      // rilevamento "WebGL2 assente" (webgl) né la perdita di contesto.
+      crash: {
+        title: 'Qualcosa si è rotto',
+        body: "Il negozio non è riuscito a partire. Può essere la connessione mentre scarica la scena 3D, o un limite del dispositivo.",
+        hint: 'Se accade di nuovo, prova a ricaricare la pagina o ad aprirla da un altro browser.',
         retry: 'Riprova',
       },
       webgl: {

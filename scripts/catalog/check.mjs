@@ -68,7 +68,7 @@ if (data.localization.language.isoCode !== language) warnings.push(`Lingua ${lan
 else oks.push(`Lingua ${language}`)
 
 // ── Capi ──
-products.forEach((p, i) => {
+products.forEach((p) => {
   const h = p.commerce?.handle
   const sp = data[`p${handles.indexOf(h)}`]
   const tag = `${p.name} (${h})`

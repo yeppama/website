@@ -25,6 +25,10 @@ export default function OptionGroup({ label, options, value, onChange, unavailab
   return (
     <div>
       <p id={labelId} className="micro mb-2">{label}</p>
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus --
+          nel pattern ARIA del gruppo di radio il focus sta sui radio, con
+          tabIndex a rotazione: il gruppo non deve essere focalizzabile, e i
+          tasti arrivano qui per bubbling dal radio che ha il focus. */}
       <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2" onKeyDown={onKeyDown}>
         {options.map((o) => {
           const off = o.available === false
