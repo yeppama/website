@@ -54,6 +54,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 
 | Prima di… | Leggere |
 |---|---|
+| **riprendere il lavoro da una sessione nuova** | **`docs/CONSEGNA.md`** (stato al 2026-10-29, cosa resta e in che ordine) |
 | toccare architettura, stile, rendering, navigazione | `docs/DECISIONI.md` |
 | cercare un file, una funzione, un comando di test, un parametro di debug | `docs/RIFERIMENTO.md` |
 | toccare rendering, navigazione, UX, foto o test | `docs/LEZIONI.md` (edge case già pagati) |
