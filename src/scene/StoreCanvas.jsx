@@ -356,6 +356,11 @@ export default function StoreCanvas({ config, device, onStage, onContextLost, on
         // Perdita del contesto (GPU resettata, app in background su mobile, troppi
         // contesti aperti): preventDefault permette al browser di restituirlo.
         const canvas = gl.domElement
+        // Un canvas è muto per chi usa uno screen reader: senza etichetta la
+        // scena è un buco nella pagina. `img` e non `application`: qui non si
+        // tabula dentro niente, e `application` dirotterebbe i tasti del lettore.
+        canvas.setAttribute('role', 'img')
+        canvas.setAttribute('aria-label', config.copy.hud.sceneLabel)
         canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onContextLost?.(canvas) })
         canvas.addEventListener('webglcontextrestored', () => onContextRestored?.(canvas))
         onStage?.('context')

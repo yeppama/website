@@ -134,7 +134,11 @@ export default function App() {
           renderizzato al suo interno finirebbe sotto l'onboarding e l'HUD —
           visibile nel DOM e invisibile a chi guarda. */}
       <ErrorBoundary id="scene" onRetry={remountScene}>
-        <div
+        {/* `main` e non un div: il negozio è il contenuto principale della
+            pagina, e senza questo punto di riferimento chi naviga per landmark
+            trova solo l'intestazione e il pie' dell'HUD. Resta lo stesso
+            riquadro di prima, stessa classe e stesso z-index. */}
+        <main
           className="absolute inset-0"
           style={{ zIndex: 'var(--z-canvas)' }}
           onPointerDown={() => {
@@ -145,7 +149,7 @@ export default function App() {
             <StoreCanvas key={sceneKey} config={storeConfig} device={device} onStage={onStage}
                          onContextLost={onContextLost} onContextRestored={remountScene} />
           </Suspense>
-        </div>
+        </main>
       </ErrorBoundary>
 
       <GrainOverlay tier={device.tier} reducedMotion={device.reducedMotion} />

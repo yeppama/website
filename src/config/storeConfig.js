@@ -708,6 +708,11 @@ export const storeConfig = {
       inputTouch: 'touch',
       inputPointer: 'puntatore',
       tier: 'tier',
+      // Testo alternativo della scena 3D: è l'unica cosa che una tecnologia
+      // assistiva può leggere del negozio, perché un canvas non ha contenuto.
+      // Dice cos'è e indica la strada testuale, che esiste ed è completa: dal
+      // menu si raggiungono capi, Lookbook e informazioni legali.
+      sceneLabel: 'Negozio 3D di INTO industries: si cammina con WASD o con le frecce e si esaminano i capi col tasto E. Lo stesso catalogo, con schede, foto e testi, è raggiungibile dal menu senza entrare nella scena.',
     },
     hints: {
       unreachable: 'Punto non raggiungibile',
