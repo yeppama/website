@@ -54,13 +54,12 @@ a chi vende; i testi e le procedure li scrive lui col suo consulente.
 | 11 | Sicurezza dei dati | **Fatto**, nei limiti di quello che c'è: HTTPS obbligatorio, CSP stretta, header completi, nessun dato personale sul sito. Dettaglio in `SICUREZZA.md`. |
 | 12 | Procedura in caso di violazione | **Del venditore.** Una violazione riguarderebbe i dati su Shopify, non il sito. |
 | 13 | Proprietà intellettuale | **Due cose concrete.** (a) Il repository è **pubblico e senza licenza**: nessuno può riusarlo legalmente, ma il codice, la struttura del catalogo e il dominio del negozio di sviluppo si leggono. Vale la pena decidere se deve restare pubblico. (b) Le immagini di ambiente sono **generate con Higgsfield**: i termini di quel servizio vanno verificati per l'uso commerciale. |
-| 14 | Licenze open source | **Verificato pacchetto per pacchetto.** 66 dipendenze di produzione, tutte permissive: 56 MIT, 5 Apache-2.0, 3 ISC, 1 BSD-3-Clause, e `webgl-constants`, che non dichiara la licenza nel manifesto ma distribuisce un file MIT. **Nessuna copyleft.** Un buco però c'è: i caratteri auto-ospitati in `public/fonts/` (Archivo, JetBrains Mono) sono sotto **SIL Open Font License**, che chiede di distribuire il testo della licenza insieme al font. Nel repository non c'è. Va aggiunto un file di licenza accanto ai `.woff2`, copiato dalla fonte originale. |
+| 14 | Licenze open source | **Verificato pacchetto per pacchetto.** 66 dipendenze di produzione, tutte permissive: 56 MIT, 5 Apache-2.0, 3 ISC, 1 BSD-3-Clause, e `webgl-constants`, che non dichiara la licenza nel manifesto ma distribuisce un file MIT. **Nessuna copyleft.** I caratteri auto-ospitati sono **tre** famiglie, non due (Archivo, JetBrains Mono, UnifrakturCook), tutte sotto **SIL Open Font License 1.1**, che chiede di distribuire il testo della licenza insieme al font. Mancava: **aggiunto il 2026-10-29**, i tre `OFL-*.txt` copiati senza modifiche da `google/fonts` stanno in `public/fonts/` accanto ai `.woff2`, con un `README.md` che spiega la regola a chi aggiungerà un peso. |
 | 15 | Pagamenti e abbonamenti | **Di Shopify**, che gestisce prezzi, imposte, spedizione e rimborsi. Il carrello dichiara "IVA inclusa, spedizione calcolata al pagamento" e non mostra mai un prezzo che non venga dal fornitore. Nessun abbonamento: solo acquisti singoli. |
 
 ## 3. Da decidere, in ordine
 
 1. **Il repository resta pubblico?** È l'unica domanda di questo elenco che non costa niente e si può rispondere subito.
-2. **Licenza dei caratteri:** aggiungere il testo OFL accanto ai font. Piccolo, e va fatto prima di vendere.
-3. **Analytics sì o no.** Da cui dipende il banner dei cookie.
-4. **Al lancio, nello stesso commit:** togliere `noindex` (meta + header), aggiungere `robots.txt` e `sitemap.xml`, mettere `og:image` e il set di favicon.
-5. **Dal venditore:** i sette testi legali, l'indirizzo reale, i DPA con Shopify e Vercel.
+2. **Analytics sì o no.** Da cui dipende il banner dei cookie.
+3. **Al lancio, nello stesso commit:** togliere `noindex` (meta + header), aggiungere `robots.txt` e `sitemap.xml`, mettere `og:image` e il set di favicon.
+4. **Dal venditore:** i sette testi legali, l'indirizzo reale, i DPA con Shopify e Vercel.
