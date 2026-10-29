@@ -116,6 +116,34 @@ attiva solo con `CI=1` o `CHROMIUM_NO_SANDBOX=1`, e l'URL di base passato come a
 validato: le suite girano solo contro un server locale, mai contro un indirizzo remoto. Lo stesso
 modulo tiene il percorso dell'eseguibile, sovrascrivibile con `CHROMIUM_PATH`.
 
+## Dipendenze (passata del 2026-10-29)
+
+`npm audit` segnalava **2 vulnerabilità moderate**, tutte e due la stessa: `uuid < 11.1.1`,
+["Missing buffer bounds check in v3/v5/v6 when buf is provided"](https://github.com/advisories/GHSA-w5hq-g745-h8pq),
+tirato dentro da `exceljs`. L'esposizione reale era nulla — `exceljs` è una **devDependency** (serve a
+`npm run catalog:template` e `catalog:import`, non finisce nel bundle del sito) e usa solo `v4`, che
+l'avviso non tocca — ma un avviso che resta acceso smette di essere letto.
+
+La correzione che npm proponeva era retrocedere `exceljs` alla 3.4.0, un cambio maggiore su una
+libreria che legge i file del cliente. Al suo posto, un `overrides` in `package.json`:
+
+    "overrides": { "uuid": "^11.1.1" }
+
+`exceljs@4.4.0` continua a funzionare: oltre a `npm run test:catalog` (23/23), è stato provato un
+giro completo di scrittura e rilettura di un `.xlsx` e la rigenerazione del modello del catalogo.
+`npm audit`: 0 vulnerabilità.
+
+Aggiornamenti dentro i vincoli già dichiarati (`package.json` non cambia, si muove solo il lock):
+`vite` 8.3.4 → 8.3.5, `zustand` 5.0.15 → 5.0.16, `playwright-core` 1.57.0 → 1.64.1.
+
+**ESLint 10 non è stato adottato, e non per pigrizia:** due dei tre plugin non lo dichiarano
+ancora. `eslint-plugin-jsx-a11y@6.10.2` (l'ultima) accetta come peer fino a `^9`, e
+`eslint-plugin-react@7.37.5` (l'ultima) fino a `^9.7`; solo `eslint-plugin-react-hooks@7.1.1` arriva
+a `^10`. Installarlo lo stesso vuol dire `--legacy-peer-deps`, cioè far girare il linter su una
+combinazione che i suoi plugin non garantiscono: lo stesso genere di deroga a un controllo che
+questa passata ha tolto di mezzo (i sette `eslint-disable` senza ESLint installato). Si rivaluta
+quando quei due plugin pubblicano il peer su `^10`.
+
 ## Rimasto aperto, per scelta
 
 - **I flag di debug restano attivi in produzione.** `?perf=1` e `?bench=1` servono a misurare
