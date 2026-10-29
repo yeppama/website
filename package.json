@@ -21,6 +21,7 @@
     "media:build": "node scripts/media/build.mjs",
     "test:content": "node scripts/test-content.mjs",
     "validate:config": "node scripts/validate-config.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
     "lint": "eslint ."
   },
   "dependencies": {

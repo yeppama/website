@@ -32,6 +32,11 @@ jobs:
       - name: Invarianti di storeConfig
         run: npm run validate:config
 
+      # Credenziali nei file tracciati. Non cerca stringhe ad alta entropia: il
+      # token Storefront di Shopify e' pubblico per costruzione e sta nel codice.
+      - name: Credenziali nel repository
+        run: npm run scan:secrets
+
       - name: Build di produzione
         run: npm run build
 

@@ -152,6 +152,44 @@ combinazione che i suoi plugin non garantiscono: lo stesso genere di deroga a un
 questa passata ha tolto di mezzo (i sette `eslint-disable` senza ESLint installato). Si rivaluta
 quando quei due plugin pubblicano il peer su `^10`.
 
+## Checklist di lancio, 20 punti (2026-10-29)
+
+Lista passata dall'utente, del tipo che gira per le app full-stack. **Dodici punti su venti
+presuppongono una parte che questo progetto non ha**: non c'è un nostro server, né database, né
+registrazione, né sessioni, né password, né caricamento di file. Il sito è statico e il pagamento
+è di Shopify, che il visitatore raggiunge sul **suo** dominio. Dirli "fatti" sarebbe falso tanto
+quanto dirli "mancanti": qui c'è cosa è stato guardato e cosa si è visto.
+
+| # | Punto | Esito |
+|---|---|---|
+| 1 | Nascondere le chiavi API | **A posto.** L'unica credenziale nel codice è il token Storefront di Shopify, pubblico per costruzione (lo legge il browser di chiunque: `docs/PLAN-8.md`). Nessun token privato nel sorgente. Il token privato dell'amministrazione non è mai entrato. |
+| 2 | Ripulire i segreti da git | **Verificato, niente da ripulire.** L'unico file sospetto mai committato è il `.env` del commit `6a206b1`: riletto dalla storia, conteneva `VITE_CONTENT=demo` e due righe di commento. Cercati in tutti i 103 commit i prefissi delle credenziali vere (Shopify privato, AWS, Stripe, GitHub, Slack, SendGrid, chiavi private): **nessuna occorrenza**. |
+| 3 | Usare la chiave pubblica del database | **Equivalente già in uso.** Il ruolo del database qui lo fa Shopify, e il sito parla con la Storefront API, che è l'interfaccia pubblica. L'Admin API non viene mai toccata dal browser. |
+| 4 | Attivare la RLS | **Non applicabile, ma c'è l'equivalente, ed è dell'utente.** Il permesso per riga qui sono gli *scope* del canale Headless su Shopify: vanno verificati che non comprendano i clienti (`unauthenticated_*_customers`). Solo dall'amministrazione, già in `docs/CONSEGNA.md` §5. |
+| 5 | Cifrare i dati sensibili | **Niente da cifrare.** Il sito non conserva dati di nessuno: niente database, niente cookie, e in `localStorage` solo l'id del carrello e il modo di controllo scelto da chi naviga. |
+| 6 | Autenticazione lato server | **Non esiste un accesso.** Nessuna registrazione, nessun profilo. L'unica autenticazione è quella della cassa, che è di Shopify. |
+| 7 | Bloccare l'accesso ai record | **Non ci sono record nostri.** Quello che il sito può leggere lo decide il token pubblico: catalogo, prezzi, giacenze, pagine legali. Nessun dato di clienti è raggiungibile. |
+| 8 | Impedire la manomissione dei campi | **A posto, ed è il punto che conta di più qui.** Il prezzo non viene mai da `storeConfig`: col commercio attivo lo dà solo il fornitore, e se non risponde il capo è "non disponibile" (`useShownPrice`). La quantità è limitata da `commerce.maxQuantity` sia nell'interfaccia sia nello store. Il totale lo calcola Shopify. Il `checkoutUrl` è accettato solo se è `https:` **e** l'host è esattamente quello del negozio: un carrello manomesso non può diventare una navigazione altrove. |
+| 9 | Cookie di sessione sicuri | **Non esistono cookie.** Verificato a ogni giro da `e2e-phase8a`: `document.cookie` vuoto e in `localStorage` solo le chiavi tecniche dichiarate. |
+| 10 | Hash delle password | **Non esistono password.** |
+| 11 | Limite di frequenza sull'accesso | **Non esiste un accesso.** Sulla Storefront API il limite lo applica Shopify. |
+| 12 | Protezione dai bot | **Nessun modulo nostro da proteggere.** La cassa, cioè l'unico punto che vale la pena attaccare, è di Shopify e ha le sue difese. |
+| 13 | Query parametrizzate | **A posto.** Nessun SQL. Le richieste GraphQL passano i valori in `variables`, mai concatenati nella stringa della query. |
+| 14 | Validare ogni ingresso | **A posto.** Gli interruttori da query string sono cercati con `Object.hasOwn` (`constructor`, `__proto__` sono chiavi valide e truthy), i numeri con `Number.isFinite` (`?fps=Infinity` spegneva il limitatore), `checkoutUrl` è validato prima di diventare una navigazione, e 30 invarianti fermano la build su un config incoerente. |
+| 15 | Ripulire il contenuto dell'utente | **A posto.** React escapa tutto; l'unico `dangerouslySetInnerHTML` è quello delle pagine legali, e il testo passa da `sanitizeHtml`, che ricostruisce ogni elemento da una lista di tag ammessi e scarta tutti gli attributi tranne `href` con protocollo verificato. |
+| 16 | Limitare il caricamento di file | **Non si carica niente.** Non esiste un modulo di upload. |
+| 17 | Sfoltire le risposte API | **A posto.** Le query GraphQL chiedono per nome i campi che servono (handle, titolo, varianti, prezzo, opzioni): non esiste un `SELECT *` da sfoltire. |
+| 18 | Header di sicurezza | **Fatto il 2026-10-28**, vedi sopra: CSP, HSTS, COOP, CORP, nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy, verificati sul dominio pubblico. |
+| 19 | Forzare HTTPS | **Fatto.** Vercel serve solo in HTTPS e reindirizza; in più `Strict-Transport-Security` e `upgrade-insecure-requests` nella CSP. `includeSubDomains` resta fuori finché non c'è il dominio definitivo, di proposito. |
+| 20 | Scansionare le dipendenze | **Fatto il 2026-10-29**, vedi "Dipendenze": `npm audit` a zero, e CI lo riesegue a ogni push fermandosi su alto e critico. |
+
+**L'unica cosa che mancava davvero, ed è stata aggiunta:** niente impediva a un segreto di *entrare*
+domani. `npm run scan:secrets` (`scripts/scan-secrets.mjs`) cerca nei file tracciati i prefissi delle
+credenziali vere e i file di ambiente, gira in CI prima della build, e sa anche dire di no: provato
+su un file con un finto token Shopify, una finta chiave AWS e una finta chiave privata, li trova
+tutti e tre. Non cerca stringhe ad alta entropia di proposito — segnalerebbe il token Storefront a
+ogni giro, e un controllo che grida sempre viene spento.
+
 ## Rimasto aperto, per scelta
 
 - **I flag di debug restano attivi in produzione.** `?perf=1` e `?bench=1` servono a misurare
