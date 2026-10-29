@@ -292,13 +292,16 @@ export function validateStoreConfig(config) {
     }
   }
 
-  // I28 — Un asset con `url` valorizzato non ha ancora nessuno che lo carichi:
-  // BrandWall.jsx usa il fallback tipografico solo quando `url` è null, e con un
-  // url valorizzato l'insegna sparirebbe in silenzio. Finché il loader non
-  // esiste, il materiale reale deve far fallire la build invece della parete.
+  // I28 — Un asset texture ha un indirizzo che il caricatore sa chiedere, o un
+  // fallback dichiarato. BrandWall.jsx carica da `url` e, se l'immagine non
+  // arriva, torna al wordmark: senza né l'uno né l'altro l'insegna resterebbe
+  // vuota in silenzio, che è il difetto più difficile da notare.
   for (const [id, asset] of Object.entries(config.assets.registry)) {
+    if (asset.type !== 'texture') continue
     if (asset.url) {
-      fail('I28', `asset "${id}": url valorizzato, ma nessun componente carica ancora le texture da url — va implementato il caricamento (vedi BrandWall.jsx) prima di popolarlo`)
+      if (!/^\/[\w/.-]+$/.test(asset.url)) fail('I28', `asset "${id}": indirizzo "${asset.url}" non valido (serve un percorso assoluto dentro public/)`)
+    } else if (!asset.fallback) {
+      fail('I28', `asset "${id}": senza url e senza fallback — chi lo usa non avrebbe niente da disegnare`)
     }
   }
 

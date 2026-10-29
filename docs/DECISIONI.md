@@ -12,7 +12,7 @@
 **Architettura data-driven**
 - Contenuti separati (demo, 2026-10-17): marchio, capi, Lookbook, posizione dei capi (`products[].displayId`, da cui `displays[].productIds` ed etichette dei POI), fornitore del commercio e testi propri (`copy`, fusi sopra) stanno in `src/content/<id>.js`, scelto con `VITE_CONTENT` (default `into`; Node lo legge da `process.env`). Il branch della demo ha `.env` con `demo`: **non portarlo su main**.
 - `src/config/storeConfig.js` è l'unica fonte di verità: mappa, muri, collider, luci, waypoint, espositori, POI, prodotti, lookbook, testi, feature flag. Relazioni solo per ID. Nessun componente contiene coordinate, colori, prezzi o frasi.
-- `src/config/validateStoreConfig.js`: 27 invarianti (I1–I27), errore bloccante solo in DEV, rimosso dal bundle di produzione.
+- `src/config/validateStoreConfig.js`: 30 invarianti (I1–I30), errore bloccante solo in DEV, rimosso dal bundle di produzione. Le stesse girano come passo di `prebuild` (`npm run validate:config`), dove fermano anche la build di produzione.
 - `src/config/designTokens.js` è l'unica fonte dei token; `scripts/generate-theme.js` genera `src/styles/theme.generated.css` (gitignored) in `predev`/`prebuild`.
 - `features` in config (`navigation`, `focusMode`, `productModal`, `lookbook` attivi; `checkout` spento, fase 8): l'interfaccia mostra "In arrivo nella Fase N" per ciò che non esiste. Il bottone d'acquisto della scheda c'è, disabilitato, e lo dice.
 - Prezzi formattati con `Intl.NumberFormat` e `meta.brand.locale` (`it-IT` → `189 €`), via `lib/format.js`.

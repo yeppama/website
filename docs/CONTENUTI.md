@@ -22,7 +22,7 @@ legali). Il lancio è in italiano; i testi inglesi raccolti insieme al catalogo 
 
 | Cosa | Formato | Perché |
 |---|---|---|
-| Logo | `.svg`, oppure `.ai` / `.pdf` vettoriale. In subordine PNG trasparente ≥ 2000 px | Insegna 3D sulla parete di fondo e titoli. Oggi c'è un wordmark tipografico di riserva (P1) |
+| Logo | `.svg`, oppure `.ai` / `.pdf` vettoriale. In subordine PNG trasparente ≥ 2000 px | Insegna 3D sulla parete di fondo e titoli. La scena carica una texture (PNG o WebP trasparente): un vettoriale va rasterizzato alla larghezza dell'insegna. Oggi c'è un wordmark tipografico di riserva (P1) |
 | Versione del logo per fondo scuro | come sopra | Il negozio è nero: se esiste una versione chiara ufficiale, si usa quella invece di invertire i colori |
 | Colori del brand | codici esatti (HEX, o Pantone + HEX) | Oggi: Flame Orange #F98E30, nero #060606, osso #f2f0ea, ricavati da screenshot |
 | Font del brand | nome, e file con licenza web se proprietario | Oggi: Archivo, JetBrains Mono, UnifrakturCook (open, vicini ma non identici, P2) |

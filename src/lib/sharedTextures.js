@@ -12,6 +12,9 @@ import { registerGpuCache } from './gpuCaches.js'
  *   non si ricompila).
  * - `useSharedTextures(urls)`: sospende la scena (Suspense) finché le immagini non ci sono, come
  *   faceva useTexture: il segnale "pronto" e il riscaldamento della GPU partono dopo.
+ * - `loadSharedTexture(url)`: la promessa, per chi deve sapere se l'immagine è arrivata (e con
+ *   quali dimensioni) senza sospendere la scena né farla fallire — l'insegna del brand, che senza
+ *   il file torna al wordmark tipografico.
  * Chi usa queste texture in un materiale scritto in JSX mette `dispose={null}` sulla mesh: React
  * Three Fiber, smontandola, libererebbe anche la `map`, che appartiene alla cache.
  */
@@ -38,6 +41,8 @@ function entry(url) {
 }
 
 export const getSharedTexture = (url) => entry(url).texture
+
+export const loadSharedTexture = (url) => entry(url).ready
 
 export function useSharedTextures(urls) {
   return urls.map((url) => use(entry(url).ready))

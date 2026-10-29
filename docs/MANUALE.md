@@ -124,7 +124,7 @@ Tutti i percorsi sono relativi alla cartella del progetto. "Config" = `src/confi
 | Colori dell'interfaccia (accento arancio, fondi, testo) | `src/config/designTokens.js` → `color` | Si rigenerano da soli a ogni `npm run dev`/`build` (`scripts/generate-theme.js`). Il rosso è solo per gli errori |
 | Colori e finiture delle superfici 3D (pavimento, muri, metallo) | Config → `lighting.materials` (r. ~340) | `color`, `roughness` (opaco ↔ lucido), `metalness`. Con una texture il colore va lasciato bianco (lezione in CONTEXT §4) |
 | Caratteri | File in `public/fonts/`, dichiarazioni in `src/styles/fonts.css`, nomi in `designTokens.type.family` | Servono file con licenza web |
-| Logo sulla parete di fondo | Config → `assets.registry['asset-logo-primary'].url` | Oggi `null`: compare il wordmark tipografico di riserva |
+| Logo sulla parete di fondo | Config → `assets.registry['asset-logo-primary'].url` | Oggi `null`: compare il wordmark tipografico di riserva. Mettendo il file in `public/` e il suo indirizzo qui, l'insegna diventa quel logo |
 | Luci (intensità, colore, direzione) | Config → `lighting.spots` (r. ~302) | Faretti sui capi in bianco caldo, colore solo su pareti e accenti (decisione di progetto). Solo i primi 2 per `priority` fanno ombre vere |
 | Luminosità generale | Config → `performance.toneMappingExposure` | Alzandola il nero dei capi diventa grigio |
 | Grana | Config → `performance.postFx.grain` | `alphaOpacity` per tier; in `low` è 0 per scelta (telefoni economici) |
