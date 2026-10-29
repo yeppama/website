@@ -110,6 +110,18 @@ Rete del container: l'host è stato aggiunto dall'utente agli Allowed domains.
   ripulito. Il venditore le scrive su Shopify → Impostazioni → Informative; oggi c'è solo la privacy generata
   da Shopify, in inglese. `check:catalog -- --launch` le pretende tutte prima della vendita.
 
+**8d eseguita il 2026-10-29, per la parte che è codice.** Le pagine legali si raggiungono dal menu e dal
+carrello (`CartSheet`, sotto "Vai al pagamento": la scheda si apre sopra il carrello e Indietro ci riporta,
+merce dentro); alla cassa ci pensa Shopify. Sulla seconda metà della Definition of Done la risposta è che
+**non serve un banner cookie**: il sito non ne scrive nessuno, non ha analytics né script di terze parti (la
+CSP non li permetterebbe) e in `localStorage` tiene solo l'id del carrello, il modo di controllo scelto da
+chi naviga e i carrelli del fornitore finto. `e2e-phase8a` (50 verifiche) lo ricontrolla a ogni giro, e
+segnala qualunque chiave nuova.
+
+**Quello che chiude la 8d non è codice:** i testi li scrive il venditore su Shopify → Impostazioni →
+Informative. Al 2026-10-29 ce n'è **una su sette**, la privacy generata da Shopify. L'elenco da passare al
+cliente, con il nome tecnico di ogni campo e come appare nel sito, è in `docs/CONTENUTI.md` §5.
+
 8c parte con il catalogo del cliente e il comando **`Approvato, procedi alla fase 8c`**.
 
 ## Appendice — Negozio di sviluppo per la 8b (passaggi dati all'utente il 2026-10-16)
