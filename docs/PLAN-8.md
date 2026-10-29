@@ -130,6 +130,10 @@ segnala qualunque chiave nuova.
 Informative. Al 2026-10-29 ce n'è **una su sette**, la privacy generata da Shopify. L'elenco da passare al
 cliente, con il nome tecnico di ogni campo e come appare nel sito, è in `docs/CONTENUTI.md` §5.
 
+Per la **8f** (inglese) c'è una nota di progettazione a parte, scritta il 2026-10-29 su richiesta
+dell'utente: [`PIANO-INGLESE.md`](PIANO-INGLESE.md). Dice come si integrerebbe, cosa costa e le
+quattro decisioni da prendere prima di cominciare. Non è lavoro avviato.
+
 8c parte con il catalogo del cliente e il comando **`Approvato, procedi alla fase 8c`**.
 
 ## Appendice — Negozio di sviluppo per la 8b (passaggi dati all'utente il 2026-10-16)
