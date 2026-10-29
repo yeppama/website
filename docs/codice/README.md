@@ -1,4 +1,12 @@
-# Il codice riga per riga
+# Il codice riga per riga — archivio del 2026-10-17
+
+> **Fotografia, non documento vivo.** Descrive il sito al commit `ac1cb32` del 2026-10-17 e non
+> viene aggiornata: tenerla al passo riga per riga costerebbe a ogni commit più di quanto rende.
+> Da allora sono cambiati, fra l'altro, i contenuti (`src/content/`, foto e capi 3D), il secondo
+> allestimento "cantiere", le invarianti (25 → 30) e la passata di sicurezza del 2026-10-28
+> (error boundary, CSP, ESLint). **Per lo stato vigente si leggono `CONTEXT.md`,
+> `docs/RIFERIMENTO.md` e `docs/DECISIONI.md`; qui si viene per capire un meccanismo, non per
+> sapere com'è il codice oggi.** Prima di fidarsi di una riga, aprire il file.
 
 Spiegazione in italiano di **ogni riga** dei file del sito (80 file, circa 7.500 righe), scritta il
 2026-10-17 sul commit `ac1cb32`. Per sapere *quale* file aprire per una modifica parti da

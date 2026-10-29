@@ -194,8 +194,13 @@ const enterFocus = (page, displayId) => page.evaluate((id) => {
 {
   const { ctx, page } = await open('mobile', { mobile: true })
   // Tap sul pannello Brand Story da lontano: cammina e lo apre all'arrivo.
-  await place(page, 0, -4, 0); await sync(page); await page.waitForTimeout(300)
+  // La distanza si legge dal config, come nel blocco desktop: con z = −4 scritto
+  // a mano il punto era lontano 14 m finché la parete di fondo stava a z = −18,
+  // ma dopo la riduzione della fase C (negozio 24 × 24) sono meno di 2 m, dentro
+  // il raggio d'attivazione: il Lookbook si apriva subito e la verifica, che
+  // vuole proprio l'avvicinamento, non provava più niente.
   const [cx, cy, cz] = storeConfig.environment.brandWall.panel.center
+  await place(page, 0, cz + 7, 0); await sync(page); await page.waitForTimeout(300)
   const t = await project(page, [cx, cy, cz])
   await page.touchscreen.tap(t.sx, t.sy)
   await page.waitForTimeout(300)

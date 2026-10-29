@@ -20,7 +20,7 @@ scripts/           generate-theme.js · test-navigation.mjs · test-framing.mjs 
 scripts/catalog/   schema.mjs (colonne del modello) · make-template.mjs · importer.mjs · import.mjs · shopify-csv.mjs · check.mjs
 docs/              PERF.md (registro delle misure) · CONTENUTI.md (cosa serve dal cliente) · modello-catalogo-INTO.xlsx (da compilare) · PLAN-8.md
 docs/MANUALE.md    come funziona il sito e "voglio cambiare X → dove" (per l'utente)
-docs/codice/       spiegazione riga per riga di tutti gli 80 file del sito (commit ac1cb32): da aggiornare quando un file cambia molto (la demo ha cambiato storeConfig, schede, menu, Focus, Lookbook, carrello, espositori: non ancora aggiornata)
+docs/codice/       spiegazione riga per riga degli 80 file del sito al commit ac1cb32 (2026-10-17): archivio dichiarato, non si aggiorna — si legge per capire un meccanismo, mai per sapere com'è il codice oggi
 docs/demo/         FOTO.md (stile e procedura) · PRESENTAZIONE.md (traccia di 2 minuti) · catalogo-demo.xlsx · foto-sorgenti.tsv
 ```
 

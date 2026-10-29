@@ -59,7 +59,6 @@ export function pickTier({ pointer, cores, memory, renderer }) {
   return 'low'
 }
 
-export { zoneAt } from './geometry.js'
 
 export function getDeviceProfile() {
   const pointer = detectPointer()

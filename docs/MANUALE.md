@@ -212,7 +212,7 @@ browser elenca i problemi (es. `I19 espositore disp-rack-01: …`).
 
 | Documento | Cosa contiene |
 |---|---|
-| [`docs/codice/`](codice/README.md) | Spiegazione **riga per riga** di ogni file del sito |
+| [`docs/codice/`](codice/README.md) | Spiegazione **riga per riga** di ogni file del sito, com'era il 2026-10-17 (archivio) |
 | `CONTEXT.md` | Stato del progetto, decisioni, lezioni apprese, comandi |
 | `PLAN.md` | Piano completo e schema dei dati |
 | `docs/PLAN-8.md` | E-commerce: decisioni, sotto-fasi, negozi Shopify |

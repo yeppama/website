@@ -53,9 +53,10 @@ function contentMode(mode) {
   return branchName() === DEMO_BRANCH ? 'demo' : 'into'
 }
 
-// Il branch della demo ha `.env` con VITE_CONTENT=demo. Se quel file arrivasse su `main`, la
-// produzione passerebbe ai contenuti dimostrativi senza che nessuno se ne accorga: in
-// produzione Vercel (o da `main`) la build con il contenuto demo si ferma con un errore.
+// Il contenuto `demo` non deve arrivare in produzione: un VITE_CONTENT di troppo
+// nell'ambiente, o il branch della demo unito per sbaglio, la farebbero passare ai
+// contenuti dimostrativi senza che nessuno se ne accorga. In produzione Vercel
+// (o da `main`) la build con il contenuto demo si ferma con un errore.
 // Build di produzione: Vercel in ambiente production, oppure il branch main.
 const isProduction = () =>
   process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main'

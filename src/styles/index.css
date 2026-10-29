@@ -84,7 +84,7 @@
   100% { transform: translateX(100%); }
 }
 
-/* Il velo di grana (D6-B) si muove a scatti: 12 passi, non un'animazione fluida.
+/* Il velo di grana (D6-B) si muove a scatti: 10 passi, non un'animazione fluida.
    La pellicola non interpola, e questo costa meno al compositore. */
 @keyframes grain-shift {
   0%,   100% { transform: translate(0, 0); }

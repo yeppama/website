@@ -55,7 +55,10 @@ export function getGridTexture({ cell = 1, lineWidth = 0.014, tint = '#1d1d20', 
  * con lo stesso materialId riusano la stessa istanza, quindi lo stesso shader.
  */
 export function getMaterial(materialId, spec, { repeat, grid } = {}) {
-  const key = `${materialId}:${repeat?.join('x') ?? ''}`
+  // La griglia entra nella chiave: due mesh con lo stesso materialId ma griglie
+  // diverse sono materiali diversi, e senza di lei la seconda riceverebbe in
+  // silenzio la griglia della prima.
+  const key = `${materialId}:${repeat?.join('x') ?? ''}:${grid ? JSON.stringify(grid) : ''}`
   if (materialCache.has(key)) return materialCache.get(key)
 
   const params = {

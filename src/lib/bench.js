@@ -124,11 +124,19 @@ export function stutterSummary(runs) {
 
 /** Nome e versione del browser dallo user agent, quanto basta per il registro. */
 export function browserLabel(ua = navigator.userAgent) {
-  const m = ua.match(/(Edg|OPR|Firefox|CriOS|FxiOS|Chrome)\/(\d+)/) ?? ua.match(/Version\/(\d+)(?:\.\d+)*.*Safari/)
-  if (!m) return 'sconosciuto'
-  if (m.length === 2) return `Safari ${m[1]}`
-  const names = { Edg: 'Edge', OPR: 'Opera', CriOS: 'Chrome iOS', FxiOS: 'Firefox iOS' }
-  return `${names[m[1]] ?? m[1]} ${m[2]}`
+  // In ordine, non con una sola alternanza: Edge e Opera scrivono `Chrome/120`
+  // nella stessa stringa, prima del proprio nome, e la ricerca più a sinistra
+  // li chiamerebbe Chrome entrambi.
+  const browsers = [['Edg', 'Edge'], ['OPR', 'Opera'], ['CriOS', 'Chrome iOS'],
+                    ['FxiOS', 'Firefox iOS'], ['Firefox', 'Firefox'], ['Chrome', 'Chrome']]
+  for (const [token, name] of browsers) {
+    const at = ua.indexOf(`${token}/`)
+    if (at === -1) continue
+    const version = parseInt(ua.slice(at + token.length + 1), 10)
+    return Number.isFinite(version) ? `${name} ${version}` : name
+  }
+  const safari = ua.match(/Version\/(\d+)(?:\.\d+)*.*Safari/)
+  return safari ? `Safari ${safari[1]}` : 'sconosciuto'
 }
 
 const f1 = (n) => (Number.isFinite(n) ? n.toFixed(1) : '—')

@@ -85,9 +85,9 @@ export const storeConfig = {
     toneMappingExposure: 1.0,
     tiers: {
       // maxAccentLights: luci vere arancioni accese dai punti luce d'accento (scene/lighting/AccentLights.jsx).
-      high:   { dprRange: [1, 2],    maxShadowCasters: 2, shadowMapSize: 1024, envMapResolution: 256, antialias: true,  maxAccentLights: 3 },
-      medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  envMapResolution: 128, antialias: true,  maxAccentLights: 2 },
-      low:    { dprRange: [0.75, 1], maxShadowCasters: 0, shadowMapSize: 256,  envMapResolution: 64,  antialias: false, maxAccentLights: 0 },
+      high:   { dprRange: [1, 2],    maxShadowCasters: 2, shadowMapSize: 1024, antialias: true,  maxAccentLights: 3 },
+      medium: { dprRange: [1, 1.5],  maxShadowCasters: 2, shadowMapSize: 512,  antialias: true,  maxAccentLights: 2 },
+      low:    { dprRange: [0.75, 1], maxShadowCasters: 0, shadowMapSize: 256,  antialias: false, maxAccentLights: 0 },
     },
     // HUD prestazioni (Fase 6): finestra delle statistiche e frequenza di aggiornamento.
     // Si attiva con ?perf=1 (anche in produzione) e durante il benchmark (?bench=1).
@@ -107,7 +107,7 @@ export const storeConfig = {
       // disponibile qui e, per confronto, con ?perf=1&grain=overlay.
       // Tier low senza grana (scelta dell'utente, 2026-10-16): sull'Honor con Adreno 619
       // la grana dava 4 fotogrammi oltre 50 ms (max 140 ms), senza nessuno (docs/PERF.md).
-      grain: { mode: 'overlay', blend: 'alpha', opacity: { high: 0.14, medium: 0.12, low: 0 },
+      grain: { blend: 'alpha', opacity: { high: 0.14, medium: 0.12, low: 0 },
                alphaOpacity: { high: 0.2, medium: 0.18, low: 0 }, tileSize: 256, animateHz: 12 },
       vignette: { enabled: true, strength: 0.38 },
     },
@@ -132,7 +132,6 @@ export const storeConfig = {
   benchmark: {
     warmupMs: 2500,
     stepTimeoutMs: 30000,
-    suggestedRuns: 3,
     steps: [
       { type: 'place', waypointId: 'wp-entrance', label: 'Ingresso' },
       { type: 'hold', ms: 2000, label: 'Ingresso' },
@@ -290,10 +289,10 @@ export const storeConfig = {
       { id: 'wall-s-right', from: [  1.5, 18], to: [ 12,  18], height: 4.2, thickness: 0.2, materialId: 'mat-plaster-dark', colliderId: 'col-wall-s-right' },
     ],
     zones: [
-      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   accentColor: 'accent.flame',   ambientBoost: 0.15, floorLabel: false },
-      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  accentColor: 'accent.flame',   ambientBoost: 0.0,  floorLabel: true },
-      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    accentColor: 'accent.flame', ambientBoost: -0.05, floorLabel: true },
-      { id: 'zone-lookbook', label: 'Lookbook',     bounds: [[-6, -5.8], [6, 1.5]], accentColor: 'accent.bone',    ambientBoost: 0.1,  floorLabel: true },
+      { id: 'zone-entrance', label: 'Ingresso',     bounds: [[-4, 12], [4, 18]],   floorLabel: false },
+      { id: 'zone-new',      label: 'Nuovi Arrivi', bounds: [[-11, 2], [-2, 12]],  floorLabel: true },
+      { id: 'zone-archive',  label: 'Archivio',     bounds: [[2, 2], [11, 12]],    floorLabel: true },
+      { id: 'zone-lookbook', label: 'Lookbook',     bounds: [[-6, -5.8], [6, 1.5]], floorLabel: true },
     ],
     entrance: {
       waypointId: 'wp-entrance', lookAtWaypointId: 'wp-hall-01',
@@ -377,39 +376,39 @@ export const storeConfig = {
     hemisphere: { skyColor: '#343840', groundColor: '#0d0d0f', intensity: 0.8 },
     // Ordinati per `priority`: il tier taglia dalla coda oltre maxShadowCasters.
     spots: [
-      { id: 'spot-hall-studio', priority: 1, kind: 'studio', zoneId: 'zone-new',
+      { id: 'spot-hall-studio', priority: 1,
         position: [-6.5, 3.95, 10.2], targetPosition: [-6.5, 0.6, 6.6],
         angle: 0.5, penumbra: 0.65, intensity: 140, distance: 26, decay: 1.4,
         color: '#fff1e2', castShadow: true },
-      { id: 'spot-hall-flame',  priority: 2, kind: 'flame', zoneId: 'zone-archive',
+      { id: 'spot-hall-flame',  priority: 2,
         position: [6.5, 3.95, 10.0], targetPosition: [6.5, 0, 7.0],
         angle: 0.52, penumbra: 0.8, intensity: 125, distance: 26, decay: 1.4,
         color: '#ffe6cc', castShadow: true },
-      { id: 'spot-entrance',    priority: 3, kind: 'flame', zoneId: 'zone-entrance',
+      { id: 'spot-entrance',    priority: 3,
         position: [0, 3.95, 13.0], targetPosition: [0, 0, 9.5],
         angle: 0.62, penumbra: 0.9, intensity: 150, distance: 18, decay: 1.6,
         color: '#f98e30', castShadow: false },
-      { id: 'spot-deep',        priority: 4, kind: 'studio', zoneId: 'zone-lookbook',
+      { id: 'spot-deep',        priority: 4,
         position: [0, 3.95, 0.5], targetPosition: [0, 1.1, -5.8],
         angle: 0.58, penumbra: 0.7, intensity: 400, distance: 24, decay: 1.3,
         color: '#e8edf2', castShadow: false },
-      { id: 'spot-portal', priority: 7, kind: 'studio', zoneId: 'zone-entrance',
+      { id: 'spot-portal', priority: 7,
         position: [0, 3.95, 12.5], targetPosition: [0, 1.6, 18.0],
         angle: 0.75, penumbra: 0.9, intensity: 240, distance: 16, decay: 1.4,
         color: '#e9edf2', castShadow: false },
-      { id: 'spot-rack', priority: 8, kind: 'studio', zoneId: 'zone-new',
+      { id: 'spot-rack', priority: 8,
         position: [-10.5, 3.95, 9.4], targetPosition: [-11.5, 1.15, 8.0],
         angle: 0.62, penumbra: 0.75, intensity: 95, distance: 12, decay: 1.4,
         color: '#f2efe8', castShadow: false },
-      { id: 'spot-wall-01', priority: 9, kind: 'flame', zoneId: 'zone-archive',
+      { id: 'spot-wall-01', priority: 9,
         position: [10.5, 3.95, 9.4], targetPosition: [11.55, 1.4, 8.0],
         angle: 0.62, penumbra: 0.75, intensity: 90, distance: 12, decay: 1.4,
         color: '#f6ece0', castShadow: false },
-      { id: 'spot-wash-w', priority: 5, kind: 'studio', zoneId: 'zone-new',
+      { id: 'spot-wash-w', priority: 5,
         position: [-10.5, 3.95, 9.0], targetPosition: [-11.8, 1.6, -2.0],
         angle: 0.95, penumbra: 1.0, intensity: 300, distance: 34, decay: 1.1,
         color: '#c9d2dc', castShadow: false },
-      { id: 'spot-wash-e', priority: 6, kind: 'flame', zoneId: 'zone-archive',
+      { id: 'spot-wash-e', priority: 6,
         position: [10.5, 3.95, 9.0], targetPosition: [11.8, 1.6, -2.0],
         angle: 0.95, penumbra: 1.0, intensity: 260, distance: 34, decay: 1.1,
         color: '#ffad5e', castShadow: false },
@@ -590,7 +589,7 @@ export const storeConfig = {
       editorial: { bg: '#0a0a0b', fg: '#f98e30', pattern: 'diagonal', showCategory: false, grain: true },
       studio:    { bg: '#dcdcd8', fg: '#060606', pattern: 'none',     showCategory: true,  grain: false },
     },
-    skeleton: { shimmerMs: 1400, minVisibleMs: 400, timeoutMs: 8000 },
+    skeleton: { shimmerMs: 1400, timeoutMs: 8000 },
     // Cornice fissa della galleria del Lookbook: immagini di ratio diverso ci
     // stanno dentro senza cambiarne l'altezza, così i bottoni non saltano.
     galleryFrame: [16, 10],

@@ -31,14 +31,26 @@ nel bundle potrebbe contattare qualunque host.
 
 La policy è stretta perché il sito non ha niente di esterno da permettere:
 
-    default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self';
+    default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob:; font-src 'self';
+    connect-src 'self' https://<dominio del negozio>.myshopify.com blob:; media-src 'self';
     worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none';
     form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests
 
 - `'unsafe-inline'` è solo in `style-src`, per lo `<style>` di `index.html` che dipinge il fondo
   prima che arrivi il CSS (evita il lampo bianco). Gli script non ne hanno bisogno, e three.js
   compila gli shader via WebGL e non con `eval`: niente `'unsafe-eval'`.
+- `'wasm-unsafe-eval'` (aggiunto il 2026-10-29) permette **solo** di compilare WebAssembly, non di
+  valutare stringhe come codice: è la keyword nata apposta per separare i due casi. Serve a chi
+  cade sul rendering software: con `--use-angle=swiftshader` Chrome istanzia un modulo WebAssembly
+  dentro la pagina, e con `script-src 'self'` da solo la console si riempie di violazioni. Trovato
+  da `e2e-cantiere` il giorno in cui la preview ha cominciato ad applicare davvero gli header (il
+  merge di `main` ha portato `productionHeaders()` sul branch di lavoro): prima la suite girava
+  senza CSP e non poteva vederlo. Il rendering software non è un caso di scuola qui —
+  `getDeviceProfile()` riconosce SwiftShader e lo manda nel tier `low`.
+- `connect-src` elenca l'host esatto del negozio Shopify, non un carattere jolly. **Col negozio
+  del cliente va cambiato nello stesso commit del token nuovo**, o il carrello smette di
+  funzionare mentre il sito continua a caricare.
 - `blob:` in `worker-src` non indebolisce niente, perché un worker creato da blob eredita questa
   stessa policy. Serve se in futuro si caricano modelli con i loader di three (DRACO, KTX2).
 - `frame-ancestors 'self'` resta allineato a `X-Frame-Options: SAMEORIGIN`, che era già la scelta

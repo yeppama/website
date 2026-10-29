@@ -32,16 +32,13 @@ export const tokens = {
       lg: '1.25rem', xl: '2rem', '2xl': '3.25rem', '3xl': '5rem',
     },
     tracking: { tight: '-0.02em', normal: '0', wide: '0.08em', brutal: '0.18em' },
-    weight: { regular: 400, bold: 700, black: 900 },
   },
 
   space:  { 0: '0', 1: '4px', 2: '8px', 3: '12px', 4: '16px', 6: '24px', 8: '32px', 12: '48px', 16: '64px' },
   radius: { none: '0', sm: '2px' },        // spigoli vivi, nessuna eccezione
-  border: { hairline: '1px', thick: '2px' },
   motion: { fast: 140, base: 240, slow: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
   // dialog: scheda prodotto e Lookbook, sopra menu e pannello del Focus da cui si aprono.
   z: { canvas: 0, hotspot: 10, hud: 20, quickTravel: 25, modal: 40, dialog: 45, onboarding: 50, fallback: 60 },
-  breakpoint: { sm: 480, md: 768, lg: 1024, xl: 1440 },
   touchTarget: { min: 44 },
 }
 
