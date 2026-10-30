@@ -43,8 +43,14 @@ Ho provato a scrivertelo io e **il sistema me l'ha impedito, giustamente**: un a
 che si allarga i permessi da solo è esattamente la cosa da non permettere. Quindi
 incolli tu.
 
-Dentro `"permissions"`, nell'array `"allow"`, dopo le voci che ci sono già (aggiungi
-una virgola alla fine dell'ultima):
+**Sostituisci tutto il contenuto del file** con quello qui sotto, invece di aggiungere
+righe in mezzo: una virgola di troppo o di meno rende il file illeggibile, e un
+settings.json malformato non dà errore — viene semplicemente ignorato in blocco, e te
+ne accorgi solo perché i permessi non funzionano.
+
+Le cinque voci che c'erano prima non sono riportate **di proposito**: erano comandi
+esatti di una sessione su `order-planner.html`, un altro lavoro. Un permesso scritto
+come comando esatto vale per quell'unica riga e non si ripresenterà mai più.
 
 ```json
 "Bash(npm run *)", "Bash(npm ci)", "Bash(npm install *)",
@@ -77,9 +83,13 @@ permesso. Sono decine di interruzioni per sessione.
 
 ### 1.3 La password del negozio di sviluppo · 1 minuto
 
-Il negozio Shopify di sviluppo è protetto da password (quella della vetrina, non del
-tuo account). Su Shopify: **Canali di vendita → Negozio online → Preferenze →
-Protezione con password**.
+**Quale dei due negozi:** quello di **sviluppo**, `into-industries-dev.myshopify.com` —
+non quello del cliente. È il negozio che `e2e-phase8b` interroga, perché è l'host scritto
+in `storeConfig.commerce.shopify.domain`.
+
+E **non è la password del tuo account Shopify**: è quella della vetrina, il muro che
+Shopify mette davanti a un negozio non ancora pubblico. Si trova in: **Canali di vendita
+→ Negozio online → Preferenze → Protezione con password**.
 
 Poi, prima di lanciare le suite:
 
@@ -93,8 +103,22 @@ ma resta non verificata.
 
 ### 1.4 Un token Vercel · 5 minuti
 
-Su `vercel.com` → avatar → **Account Settings → Tokens → Create**. Ambito: il progetto
-del sito. Scadenza: quella che preferisci.
+Su `vercel.com` → avatar → **Account Settings → Tokens → Create Token**. Tre campi:
+
+- **Nome:** è solo un'etichetta, serve a te per riconoscerlo quando lo revocherai.
+  Mettici dentro chi lo usa e quando è nato, per esempio `claude-code-2026-10`.
+  Evita nomi generici come `token1`: fra sei mesi non saprai cosa revochi.
+- **Ambito (Scope):** il team o l'account che possiede questo progetto. Se il sito sta
+  in un team suo, scegli quello e non l'account personale: il token non potrà toccare
+  nient'altro.
+- **Scadenza:** mettine una. 30 giorni è ragionevole; si rinnova in un minuto.
+
+⚠️ **Un token Vercel non è di sola lettura, e non esiste un'opzione per renderlo tale.**
+Dentro il suo ambito può pubblicare, cambiare le variabili d'ambiente e cancellare
+progetti. A me serve per leggere lo stato dei deploy e gli header del dominio vero, ma
+il token che mi dai può fare molto di più: per questo vale l'ambito ristretto e la
+scadenza breve. Se preferisci non darlo, l'alternativa è che continui a guardare tu
+l'anteprima e a dirmi cosa vedi — è solo più lento, non è un blocco.
 
 **Cosa si sblocca:** oggi non vedo né le anteprime né la produzione — `*.vercel.app`
 non è raggiungibile da qui — e ogni volta ti chiedo di guardare tu. Col token leggo lo
