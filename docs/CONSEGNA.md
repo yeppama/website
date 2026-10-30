@@ -89,6 +89,11 @@ La lista è corta, ed è corta perché è stata consumata.
 ## 6. Deciso, e da non rimettere in discussione
 
 - **Repository pubblico e senza licenza**, scelta consapevole dell'utente (2026-10-29).
+- **Niente token Vercel** (2026-10-30). Da Windows anteprime e produzione si aprono
+  senza login e gli indirizzi dei deploy si leggono con `gh`: il token aggiungerebbe
+  solo le cose interne a Vercel (variabili d'ambiente, impostazioni, domini, log,
+  rilanciare un deploy), e non esiste in versione di sola lettura. Si rivaluta se
+  servirà una di quelle, non prima.
 - **Analytics: sì, Vercel Analytics**, perché non usa cookie e non impone il banner. Da
   installare col suo contorno: CSP, informativa, DPA. Non urgente, ma deciso.
 - **Inglese dopo il lancio** (8f), con il piano già scritto.
@@ -104,7 +109,7 @@ La lista è corta, ed è corta perché è stata consumata.
 | Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
 | ~~Scope del canale Headless su `into-industries-dev`~~ | — | **Fatto il 2026-10-30**: i sei non usati tolti dall'amministrazione, `npm run check:scopes` verde, `e2e-phase8b` 11/12 come prima |
 | Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
-| Token Vercel | utente | Vedi `PER-L-UTENTE.md` §1.4. `gh` CLI, allowlist dei permessi e `STORE_PASSWORD`: **fatti il 2026-10-30** |
+| — | — | **La Parte 1 di `PER-L-UTENTE.md` è chiusa.** `gh` CLI, allowlist dei permessi e `STORE_PASSWORD` fatti il 2026-10-30; il token Vercel non si fa (§6) |
 
 ## 8. Trappole già pagate, da non ripagare
 

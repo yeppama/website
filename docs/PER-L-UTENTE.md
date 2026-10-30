@@ -78,7 +78,7 @@ automatico, dal capo nella scena fino alla cassa di Shopify.
 La password resta una variabile d'ambiente della singola finestra, mai un file: il
 comando sopra va ridato a ogni sessione in cui serve.
 
-### 1.4 Un token Vercel · 5 minuti
+### 1.4 ~~Un token Vercel~~ · **non si fa**, deciso il 2026-10-30
 
 Su `vercel.com` → avatar → **Account Settings → Tokens → Create Token**. Tre campi:
 
