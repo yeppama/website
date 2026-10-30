@@ -53,7 +53,8 @@ Deploy: integrazione Git di Vercel. Ogni push su un branch crea un'anteprima (pr
 Vercel); `main` è la produzione. Header e cache in `vercel.json`.
 
 Ogni push fa girare lint, invarianti, build e le suite Node su GitHub Actions
-(`.github/workflows/ci.yml`), più `npm audit` sulle dipendenze.
+(`.github/workflows/ci.yml`), più `npm audit` sulle dipendenze. Le suite col browser
+stanno in `.github/workflows/e2e.yml`, che salta i push di soli documenti.
 
 ## Documentazione
 

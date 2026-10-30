@@ -1,0 +1,55 @@
+# Le suite col browser, in un workflow a parte per un motivo solo: GitHub
+# filtra i percorsi per workflow, non per job. Finché l'e2e stava dentro
+# `ci.yml` un push di soli documenti faceva girare sedici minuti di browser per
+# niente; qui il `paths-ignore` lo evita, e `ci.yml` (lint, invarianti, build,
+# suite Node) continua a girare su tutto, documenti compresi.
+name: e2e
+
+on:
+  # Gli ancoraggi YAML non valgono nei workflow di GitHub: la lista si ripete.
+  push:
+    branches: ['**']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE*'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Il browser e' quello gia' installato sull'immagine del runner; CI=1 lo fa
+  # partire senza sandbox (scripts/e2e/launchOptions.mjs), che nei container
+  # serve davvero.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Suite end-to-end
+        run: npm run e2e -- --out e2e-out
+
+      # Gli screenshot delle suite: servono a capire un rosso senza rieseguire
+      # tutto in locale. Solo quando qualcosa e' fallito.
+      - name: Screenshot delle suite fallite
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshot
+          path: e2e-out/
+          retention-days: 7
