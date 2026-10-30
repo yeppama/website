@@ -1,121 +1,129 @@
-# CONSEGNA — stato e cosa resta, al 2026-10-29
+# CONSEGNA — stato e cosa resta, al 2026-10-30
 
 Scritto per una sessione nuova che riprende il lavoro da zero. Si legge dopo
-`CONTEXT.md`, che resta la fonte dello stato corrente; qui c'è cosa è successo,
-cosa è rimasto aperto e in che ordine conviene affrontarlo.
+`CONTEXT.md`, che resta la fonte dello stato corrente; qui c'è cosa è successo, cosa è
+rimasto aperto e in che ordine conviene affrontarlo.
 
 ## 1. Dove sta tutto
 
 | | |
 |---|---|
-| `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ultimo commit `7f87699`. **Non ha il lavoro del 29.** |
-| `sviluppo` | **Branch di lavoro.** Fase 8a/8b, demo con foto, allestimento cantiere, e dal 2026-10-29 anche tutta la passata di sicurezza di `main`. Ultimo commit `4a72877`. Ogni push crea un'anteprima Vercel. |
+| `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ferma a `7f87699` del 2026-10-28. **Non ha niente del lavoro del 29 e del 30.** |
+| `sviluppo` | **Branch di lavoro.** Ultimo commit `f5abc2f`, già su GitHub. **73 commit davanti a `main`.** Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | tag `archivio-docs-ristrutturati` | Due commit di riordino documenti del 2026-10-16, mai uniti. Il branch è stato cancellato, il tag li tiene raggiungibili. |
 
-GitHub Pages è **spento** dal 2026-10-28 (sorgente su None). Pubblicava una copia
-rotta del sito, senza nessuno degli header di sicurezza.
+GitHub Pages è spento dal 2026-10-28. La CI gira su GitHub Actions a ogni push:
+lint, invarianti, build, suite Node, **suite e2e** e `npm audit`.
 
-## 2. Cosa è cambiato il 2026-10-29
+## 2. Le regole che non si deducono dal codice
 
-Tre commit su `sviluppo`, tutti lavoro tecnico che non dipendeva dal cliente.
+Tre, e tutte e tre sono state imparate pagando:
 
-**`ec69125` — `main` unito in `sviluppo`.** I due rami non si univano più da
-soli: 13 file in conflitto, tutti toccati dalla passata di sicurezza del 28.
-Adesso `sviluppo` ha gli stessi header, le stesse guardie e gli stessi controlli
-di `main`, e il merge finale verso `main` è una formalità. Le scelte di merge
-sono nel messaggio del commit; quelle che pesano:
+1. **Una fase alla volta.** Si avanza solo col comando esplicito
+   `Approvato, procedi alla fase X`. A fine fase: build, verifica nel browser, report che
+   distingue eseguito / non eseguito / bloccato, poi stop.
+2. **Un negozio alla volta** (`PLAN-8.md` §4-bis, scritta il 2026-10-30). Fino al
+   prototipo completo il negozio di riferimento è `into-industries-dev`; quello del
+   cliente è un'annotazione, non un lavoro aperto. Il passaggio è la 8c e vale **un
+   commit solo**: dominio, token e `connect-src` della CSP insieme.
+3. **Entrambi gli allestimenti restano accessibili** (requisito dell'utente): negozio A
+   senza parametri, cantiere con `?allestimento=cantiere`. Ogni verifica si fa su tutti
+   e due — è il motivo per cui il giro completo delle suite dura sedici minuti.
 
-- `src/App.jsx` usa l'`ErrorBoundary` di `main`, fuori dal contenitore del
-  canvas (quel div ha uno z-index, quindi crea un contesto di impilamento:
-  l'avviso renderizzato dentro finirebbe sotto l'onboarding). `SceneErrorBoundary`,
-  che esisteva solo qui, è stato rimosso: faceva la stessa cosa mostrando meno.
-- le tre invarianti arrivate da `main` si chiamavano I23–I25, numeri già usati
-  qui dal commercio: sono **I28, I29, I30**. In tutto 30.
-- `vercel.json` ha la CSP di questo branch, con `connect-src` sull'host del
-  negozio: quella di `main` ha `connect-src 'self'` e fermerebbe il carrello.
+## 3. Cosa è cambiato il 2026-10-29 e il 2026-10-30
 
-Due cose che il merge ha rotto e che sono state corrette nello stesso commit:
-`@react-three/drei` (rimossa su `main` perché lì non la importava nessuno, qui
-serve a `useGLTF` per i capi in GLB) e l'attivazione del POI col tasto `E`, che
-leggeva una chiave di `copy` non più esistente su questo branch.
+Diciotto commit. I quattro che cambiano come si lavora:
 
-**`abbb71a` — il logo si carica da `url`.** `BrandWall` legge
-`assets.registry['asset-logo-primary'].url` dalla cache condivisa delle texture;
-il wordmark tipografico resta la riserva per `url: null`, file mancante o server
-che non risponde. Quando arriverà il vettoriale è un cambio di config, non un
-lavoro di sviluppo. L'invariante I28 non vieta più `url`: controlla che
-l'indirizzo abbia la forma di un percorso dentro `public/`.
+- **`ec69125` — `main` unito in `sviluppo`.** 13 file in conflitto, tutti della passata
+  di sicurezza del 28. Adesso i due rami hanno gli stessi header, le stesse guardie e
+  gli stessi controlli. Le invarianti di `main` (I23–I25) sono state rinumerate
+  **I28–I30**: 30 in tutto.
+- **`8d99ba9` — le suite e2e girano in CI**, e `npm run e2e` le esegue in locale in un
+  comando solo (build col contenuto giusto, server sulla porta libera, suite,
+  spegnimento). Fuori dalla CI resta `e2e-phase6`, che misura prestazioni: su una
+  macchina condivisa direbbe più della macchina che del codice.
+- **`265f031` — `npm run scan:secrets`**, in CI prima della build. Cerca i prefissi
+  delle credenziali vere, non stringhe ad alta entropia: il token Storefront è pubblico
+  per costruzione e un controllo che grida sempre viene spento.
+- **`f5abc2f` — un negozio alla volta**, con la correzione del piano che era stato
+  scritto correndo avanti di due fasi.
 
-**`4a72877` — CSP, incongruenze e un test che non provava più niente.**
-`script-src 'self'` da solo blocca WebAssembly, e Chrome in rendering software
-ne istanzia uno dentro la pagina: aggiunta `'wasm-unsafe-eval'` (permette solo
-WebAssembly, non `eval`). Chiuse tutte le piccole incongruenze aperte dal
-2026-10-17 (elenco in `docs/STORIA.md`). `docs/codice/` è dichiarato archivio
-del 2026-10-17 nel suo README e dove viene citato.
+Il resto, in breve: il logo si carica da `url` col wordmark come riserva (`abbb71a`);
+CSP corretta per il rendering software (`4a72877`); `npm audit` a zero con un override
+su `uuid` invece di retrocedere `exceljs` (`3161939`); la sandbox del browser estesa da
+sei a quattordici script (`795c843`); pagine legali raggiungibili dal carrello, che
+chiude la 8d per la parte di codice (`f315b17`); nome accessibile per la scena 3D e
+landmark `main` (`4a0f4a3`); pagina 404 del marchio (`4fb25aa`); licenze OFL accanto ai
+caratteri (`567f991`).
 
-## 3. Il blocco principale: il cliente
+## 4. Documenti nuovi, e quando servono
 
-**Niente di quanto segue si sblocca senza il materiale del cliente**, chiesto il
-2026-10-16 con il modello Excel `docs/modello-catalogo-INTO.xlsx` e l'import
-`npm run catalog:import`. Servono: logo (P1), conferma della tagline (P3), dati
-e foto dei capi, testi e immagini del Lookbook, la scelta fra i due allestimenti
-(A negozio / B cantiere), e le decisioni su prezzi definitivi e dominio. Da
-questo dipendono la Fase 8c, la rimozione del `noindex` e il lancio.
+| Documento | Quando aprirlo |
+|---|---|
+| [`PER-L-UTENTE.md`](PER-L-UTENTE.md) | **Per primo, se c'è da chiedere qualcosa all'utente.** Guida passo passo di tutto quello che non si può fare senza di lui, con cosa sblocca ciascuna voce |
+| [`LANCIO.md`](LANCIO.md) | Cosa manca prima di vendere: SEO, condivisione, legale. Due checklist verificate riga per riga |
+| [`PIANO-INGLESE.md`](PIANO-INGLESE.md) | Se si parla della seconda lingua (Fase 8f). Quattro decisioni, con una raccomandazione ciascuna. Non è lavoro avviato |
+| [`SICUREZZA.md`](SICUREZZA.md) | Header, CSP, dipendenze, e la checklist di sicurezza verificata punto per punto |
 
-## 4. Lavoro tecnico possibile senza il cliente
+## 5. Lavoro tecnico possibile senza nessuno
 
-Le tre voci che c'erano qui il 28 (merge, caricatore del logo, debito di
-documentazione) sono fatte. Resta poco, e niente di urgente:
+La lista è corta, ed è corta perché è stata consumata.
 
-- **`e2e-phase6` e `e2e-cantiere` sono sensibili alla macchina.** Il 29 la prima
-  ha dato 28/30 al primo giro e 30/30 ai due successivi; la seconda ha segnalato
-  una texture in più al ciclo 3 dei rimontaggi, sparita alla ripetizione. In
-  rendering software le risorse tornano a posto in tempi variabili e il budget
-  di attesa è 30 s per ciclo. Se tornasse a comparire in modo stabile, è una
-  perdita vera e va cercata; una volta sola no.
-- **Prima di unire `sviluppo` in `main`:** `main` pubblica in automatico, quindi
-  unire significa pubblicare. Col negozio del cliente, `connect-src` e il token
-  nuovo vanno cambiati **nello stesso commit**.
-- Il resto è contenuto, non codice.
+- **`e2e-phase6` e `e2e-cantiere` sono sensibili alla macchina.** Il 29 la prima ha dato
+  28/30 al primo giro e 30/30 ai due successivi; la seconda ha segnalato una texture in
+  più al ciclo 3 dei rimontaggi, sparita alla ripetizione. Se tornasse stabile è una
+  perdita vera; una volta sola no.
+- **Peso del bundle**: il chunk della scena è 1,08 MB (293 kB gzip), sopra la soglia di
+  Vite. Sconsigliato finché non ci sono misure su telefoni veri: si ottimizzerebbe alla
+  cieca, e il progetto ha già pagato un `manualChunks` che annullava il lazy import.
+- **Un push di soli documenti fa girare 16 minuti di suite e2e.** Si eviterebbe con un
+  `paths-ignore` sul job e2e. Piccolo, non ancora fatto.
+- **ESLint 10**: bloccato dai plugin, non da noi (jsx-a11y arriva a `^9`, plugin-react a
+  `^9.7`). Si rivaluta quando pubblicano il peer su `^10`.
 
-## 5. Cosa può fare solo l'utente
+## 6. Deciso, e da non rimettere in discussione
 
-> Dal 2026-10-30 ognuna di queste voci ha istruzioni passo passo in
-> [`PER-L-UTENTE.md`](PER-L-UTENTE.md): cosa fare, quanto costa, cosa sblocca.
+- **Repository pubblico e senza licenza**, scelta consapevole dell'utente (2026-10-29).
+- **Analytics: sì, Vercel Analytics**, perché non usa cookie e non impone il banner. Da
+  installare col suo contorno: CSP, informativa, DPA. Non urgente, ma deciso.
+- **Inglese dopo il lancio** (8f), con il piano già scritto.
 
-- **Admin Shopify:** verificare che il canale Headless non abbia scope sui
-  clienti (`unauthenticated_*_customers`). Per la 8c serve un token nuovo del
-  negozio del cliente.
-- **Misure mancanti:** iPhone, PC con scheda dedicata, Honor da rimisurare nel
-  negozio A, Android di fascia media (tier low, mai fatto), e il giudizio su
-  luminosità e neri. Protocollo in `docs/PERF.md`.
-- **Checklist mobile** delle fasi 4 e 5 su un telefono vero.
-- **Dominio definitivo:** quando sarà attivo, rivalutare `includeSubDomains`
-  sull'HSTS, oggi lasciato fuori di proposito.
+## 7. Bloccato, e da chi
 
-## 6. Trappole già pagate, da non ripagare
+| Cosa | Chi | Sblocca |
+|---|---|---|
+| Catalogo compilato + foto dei capi | cliente | **8c**, il negozio vero |
+| Logo vettoriale (P1) | cliente | Insegna 3D, favicon, immagine di anteprima |
+| Testi e immagini del Lookbook, conferma tagline (P3) | cliente | Contenuto reale |
+| **Scelta fra allestimento A e B** | cliente | Dimezza la superficie da verificare. In sospeso dal 2026-10-19 |
+| Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
+| Scope del canale Headless su `into-industries-dev` | utente | Una verifica di sicurezza che non può fare nessun altro |
+| Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
+| `gh` CLI, allowlist dei permessi, `STORE_PASSWORD`, token Vercel | utente | Vedi `PER-L-UTENTE.md` §1 |
 
-- **Il contenuto della build**: non esiste più un `.env` tracciato. Su
-  `sviluppo` la build risolve `demo` dal nome del branch; `VITE_CONTENT`
-  sovrascrive. Le suite e2e vanno eseguite contro una build **dello stesso
-  contenuto** che assumono: cantiere e negozio con `demo`, carrello (`e2e-phase8a`)
-  e `e2e-phase5` con `into`.
-- **Test che leggono al volo**: si aspettano condizioni, mai istanti.
-- **Test con coordinate scritte a mano**: smettono di provare quello che dicono
-  quando la scena cambia. Le distanze si leggono dal config.
-- **Lo switch dell'alias Vercel**: subito dopo un deploy c'è una finestra di
-  pochi secondi in cui l'HTML nuovo chiede un chunk non ancora servito. L'error
-  boundary mostra "Riprova": è transitorio, si ricarica.
-- **Su Windows**: il working tree è CRLF (`core.autocrlf`) mentre git normalizza
-  a LF, e gli heredoc della shell mangiano i backslash. Le patch con `\n` o `\t`
-  vanno scritte in un file, non in un heredoc.
-- **Il riquadro del browser dell'agente**: una scheda lasciata aperta e in
-  secondo piano resta su "Caricamento ambiente" per sempre, perché la pagina in
-  background non riceve fotogrammi. Non è un guasto del sito: per guardarlo si
-  apre una scheda nuova in primo piano, e per verificare davvero si usano le
-  suite e2e.
+## 8. Trappole già pagate, da non ripagare
 
-## 7. Come si verifica
+- **Il contenuto della build**: su `sviluppo` la build risolve `demo` dal nome del
+  branch; `VITE_CONTENT` sovrascrive. Una suite eseguita contro la build dell'altro
+  contenuto fallisce su valori che non c'entrano. `npm run e2e` ci pensa da sé.
+- **La porta della preview**: se 4173 è occupata `vite preview` ne prende un'altra. Il
+  codice colore che vite infila fra `localhost:` e le cifre contiene un numero: chi la
+  legge con una regex ingenua apre `localhost:1`.
+- **Test con coordinate scritte a mano**: smettono di provare quello che dicono quando
+  la scena cambia, restando verdi o diventando rossi senza spiegare. Le distanze si
+  leggono dal config.
+- **Shopify non segnala le traduzioni mancanti**: risponde nella lingua predefinita
+  senza errore. Vale per la 8f.
+- **Su Windows**: il working tree è CRLF mentre git normalizza a LF, e gli heredoc della
+  shell mangiano i backslash. Le patch con `\n` o `\t` vanno scritte in un file.
+  `npm ci` può fallire su un binario nativo in uso: `npm install` riconcilia sul posto.
+- **Il riquadro del browser dell'agente**: una scheda in secondo piano resta su
+  "Caricamento ambiente" per sempre, perché la pagina non riceve fotogrammi. Per
+  verificare davvero si usano le suite.
+- **Che una verifica si possa fare non vuol dire che sia il momento di farla.** È il
+  motivo per cui esiste la regola del negozio unico.
+
+## 9. Come si verifica
 
 ```bash
 npm ci
@@ -131,30 +139,15 @@ npm run scan:secrets          # credenziali nei file tracciati
 npm run e2e                   # tutte le suite col browser, dall'inizio alla fine
 ```
 
-**`npm run e2e` fa tutto da sé**: build col contenuto giusto, server sulla porta
-che trova libera, suite, spegnimento. Cerca Chrome dove sta di solito, o usa
-`CHROMIUM_PATH`. Varianti: `-- --only cantiere` per una sola, `-- --content into`
-per un contenuto solo, `-- --out e2e-out` per tenere gli screenshot.
+`npm run e2e` fa tutto da sé. Varianti: `-- --only cantiere`, `-- --content into`,
+`-- --out e2e-out` per tenere gli screenshot.
 
-Dal 2026-10-30 le stesse suite girano **anche in CI**, in un job a parte, col
-browser dell'immagine del runner. Resta fuori `e2e-phase6`, che misura
-prestazioni: su una macchina condivisa il p50 oscilla e direbbe più della
-macchina che del codice. Quella si esegue a mano:
-`node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`.
+Ultimo esito noto, 2026-10-30: **CI #14 verde**, job e2e compreso — tutte e dieci le
+suite col browser su un runner GitHub, 16 minuti e 16 secondi. In locale, stesso
+risultato: 10 suite su 10.
 
-Ultimo esito noto, 2026-10-29, Chrome di sistema contro una preview locale:
+Fuori da quel giro, da eseguire a mano:
 
-| Suite | Contenuto | Esito |
-|---|---|---|
-| `e2e-cantiere` | demo | 47/47 |
-| `e2e-phase3` | demo | 27/27 |
-| `e2e-phase4` | demo | 22/22 |
-| `e2e-navfix` | demo | 18/18 |
-| `e2e-landscape` | demo | 50/50 |
-| `e2e-demo` | demo | 15/15 |
-| `e2e-phase6` | demo | 30/30 (28/30 al primo giro) |
-| `e2e-phase1b`, `e2e-phase2` | into | nessun problema |
-| `e2e-phase8a` | into | 45/45 |
-| `e2e-phase5` | into | 34/34 |
-
-`e2e-phase8b` non è stata eseguita: parla col negozio Shopify di sviluppo.
+- `e2e-phase6` (prestazioni): `node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`
+- `e2e-phase8b` (dal vivo su Shopify): 11 su 12 il 2026-10-29. L'unica rossa è la cassa,
+  che vuole `STORE_PASSWORD` del negozio di sviluppo.

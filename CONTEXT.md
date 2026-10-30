@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-29 · branch di lavoro **`sviluppo`** · `main` = produzione, Fase 7 + passata di sicurezza.
+> Stato al 2026-10-30 · branch di lavoro **`sviluppo`** (73 commit davanti) · `main` = produzione, ferma al 2026-10-28.
 > Questo file si carica a ogni sessione: contiene solo lo stato vigente. Il resto si legge quando serve (tabella in fondo).
 
 ## 1. Cos'è
@@ -12,10 +12,10 @@ Prototipo web 3D navigabile in prima persona del negozio streetwear INTO industr
 | Branch | Ruolo |
 |---|---|
 | `main` | Produzione su Vercel. Fase 7, contenuto `into` (segnaposto dichiarati), `noindex`. Non si tocca senza comando dell'utente. |
-| `sviluppo` | **Branch di lavoro.** Tutto il lavoro dal 2026-10-17 in poi: Fase 8a/8b, demo con foto, prova del cantiere. Ha `.env` con `VITE_CONTENT=demo`. Ogni push crea un'anteprima Vercel. |
+| `sviluppo` | **Branch di lavoro.** Tutto il lavoro dal 2026-10-17 in poi: Fase 8a/8b, demo con foto, cantiere, passata di sicurezza. Il contenuto `demo` si accende dal nome del branch (non c'è più un `.env`). Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | `archivio/docs-ristrutturati` | Archivio: riordino dei documenti del 2026-10-16 mai unito. Non ci si lavora. |
 
-- Il contenuto `demo` non può finire in produzione: con `VERCEL_ENV=production` o da `main` la build si ferma (`vite.config.js`, `guardProductionContent`). Unendo `sviluppo` in `main` va tolto `.env`.
+- Il contenuto `demo` non può finire in produzione: con `VERCEL_ENV=production` o da `main` la build si ferma (`vite.config.js`, `guardProductionContent`).
 - Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Si cancellano da GitHub; il proxy del container non permette di cancellare branch né di creare tag.
 
 ## 3. Le due proposte per il cliente
@@ -56,7 +56,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 
 | Prima di… | Leggere |
 |---|---|
-| **riprendere il lavoro da una sessione nuova** | **`docs/CONSEGNA.md`** (stato al 2026-10-29, cosa resta e in che ordine) |
+| **riprendere il lavoro da una sessione nuova** | **`docs/CONSEGNA.md`** (stato al 2026-10-30, cosa resta e in che ordine) |
 | toccare architettura, stile, rendering, navigazione | `docs/DECISIONI.md` |
 | cercare un file, una funzione, un comando di test, un parametro di debug | `docs/RIFERIMENTO.md` |
 | toccare rendering, navigazione, UX, foto o test | `docs/LEZIONI.md` (edge case già pagati) |
