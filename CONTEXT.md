@@ -16,7 +16,7 @@ Prototipo web 3D navigabile in prima persona del negozio streetwear INTO industr
 | `archivio/docs-ristrutturati` | Archivio: riordino dei documenti del 2026-10-16 mai unito. Non ci si lavora. |
 
 - Il contenuto `demo` non può finire in produzione: con `VERCEL_ENV=production` o da `main` la build si ferma (`vite.config.js`, `guardProductionContent`).
-- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Si cancellano da GitHub; il proxy del container non permette di cancellare branch né di creare tag.
+- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Cancellati da GitHub: il 2026-10-30 i branch remoti sono solo `main` e `sviluppo`, e il tag `archivio-docs-ristrutturati` tiene raggiungibili i due commit di `adoring-brown`.
 
 ## 3. Le due proposte per il cliente
 

@@ -10,76 +10,48 @@ Le altre riguardano il sito e non le può fare nessun altro che tu (o il cliente
 
 ## Parte 1 — Per rendermi autonomo
 
-### 1.1 Installare GitHub CLI · 5 minuti · **il più utile di tutti**
+### 1.1 ~~Installare GitHub CLI~~ · **fatto**, verificato il 2026-10-30
 
-In PowerShell:
+`gh` 2.103.3, autenticato sull'account `yeppama`, ambiti `repo`, `workflow`, `gist`,
+`read:org`. Da qui leggo l'esito della CI, i log del singolo passo fallito, i branch, i
+tag e le protezioni, senza passare dal browser e senza chiedere a te.
 
-```powershell
-winget install GitHub.cli
-```
+Prima verifica utile, fatta subito: **`main` non ha branch protection** (nessun
+controllo obbligatorio da rinominare), i branch remoti sono solo `main` e `sviluppo`, e
+il tag `archivio-docs-ristrutturati` c'è. La nota in `CONTEXT.md` §2 — "il proxy del
+container non permette di creare tag" — è superata.
 
-Chiudi e riapri il terminale, poi:
+Se un giorno `gh auth status` dicesse che non sei più autenticato: `gh auth login`,
+poi `GitHub.com` → `HTTPS` → `Login with a web browser`.
 
-```powershell
-gh auth login
-```
+### 1.2 ~~Preapprovare i comandi ripetitivi~~ · **fatto il 2026-10-30**
 
-Scegli: `GitHub.com` → `HTTPS` → `Login with a web browser`. Copia il codice che
-stampa, premi Invio, incollalo nel browser.
+`outbound\.claude\settings.local.json` contiene 30 voci in `allow` e 8 in `deny`,
+verificate come JSON valido. Le cinque voci di `order-planner.html` che c'erano prima
+non sono state riportate: erano comandi esatti di un altro lavoro, e un permesso
+scritto come comando esatto non si ripresenta mai.
 
-Verifica: `gh auth status` deve dire che sei autenticato.
+Cosa c'e' dentro, in breve: `npm`, `node scripts/`, `vite preview`, il git di lettura
+piu' `add`/`commit`/`branch`/`fetch`, e sei comandi `gh` di sola lettura. **`git push`
+e' preapprovato solo verso `sviluppo`**: la produzione resta una decisione dell'utente
+ogni volta, perche' `main` pubblica in automatico e unire significa pubblicare. In
+`deny`: push forzato, push su `main`, `reset --hard`, `rm -rf`, le chiamate `gh api` in
+scrittura, `gh repo delete` e `gh release`.
 
-**Cosa si sblocca:** oggi per controllare la CI apro un browser e aspetto a blocchi di
-dieci secondi, e i log dei singoli passi non li leggo proprio — GitHub chiede il login
-e io non ce l'ho. Con `gh` leggo l'esito, i log di un passo fallito e lo stato dei
-controlli direttamente. Quando un giro di CI va rosso, la differenza è fra "ti dico che
-è rosso" e "ti dico quale riga ha fallito e perché".
+Due trappole pagate qui, da non ripagare:
 
-### 1.2 Preapprovare i comandi ripetitivi · 2 minuti
+1. **La sintassi.** La forma documentata per "qualunque argomento" e' `Bash(npm run:*)`
+   con i due punti, non `Bash(npm run *)` con lo spazio — la prima stesura di questa
+   sezione aveva la seconda. Un pattern che non combacia **non da' errore**: chiede il
+   permesso come se non ci fosse, e sembra che il file non sia stato letto.
+2. **Il file si sostituisce tutto, non si modifica in mezzo.** Un `settings.json`
+   malformato non segnala niente: viene ignorato in blocco.
 
-Apri `C:\Users\stefa\Desktop\outbound\.claude\settings.local.json`.
+I permessi si leggono all'avvio, quindi dopo una modifica va riavviata la sessione.
 
-Ho provato a scrivertelo io e **il sistema me l'ha impedito, giustamente**: un agente
-che si allarga i permessi da solo è esattamente la cosa da non permettere. Quindi
-incolli tu.
-
-**Sostituisci tutto il contenuto del file** con quello qui sotto, invece di aggiungere
-righe in mezzo: una virgola di troppo o di meno rende il file illeggibile, e un
-settings.json malformato non dà errore — viene semplicemente ignorato in blocco, e te
-ne accorgi solo perché i permessi non funzionano.
-
-Le cinque voci che c'erano prima non sono riportate **di proposito**: erano comandi
-esatti di una sessione su `order-planner.html`, un altro lavoro. Un permesso scritto
-come comando esatto vale per quell'unica riga e non si ripresenterà mai più.
-
-```json
-"Bash(npm run *)", "Bash(npm ci)", "Bash(npm install *)",
-"Bash(npm audit *)", "Bash(npm outdated)", "Bash(npm ls *)", "Bash(npm view *)",
-"Bash(npx vite preview *)", "Bash(node scripts/*)",
-"Bash(git status *)", "Bash(git log *)", "Bash(git diff *)", "Bash(git show *)",
-"Bash(git add *)", "Bash(git commit *)", "Bash(git branch *)", "Bash(git fetch *)",
-"Bash(git merge-base *)", "Bash(git ls-files *)", "Bash(git rev-list *)",
-"Bash(git rev-parse *)", "Bash(git worktree *)", "Bash(git push origin sviluppo)",
-"Bash(netstat *)"
-```
-
-E, **accanto** ad `"allow"` (non dentro), una rete di sicurezza:
-
-```json
-"deny": [
-  "Bash(git push --force *)", "Bash(git push -f *)", "Bash(git push origin main*)",
-  "Bash(git reset --hard *)", "Bash(rm -rf *)"
-]
-```
-
-Poi riavvia la sessione: i permessi si leggono all'avvio.
-
-**Nota su cosa NON c'è dentro:** `git push` è preapprovato **solo verso `sviluppo`**.
-La produzione resta una decisione tua ogni volta, ed è giusto così: `main` pubblica in
-automatico, quindi unire significa pubblicare.
-
-**Cosa si sblocca:** oggi ogni build, ogni suite, ogni commit si ferma a chiederti il
-permesso. Sono decine di interruzioni per sessione.
+Questo file non lo scrivo io: un agente che si allarga i permessi da solo e'
+esattamente la cosa da non permettere, e il sistema me lo impedisce. Il contenuto lo
+preparo, incolla l'utente.
 
 ### 1.3 La password del negozio di sviluppo · 1 minuto
 

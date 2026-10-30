@@ -13,7 +13,8 @@ rimasto aperto e in che ordine conviene affrontarlo.
 | tag `archivio-docs-ristrutturati` | Due commit di riordino documenti del 2026-10-16, mai uniti. Il branch è stato cancellato, il tag li tiene raggiungibili. |
 
 GitHub Pages è spento dal 2026-10-28. La CI gira su GitHub Actions a ogni push:
-lint, invarianti, build, suite Node, **suite e2e** e `npm audit`.
+lint, invarianti, build, suite Node e `npm audit` (`ci.yml`), e **le suite e2e** in un
+workflow a parte (`e2e.yml`) che salta i push di soli documenti.
 
 ## 2. Le regole che non si deducono dal codice
 
@@ -76,8 +77,12 @@ La lista è corta, ed è corta perché è stata consumata.
 - **Peso del bundle**: il chunk della scena è 1,08 MB (293 kB gzip), sopra la soglia di
   Vite. Sconsigliato finché non ci sono misure su telefoni veri: si ottimizzerebbe alla
   cieca, e il progetto ha già pagato un `manualChunks` che annullava il lazy import.
-- **Un push di soli documenti fa girare 16 minuti di suite e2e.** Si eviterebbe con un
-  `paths-ignore` sul job e2e. Piccolo, non ancora fatto.
+- ~~**Un push di soli documenti fa girare 16 minuti di suite e2e.**~~ Fatto il
+  2026-10-30: le suite col browser hanno il loro workflow
+  (`.github/workflows/e2e.yml`) con `paths-ignore` su `**/*.md` e `docs/**`, perché
+  GitHub filtra i percorsi per workflow e non per job. `ci.yml` continua a girare su
+  tutto. Da verificare al primo push di solo codice: che il workflow `e2e` parta
+  davvero.
 - **ESLint 10**: bloccato dai plugin, non da noi (jsx-a11y arriva a `^9`, plugin-react a
   `^9.7`). Si rivaluta quando pubblicano il peer su `^10`.
 
@@ -99,7 +104,7 @@ La lista è corta, ed è corta perché è stata consumata.
 | Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
 | Scope del canale Headless su `into-industries-dev` | utente | Una verifica di sicurezza che non può fare nessun altro |
 | Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
-| `gh` CLI, allowlist dei permessi, `STORE_PASSWORD`, token Vercel | utente | Vedi `PER-L-UTENTE.md` §1 |
+| `STORE_PASSWORD`, token Vercel | utente | Vedi `PER-L-UTENTE.md` §1. `gh` CLI e allowlist dei permessi: **fatti il 2026-10-30** |
 
 ## 8. Trappole già pagate, da non ripagare
 
