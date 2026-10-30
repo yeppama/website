@@ -168,8 +168,14 @@ permessi valgono per tutte le vetrine virtuali del canale Headless**, quindi una
 tolta le riguarda tutte; e nelle schermate le caselle sono in grigio, che di solito vuol
 dire sola lettura — potrebbe servire un "Modifica" o il pannello del canale Headless.
 
-Dopo la modifica si rilancia `node scripts/e2e/e2e-phase8b.mjs`: interroga il negozio
-dal vivo, e se un permesso tolto servisse davvero, cade li'.
+Dopo la modifica si rilanciano due cose: **`npm run check:scopes`**, che chiede al
+negozio cosa puo' fare il token e si aspetta i quattro accesi e gli altri spenti, e
+`node scripts/e2e/e2e-phase8b.mjs`, che fa il giro vero (catalogo, carrello, pagine
+legali) — se un permesso tolto servisse davvero, cade li'.
+
+`check:scopes` e' nato il 2026-10-30 proprio da questa verifica: era una lettura a mano
+dall'amministrazione, adesso e' un comando. Non sta in CI perche' interroga il negozio
+dal vivo, e alla 8c si rilancia sul negozio del cliente.
 
 ### 2.2 Vercel e Shopify: i DPA · 15 minuti
 

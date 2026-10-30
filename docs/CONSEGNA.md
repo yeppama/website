@@ -156,3 +156,6 @@ Fuori da quel giro, da eseguire a mano:
 - `e2e-phase6` (prestazioni): `node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`
 - `e2e-phase8b` (dal vivo su Shopify): 11 su 12 il 2026-10-29. L'unica rossa è la cassa,
   che vuole `STORE_PASSWORD` del negozio di sviluppo.
+- `npm run check:scopes` (dal vivo su Shopify): cosa può fare il token pubblico. Rosso
+  il 2026-10-30 con cinque permessi attivi e non usati, `read_customers` compreso. Si
+  rilancia dopo aver tolto le caselle, e di nuovo alla 8c sul negozio del cliente.

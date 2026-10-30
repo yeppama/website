@@ -84,6 +84,7 @@ npm run test:framing                   # inquadratura del Focus contro la camera
 npm run catalog:template               # rigenera docs/modello-catalogo-INTO.xlsx dallo schema
 npm run catalog:import -- <file.xlsx> [uscita] [--foto <cartella>]   # resoconto.md sempre; CSV Shopify, bozza dei capi, testi EN solo senza errori
 npm run check:catalog -- [--domain x --token y] [--launch]           # DAL VIVO: storeConfig ↔ Shopify (criterio della 8c); --launch pretende le pagine legali
+npm run check:scopes                   # DAL VIVO: cosa puo' fare il token pubblico. Fuori dalla CI, come check:catalog
 # e2e-phase8b.mjs <base> <out> [PAESE]: prova DAL VIVO sul negozio di sviluppo (serve rete verso *.myshopify.com), 12 verifiche con STORE_PASSWORD
 # e2e-phase8a.mjs: carrello col negozio di prova (?commerce=mock) e pagine legali (filtro HTML attaccato apposta), 45 verifiche
 npx vite preview --port 4173 &         # poi, per ogni suite:
