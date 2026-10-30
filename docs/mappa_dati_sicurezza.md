@@ -183,11 +183,25 @@ repository.
   `VITE_CONTENT=demo` e due righe di commento: niente da ruotare.
 - **`npm run scan:secrets` gira in CI prima della build** e impedisce che ne entri uno
   domani.
+- **`npm run check:scopes`** chiede al negozio cosa quel token può fare davvero, invece
+  di fidarsi di quello che dovrebbe poter fare. Non sta in CI perché interroga Shopify
+  dal vivo: si lancia a mano, e si rilancia alla 8c sul negozio del cliente.
 
-⚠️ **Da verificare sull'amministrazione Shopify, e non può farlo il codice:** che il
-canale Headless **non abbia** permessi `unauthenticated_*_customers`. Quel token è
-pubblico: se può leggere i dati dei clienti, quei dati sono pubblici.
-`[DA VERIFICARE]`
+**Permessi del token (scope del canale Headless) — verificati e corretti il 2026-10-30.**
+Dei 16 scope della Storefront API ne erano attivi **10**, fra cui
+`unauthenticated_read_customers` e `unauthenticated_write_customers`. Il sito non ha
+login, registrazione né storico ordini: le sue chiamate sono catalogo, carrello e pagine
+legali. Quei permessi erano superficie inutile su un token pubblico per costruzione.
+
+Misurato, non gonfiato: **non era una lista di clienti esposta** — leggere un cliente
+richiede comunque un `customerAccessToken`, cioè un accesso riuscito. Ma
+`write_customers` permetteva di creare account e di far partire email di recupero
+password dal negozio, verso indirizzi scelti da chi avesse il token.
+
+I sei scope non usati sono stati **tolti**; restano i quattro che servono. Verificato due
+volte: `npm run check:scopes` (chiede al negozio cosa il token può fare davvero) ed
+`e2e-phase8b` dal vivo. **Alla 8c la stessa lista va rifatta sul negozio del cliente**,
+dove i clienti ci saranno davvero.
 
 ### Autorizzazioni e accesso ai dati
 
@@ -242,8 +256,8 @@ Tre cose che non si deducono dal codice:
 2. **Identità del titolare del trattamento**: ragione sociale, sede, partita IVA del
    venditore. Serve anche per le pagine legali, ed è **obbligatoria** per vendere online
    in UE.
-3. **Scope del canale Headless** su Shopify (vedi §4). È una verifica di cinque minuti e
-   l'unica voce di sicurezza di questo documento che il codice non può controllare da sé.
+*(La terza voce di questo elenco — gli scope del canale Headless — è stata verificata e
+corretta il 2026-10-30: vedi §4.)*
 
 ---
 
