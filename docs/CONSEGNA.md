@@ -124,12 +124,20 @@ npm run test:commerce         # 11/11, senza rete
 npm run test:catalog          # 23/23
 npm run test:framing          # 9/9
 npm run test:content          # invarianti su into e demo, negozio e cantiere
-npm run preview               # poi le suite e2e contro l'indirizzo che stampa
+npm run scan:secrets          # credenziali nei file tracciati
+npm run e2e                   # tutte le suite col browser, dall'inizio alla fine
 ```
 
-Le suite e2e vogliono `CHROMIUM_PATH` (su Windows va bene Chrome di sistema) e
-un server già avviato. **Attenzione al numero di porta**: se 4173 è occupata,
-`vite preview` ne sceglie un'altra e lo dice; passare alla suite quella giusta.
+**`npm run e2e` fa tutto da sé**: build col contenuto giusto, server sulla porta
+che trova libera, suite, spegnimento. Cerca Chrome dove sta di solito, o usa
+`CHROMIUM_PATH`. Varianti: `-- --only cantiere` per una sola, `-- --content into`
+per un contenuto solo, `-- --out e2e-out` per tenere gli screenshot.
+
+Dal 2026-10-30 le stesse suite girano **anche in CI**, in un job a parte, col
+browser dell'immagine del runner. Resta fuori `e2e-phase6`, che misura
+prestazioni: su una macchina condivisa il p50 oscilla e direbbe più della
+macchina che del codice. Quella si esegue a mano:
+`node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`.
 
 Ultimo esito noto, 2026-10-29, Chrome di sistema contro una preview locale:
 

@@ -61,6 +61,38 @@ jobs:
       - name: Contenuti e allestimenti
         run: npm run test:content
 
+  # Le suite col browser: una decina di minuti, quindi un job a parte che gira
+  # in parallelo agli altri invece di allungare la catena principale.
+  # Il browser e' quello gia' installato sull'immagine del runner; CI=1 lo fa
+  # partire senza sandbox (scripts/e2e/launchOptions.mjs), che nei container
+  # serve davvero.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Suite end-to-end
+        run: npm run e2e -- --out e2e-out
+
+      # Gli screenshot delle suite: servono a capire un rosso senza rieseguire
+      # tutto in locale. Solo quando qualcosa e' fallito.
+      - name: Screenshot delle suite fallite
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshot
+          path: e2e-out/
+          retention-days: 7
+
   audit:
     runs-on: ubuntu-latest
     steps:

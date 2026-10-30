@@ -29,7 +29,7 @@ il sito pubblica i testi che riceve, non li scrive ([`PLAN-8.md`](PLAN-8.md) §5
 | 15 | Pagina privacy | **Raggiungibile**, dal menu e dal carrello. Il testo c'è ma è il modello generato da Shopify: va riscritto. |
 | 16 | Pagina termini | **Manca il testo** (venditore). Il posto dove comparirà esiste già. |
 | 17 | Banner dei cookie | **Non serve, ed è verificato a ogni giro.** Il sito non scrive cookie e non ha analytics né script di terze parti. Vedi `SICUREZZA.md`. |
-| 18 | Analytics | **Non installato, ed è una decisione da prendere.** Metterlo significa quasi certamente un banner di consenso, oggi non necessario, e allargare la CSP. Se serve sapere quanti visitano, la via meno invasiva sono le statistiche di Vercel, senza cookie. |
+| 18 | Analytics | **Deciso il 2026-10-29: Vercel Analytics, da installare.** Senza cookie, quindi **il banner di consenso resta non necessario** — che è la ragione della scelta. Da fare in un commit solo: lo script, `script-src` e `connect-src` allargati nella CSP al dominio di Vercel, una riga nell'informativa privacy, e Vercel fra i responsabili del trattamento (il DPA serve comunque, perché ospita il sito). Finché non è installato, la verifica di `e2e-phase8a` sui cookie resta verde e va tenuta: dopo l'installazione dovrà restare verde lo stesso, ed è esattamente il controllo che lo dimostra. |
 | 19 | Indirizzo di contatto reale | **Manca, ed è obbligatorio** per vendere online in UE: ragione sociale, sede, partita IVA, contatto. Va nella pagina "Contatti" e nelle "Note legali" su Shopify. **Venditore.** |
 | 20 | *(coperto dall'interfaccia nello screenshot)* | Da chiarire con l'utente. |
 
@@ -53,13 +53,19 @@ a chi vende; i testi e le procedure li scrive lui col suo consulente.
 | 10 | Informativa sui terzi | **Inventario verificato, ed è corto.** A runtime il sito parla con due soli host: Shopify (catalogo, carrello, pagine legali) e Vercel (che lo serve). Niente font esterni, niente analytics, niente widget: i caratteri sono auto-ospitati e la CSP vieta il resto, quindi non è una promessa ma un vincolo tecnico. |
 | 11 | Sicurezza dei dati | **Fatto**, nei limiti di quello che c'è: HTTPS obbligatorio, CSP stretta, header completi, nessun dato personale sul sito. Dettaglio in `SICUREZZA.md`. |
 | 12 | Procedura in caso di violazione | **Del venditore.** Una violazione riguarderebbe i dati su Shopify, non il sito. |
-| 13 | Proprietà intellettuale | **Due cose concrete.** (a) Il repository è **pubblico e senza licenza**: nessuno può riusarlo legalmente, ma il codice, la struttura del catalogo e il dominio del negozio di sviluppo si leggono. Vale la pena decidere se deve restare pubblico. (b) Le immagini di ambiente sono **generate con Higgsfield**: i termini di quel servizio vanno verificati per l'uso commerciale. |
+| 13 | Proprietà intellettuale | **Due cose concrete.** (a) Il repository è **pubblico e senza licenza**: nessuno può riusarlo legalmente, ma il codice, la struttura del catalogo e il dominio del negozio di sviluppo si leggono. **Deciso il 2026-10-29: resta com'è.** Da sapere, non da correggere: chiunque può leggere il codice e l'indirizzo del negozio di sviluppo, e nome ed email dell'autore stanno nei metadati dei commit. (b) Le immagini di ambiente sono **generate con Higgsfield**: i termini di quel servizio vanno verificati per l'uso commerciale. |
 | 14 | Licenze open source | **Verificato pacchetto per pacchetto.** 66 dipendenze di produzione, tutte permissive: 56 MIT, 5 Apache-2.0, 3 ISC, 1 BSD-3-Clause, e `webgl-constants`, che non dichiara la licenza nel manifesto ma distribuisce un file MIT. **Nessuna copyleft.** I caratteri auto-ospitati sono **tre** famiglie, non due (Archivo, JetBrains Mono, UnifrakturCook), tutte sotto **SIL Open Font License 1.1**, che chiede di distribuire il testo della licenza insieme al font. Mancava: **aggiunto il 2026-10-29**, i tre `OFL-*.txt` copiati senza modifiche da `google/fonts` stanno in `public/fonts/` accanto ai `.woff2`, con un `README.md` che spiega la regola a chi aggiungerà un peso. |
 | 15 | Pagamenti e abbonamenti | **Di Shopify**, che gestisce prezzi, imposte, spedizione e rimborsi. Il carrello dichiara "IVA inclusa, spedizione calcolata al pagamento" e non mostra mai un prezzo che non venga dal fornitore. Nessun abbonamento: solo acquisti singoli. |
 
-## 3. Da decidere, in ordine
+## 3. Deciso il 2026-10-29
 
-1. **Il repository resta pubblico?** È l'unica domanda di questo elenco che non costa niente e si può rispondere subito.
-2. **Analytics sì o no.** Da cui dipende il banner dei cookie.
-3. **Al lancio, nello stesso commit:** togliere `noindex` (meta + header), aggiungere `robots.txt` e `sitemap.xml`, mettere `og:image` e il set di favicon.
-4. **Dal venditore:** i sette testi legali, l'indirizzo reale, i DPA con Shopify e Vercel.
+- **Il repository resta pubblico e senza licenza.** Scelta dell'utente, consapevole.
+- **Analytics: sì, Vercel Analytics**, perché non usa cookie e non impone il banner. Da
+  installare insieme alle modifiche che porta con sé (CSP, informativa, DPA): vedi il punto 18.
+
+## 4. Ancora aperto
+
+1. **Installare Vercel Analytics**, col suo contorno. Non è urgente, ma è deciso.
+2. **Al lancio, nello stesso commit:** togliere `noindex` (meta + header), aggiungere `robots.txt`
+   e `sitemap.xml`, mettere `og:image` e il set di favicon.
+3. **Dal venditore:** i sette testi legali, l'indirizzo reale, i DPA con Shopify e Vercel.

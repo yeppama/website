@@ -7,6 +7,9 @@ dist-ssr
 npm-debug.log*
 src/styles/theme.generated.css
 
+# esiti e screenshot delle suite e2e (npm run e2e -- --out e2e-out)
+e2e-out/
+
 # dati del cliente prodotti da scripts/catalog/import.mjs
 catalogo-importato/
 media-sorgenti/
