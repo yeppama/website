@@ -32,7 +32,10 @@ const RICHIESTI = [
   ['unauthenticated_read_checkouts', '{ cart(id:"gid://shopify/Cart/inesistente"){ id } }'],
 ]
 const NON_USATI = [
-  ['unauthenticated_read_product_tags', '{ products(first:1){ nodes { tags } } }'],
+// `read_product_tags` non e' nella lista di proposito: il 2026-10-30 e' stato
+// tolto dall'amministrazione e il campo `tags` ha continuato a rispondere,
+// quindi lo copre gia' `read_product_listings`. Una sonda su quel campo
+// direbbe sempre 'attivo', e un controllo che grida sempre viene spento.
   ['unauthenticated_read_product_inventory', '{ products(first:1){ nodes { variants(first:1){ nodes { quantityAvailable } } } } }'],
   ['unauthenticated_read_product_pickup_locations', '{ products(first:1){ nodes { variants(first:1){ nodes { storeAvailability(first:1){ nodes { available } } } } } } }'],
   ['unauthenticated_read_selling_plans', '{ products(first:1){ nodes { sellingPlanGroups(first:1){ nodes { name } } } } }'],
@@ -74,7 +77,11 @@ for (const [nome, query] of NON_USATI) {
   if (ok) problemi.push(`${nome}: attivo e non usato`)
 }
 
-console.log('\nNon sondabile: unauthenticated_write_customers (ogni prova e\' una scrittura sui clienti). Si legge dall\'amministrazione.')
+console.log('')
+console.log("Non sondabili, si leggono dall'amministrazione:")
+console.log('  write_customers    ogni prova sarebbe una scrittura sui clienti')
+console.log('  write_checkouts    servirebbe creare un carrello: lo fa e2e-phase8b')
+console.log('  read_product_tags  il campo tags risponde anche senza')
 
 if (problemi.length) {
   console.error(`\nScope: ${problemi.length} da sistemare`)
