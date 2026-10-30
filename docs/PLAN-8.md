@@ -94,6 +94,13 @@ Esistono due negozi Shopify e **solo uno per volta è quello di riferimento**:
   suoi dati stanno in §6. Non si interroga, non si popola, non ci si scrivono le
   informative finché non si arriva alla 8c.
 
+**Gli scope del canale Headless si impostano a mano, e sono quattro**:
+`unauthenticated_read_product_listings` (catalogo), `unauthenticated_write_checkouts` e
+`unauthenticated_read_checkouts` (carrello), `unauthenticated_read_content` (pagine
+legali). Nient'altro, e **mai** i due dei clienti: sul negozio di sviluppo erano accesi
+per impostazione predefinita (trovato il 2026-10-30), e lì non c'erano clienti veri. Sul
+negozio del cliente ci saranno.
+
 **Il passaggio è la 8c, ed è un commit solo**: dominio, token pubblico e `connect-src`
 della CSP cambiano insieme. Separarli significa un carrello che smette di funzionare in
 silenzio — il sito carica, i capi si vedono, "Aggiungi al carrello" non fa niente.

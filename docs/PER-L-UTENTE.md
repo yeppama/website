@@ -138,9 +138,38 @@ sito: lo legge chiunque apra gli strumenti del browser.
 `read_product_pickup_locations`, `read_selling_plans`, `read_metaobjects`,
 `read_bundles`, `read_shop_pay_installments_pricing`.
 
-Nell'amministrazione i permessi possono comparire con etichette in italiano invece dei
-nomi tecnici. Se non trovi la corrispondenza, copiami l'elenco come lo vedi e lo
-confronto io voce per voce.
+**Com'erano davvero, letti dalle schermate del 2026-10-30.** Attivi 10 su 16:
+
+| Attivo | Giudizio |
+|---|---|
+| `read_product_listings` | **tenere** |
+| `read_checkouts`, `write_checkouts` | **tenere** |
+| `read_content` | **tenere** |
+| `read_customers` | **togliere** |
+| `write_customers` | **togliere, e' il piu' serio** |
+| `read_product_tags` | togliere, non usato |
+| `read_product_pickup_locations` | togliere, non usato |
+| `read_selling_plans` | togliere, non usato |
+| `read_metaobjects` | togliere, non usato |
+
+Gia' spenti, e vanno lasciati cosi': `read_product_inventory`,
+`read_customer_tags`, `read_bulk_operations`, `write_bulk_operations`,
+`read_bundles`, `read_shop_pay_installments_pricing`.
+
+**Quanto e' grave `write_customers`.** Non e' una lista di clienti esposta: per leggere
+un cliente la Storefront API vuole comunque un `customerAccessToken`, cioe' un accesso
+riuscito. Quello che permette e' creare account e far partire email di recupero
+password dal negozio, a indirizzi scelti da chi ha il token — e il token e' nel sorgente
+della pagina. Sul negozio di sviluppo non ci sono clienti veri, quindi oggi vale poco:
+conta perche' alla 8c non deve essere ricopiato sul negozio del cliente.
+
+Due avvertenze prima di toccare le caselle: l'avviso in cima alla pagina dice che **i
+permessi valgono per tutte le vetrine virtuali del canale Headless**, quindi una casella
+tolta le riguarda tutte; e nelle schermate le caselle sono in grigio, che di solito vuol
+dire sola lettura — potrebbe servire un "Modifica" o il pannello del canale Headless.
+
+Dopo la modifica si rilancia `node scripts/e2e/e2e-phase8b.mjs`: interroga il negozio
+dal vivo, e se un permesso tolto servisse davvero, cade li'.
 
 ### 2.2 Vercel e Shopify: i DPA · 15 minuti
 
