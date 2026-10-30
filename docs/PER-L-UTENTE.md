@@ -101,7 +101,7 @@ locale) e ti do già pronto l'indirizzo dell'anteprima da mandare al cliente.
 
 ## Parte 2 — Il sito: cose che richiedono i tuoi account
 
-### 2.1 Shopify: controllare gli scope del canale Headless · 5 minuti · **adesso**
+### 2.1 ~~Shopify: controllare gli scope del canale Headless~~ · **fatto il 2026-10-30**
 
 **Sul negozio di sviluppo** (`into-industries-dev`): è quello il cui token pubblico sta
 nel codice del sito oggi. Sul negozio del cliente si rifarà alla 8c, col suo token.
@@ -138,44 +138,49 @@ sito: lo legge chiunque apra gli strumenti del browser.
 `read_product_pickup_locations`, `read_selling_plans`, `read_metaobjects`,
 `read_bundles`, `read_shop_pay_installments_pricing`.
 
-**Com'erano davvero, letti dalle schermate del 2026-10-30.** Attivi 10 su 16:
+**Com'erano, e cosa e' stato fatto.** Attivi 10 su 16. I sei che il sito non usa sono
+stati tolti il 2026-10-30 dall'amministrazione; restano i quattro della tabella qui
+sopra. La lista serve ancora, perche' alla 8c va rifatta sul negozio del cliente.
 
-| Attivo | Giudizio |
+| Era attivo | Fatto |
 |---|---|
-| `read_product_listings` | **tenere** |
-| `read_checkouts`, `write_checkouts` | **tenere** |
-| `read_content` | **tenere** |
-| `read_customers` | **togliere** |
-| `write_customers` | **togliere, e' il piu' serio** |
-| `read_product_tags` | togliere, non usato |
-| `read_product_pickup_locations` | togliere, non usato |
-| `read_selling_plans` | togliere, non usato |
-| `read_metaobjects` | togliere, non usato |
+| `read_product_listings` · `read_checkouts` · `write_checkouts` · `read_content` | tenuti |
+| `read_customers` · `write_customers` | **tolti** |
+| `read_product_tags` · `read_product_pickup_locations` · `read_selling_plans` · `read_metaobjects` | tolti, non usati |
 
-Gia' spenti, e vanno lasciati cosi': `read_product_inventory`,
-`read_customer_tags`, `read_bulk_operations`, `write_bulk_operations`,
-`read_bundles`, `read_shop_pay_installments_pricing`.
+Gia' spenti e lasciati tali: `read_product_inventory`, `read_customer_tags`,
+`read_bulk_operations`, `write_bulk_operations`, `read_bundles`,
+`read_shop_pay_installments_pricing`.
 
-**Quanto e' grave `write_customers`.** Non e' una lista di clienti esposta: per leggere
+**Quanto era grave `write_customers`.** Non era una lista di clienti esposta: per leggere
 un cliente la Storefront API vuole comunque un `customerAccessToken`, cioe' un accesso
-riuscito. Quello che permette e' creare account e far partire email di recupero
+riuscito. Quello che permetteva era creare account e far partire email di recupero
 password dal negozio, a indirizzi scelti da chi ha il token — e il token e' nel sorgente
-della pagina. Sul negozio di sviluppo non ci sono clienti veri, quindi oggi vale poco:
-conta perche' alla 8c non deve essere ricopiato sul negozio del cliente.
+della pagina. Sul negozio di sviluppo non ci sono clienti veri, quindi il danno possibile
+era piccolo: contava perche' alla 8c non deve essere ricopiato sul negozio del cliente.
 
-Due avvertenze prima di toccare le caselle: l'avviso in cima alla pagina dice che **i
-permessi valgono per tutte le vetrine virtuali del canale Headless**, quindi una casella
-tolta le riguarda tutte; e nelle schermate le caselle sono in grigio, che di solito vuol
-dire sola lettura — potrebbe servire un "Modifica" o il pannello del canale Headless.
+**Dove si tocca**, per la prossima volta: Headless → la vetrina virtuale → *Gestione
+accesso API* → **API Storefront** → *Autorizzazioni API Storefront* → la **matita** in
+alto a destra (senza, le caselle sono in sola lettura), poi *Salva*. L'avviso in cima
+dice il vero: i permessi valgono per **tutte** le vetrine virtuali del canale.
 
-Dopo la modifica si rilanciano due cose: **`npm run check:scopes`**, che chiede al
-negozio cosa puo' fare il token e si aspetta i quattro accesi e gli altri spenti, e
-`node scripts/e2e/e2e-phase8b.mjs`, che fa il giro vero (catalogo, carrello, pagine
-legali) — se un permesso tolto servisse davvero, cade li'.
+**Verificato due volte dopo la modifica**, perche' togliere un permesso che serviva si
+vede solo dall'uso:
 
-`check:scopes` e' nato il 2026-10-30 proprio da questa verifica: era una lettura a mano
-dall'amministrazione, adesso e' un comando. Non sta in CI perche' interroga il negozio
-dal vivo, e alla 8c si rilancia sul negozio del cliente.
+- `npm run check:scopes` — verde: i tre sondabili fra i richiesti rispondono, i cinque
+  sondabili fra i tolti sono spenti.
+- `node scripts/e2e/e2e-phase8b.mjs http://localhost:<porta>` — **11 su 12**, identico a
+  prima della modifica: catalogo, varianti, prezzi in EUR, carrello creato, aggiornato,
+  ricaricato e svuotato su Shopify, pagine legali. L'unica rossa resta la cassa, che
+  vuole `STORE_PASSWORD` (§1.3). Su Windows serve
+  `CHROMIUM_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe"`: il percorso
+  predefinito nelle suite e' quello del container dove sono state scritte.
+
+**Una trappola trovata qui:** la prima versione di `check:scopes` sondava anche
+`read_product_tags` leggendo il campo `tags` di un prodotto. Tolto il permesso, il campo
+ha continuato a rispondere — lo copre gia' `read_product_listings`. La sonda e' stata
+rimossa: un controllo che segnala sempre un problema inesistente viene spento, e con lui
+quelli veri.
 
 ### 2.2 Vercel e Shopify: i DPA · 15 minuti
 

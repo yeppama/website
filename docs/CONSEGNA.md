@@ -102,7 +102,7 @@ La lista è corta, ed è corta perché è stata consumata.
 | Testi e immagini del Lookbook, conferma tagline (P3) | cliente | Contenuto reale |
 | **Scelta fra allestimento A e B** | cliente | Dimezza la superficie da verificare. In sospeso dal 2026-10-19 |
 | Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
-| Scope del canale Headless su `into-industries-dev` | utente | Una verifica di sicurezza che non può fare nessun altro |
+| ~~Scope del canale Headless su `into-industries-dev`~~ | — | **Fatto il 2026-10-30**: i sei non usati tolti dall'amministrazione, `npm run check:scopes` verde, `e2e-phase8b` 11/12 come prima |
 | Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
 | `STORE_PASSWORD`, token Vercel | utente | Vedi `PER-L-UTENTE.md` §1. `gh` CLI e allowlist dei permessi: **fatti il 2026-10-30** |
 
