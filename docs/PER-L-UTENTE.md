@@ -164,8 +164,13 @@ accesso API* → **API Storefront** → *Autorizzazioni API Storefront* → la *
 alto a destra (senza, le caselle sono in sola lettura), poi *Salva*. L'avviso in cima
 dice il vero: i permessi valgono per **tutte** le vetrine virtuali del canale.
 
-**Verificato due volte dopo la modifica**, perche' togliere un permesso che serviva si
-vede solo dall'uso:
+**Verificato in tre modi dopo la modifica**, perche' nessuno dei tre copre tutto e
+togliere un permesso che serviva si vede solo dall'uso:
+
+- **l'amministrazione riletta a schermo**, ingrandita: `read_customers`,
+  `write_customers` e `read_customer_tags` sono tutte e tre vuote; `read_content`,
+  `read_checkouts` e `write_checkouts` spuntate. Serve perche' le due di scrittura non
+  si possono sondare senza scrivere davvero.
 
 - `npm run check:scopes` — verde: i tre sondabili fra i richiesti rispondono, i cinque
   sondabili fra i tolti sono spenti.
