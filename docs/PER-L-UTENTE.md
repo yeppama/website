@@ -129,7 +129,10 @@ locale) e ti do già pronto l'indirizzo dell'anteprima da mandare al cliente.
 
 ## Parte 2 — Il sito: cose che richiedono i tuoi account
 
-### 2.1 Shopify: controllare gli scope del canale Headless · 5 minuti · **da fare prima della 8c**
+### 2.1 Shopify: controllare gli scope del canale Headless · 5 minuti · **adesso**
+
+**Sul negozio di sviluppo** (`into-industries-dev`): è quello il cui token pubblico sta
+nel codice del sito oggi. Sul negozio del cliente si rifarà alla 8c, col suo token.
 
 Amministrazione Shopify → **Impostazioni → App e canali di vendita → Headless** →
 guarda i permessi della Storefront API.
@@ -142,34 +145,7 @@ strumenti del browser.
 
 Servono solo: prodotti, collezioni, carrello, checkout, pagine legali.
 
-### 2.2 Shopify: i sette testi legali · dipende dal cliente · **blocca la 8d**
-
-**Impostazioni → Informative.** Oggi c'è **una pagina su sette**, ed è il modello che
-Shopify genera da solo, in inglese.
-
-L'elenco completo con il nome tecnico di ogni campo è in
-[`CONTENUTI.md`](CONTENUTI.md) §5. Da inoltrare al cliente così com'è.
-
-**Non li scrivo io, e non è pigrizia:** sono obblighi del venditore e li definisce col
-suo consulente. Il sito pubblica i testi che riceve.
-
-Quando ne pubblica uno, lo vedi subito:
-
-```powershell
-npm run check:catalog -- --domain into-industries-ayehghmw.myshopify.com --token 75261516e790b43df1e21a01c0000dae
-```
-
-### 2.3 Shopify: token nuovo del negozio del cliente · 2 minuti · **blocca la 8c**
-
-Quando il negozio del cliente sarà quello definitivo, serve il token pubblico della sua
-Storefront API.
-
-⚠️ **Dammelo insieme al dominio, e lo cambio in un commit solo.** La CSP in
-`vercel.json` elenca l'host esatto del negozio: se cambia il token ma non l'host, il
-carrello smette di funzionare **in silenzio** — il sito carica, i capi si vedono, e
-"Aggiungi al carrello" non fa niente.
-
-### 2.4 Vercel e Shopify: i DPA · 15 minuti
+### 2.2 Vercel e Shopify: i DPA · 15 minuti
 
 Sono i contratti che ti servono per trattare dati personali tramite loro. Entrambi li
 offrono standard:
@@ -180,7 +156,7 @@ offrono standard:
 Non è codice e non cambia niente nel sito, ma è il punto 09 della checklist legale e
 serve prima di vendere.
 
-### 2.5 Higgsfield: i termini per l'uso commerciale · 10 minuti
+### 2.3 Higgsfield: i termini per l'uso commerciale · 10 minuti
 
 Le immagini delle pareti del negozio e del cantiere (`public/negozio/`,
 `public/cantiere/`) sono generate con Higgsfield, col tuo account. Vale la pena
@@ -249,6 +225,26 @@ Elenco completo e formati in [`CONTENUTI.md`](CONTENUTI.md). Qui solo cosa sbloc
 | **Indirizzo e dati del venditore** | **Obbligatorio per vendere in UE.** Ragione sociale, sede, partita IVA, contatto |
 | **La scelta fra i due allestimenti** (A negozio / B cantiere) | Smette di servire mantenerli entrambi, e il lavoro si concentra su uno |
 | **Prezzi definitivi e dominio** | Il lancio |
+
+---
+
+## Parte 5 — Quando si arriverà alla 8c
+
+**Non adesso.** Si lavora su un negozio alla volta, e fino al prototipo completo quello
+di riferimento è `into-industries-dev` (la regola sta in [`PLAN-8.md`](PLAN-8.md)
+§4-bis). Il negozio del cliente oggi è vuoto e va lasciato vuoto: non si interroga, non
+si popola, non ci si scrivono le informative.
+
+Queste due voci sono qui perché non si perdano, non perché siano da fare:
+
+- **I sette testi legali** sul negozio del cliente, scritti dal venditore col suo
+  consulente. La consegna pronta da inoltrare è in [`CONTENUTI.md`](CONTENUTI.md) §5.
+  Il meccanismo che li pubblica è già fatto e verificato — sul negozio di sviluppo, con
+  informative di prova, che è tutto ciò che serve per sapere che funziona.
+- **Il token pubblico della sua Storefront API**, da darmi **insieme al dominio**: li
+  cambio in un commit solo con il `connect-src` della CSP. Se cambia il token ma non
+  l'host, il carrello smette di funzionare in silenzio — il sito carica, i capi si
+  vedono, "Aggiungi al carrello" non fa niente.
 
 ---
 

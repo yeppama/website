@@ -68,7 +68,11 @@ di più o di meno, si cambia la disposizione degli espositori (dimmi quanti).
 - **Dominio:** acquistato dal cliente, verrà comunicato a materiale pronto. Servirà configurarlo su Vercel (Settings → Domains) e nei DNS del registrar: istruzioni al momento.
 - **Misura su Android di fascia media:** mai fatta. Se non è possibile, resta come rischio dichiarato.
 
-## 5. Pagine legali del venditore (Fase 8d)
+## 5. Pagine legali del venditore (materiale di lancio)
+
+> **Da inoltrare al cliente, non da rincorrere adesso.** Il meccanismo che le pubblica è fatto e
+> verificato sul negozio di sviluppo, con informative di prova. I testi veri servono sul negozio
+> del cliente, cioè alla 8c/8e: un negozio alla volta (`docs/PLAN-8.md` §4-bis).
 
 Il sito **non scrive** questi testi: li legge da Shopify e li mostra nel menu e nel carrello, puliti
 prima di entrare nella pagina. Li scrive il venditore, col suo consulente o commercialista: sono

@@ -26,8 +26,8 @@ il sito pubblica i testi che riceve, non li scrive ([`PLAN-8.md`](PLAN-8.md) §5
 | 12 | Stati di caricamento | **A posto.** Barra dell'onboarding per stadi reali, scheletro delle immagini, "…" sui prezzi finché il fornitore non risponde. |
 | 13 | Stati d'errore dei moduli | **Non ci sono moduli.** Gli errori che esistono — carrello, fornitore irraggiungibile, testi legali non caricati — hanno il loro stato e un "Riprova". |
 | 14 | Pagina di ringraziamento | **È di Shopify**, che possiede la cassa e il dopo-ordine. |
-| 15 | Pagina privacy | **Raggiungibile**, dal menu e dal carrello. Il testo c'è ma è il modello generato da Shopify: va riscritto. |
-| 16 | Pagina termini | **Manca il testo** (venditore). Il posto dove comparirà esiste già. |
+| 15 | Pagina privacy | **Raggiungibile**, dal menu e dal carrello: il meccanismo è fatto e verificato sul negozio di sviluppo. Il testo vero lo scrive il venditore sul **suo** negozio, alla 8c. |
+| 16 | Pagina termini | Il posto dove comparirà esiste già e funziona. Il testo è materiale di lancio, non un lavoro aperto adesso. |
 | 17 | Banner dei cookie | **Non serve, ed è verificato a ogni giro.** Il sito non scrive cookie e non ha analytics né script di terze parti. Vedi `SICUREZZA.md`. |
 | 18 | Analytics | **Deciso il 2026-10-29: Vercel Analytics, da installare.** Senza cookie, quindi **il banner di consenso resta non necessario** — che è la ragione della scelta. Da fare in un commit solo: lo script, `script-src` e `connect-src` allargati nella CSP al dominio di Vercel, una riga nell'informativa privacy, e Vercel fra i responsabili del trattamento (il DPA serve comunque, perché ospita il sito). Finché non è installato, la verifica di `e2e-phase8a` sui cookie resta verde e va tenuta: dopo l'installazione dovrà restare verde lo stesso, ed è esattamente il controllo che lo dimostra. |
 | 19 | Indirizzo di contatto reale | **Manca, ed è obbligatorio** per vendere online in UE: ragione sociale, sede, partita IVA, contatto. Va nella pagina "Contatti" e nelle "Note legali" su Shopify. **Venditore.** |
@@ -41,8 +41,8 @@ a chi vende; i testi e le procedure li scrive lui col suo consulente.
 
 | # | Punto | Esito |
 |---|---|---|
-| 01 | Privacy policy | Pubblicata su Shopify ma è il **modello generato automaticamente**, in inglese. Da riscrivere sul trattamento reale. |
-| 02 | Termini e condizioni | **Da scrivere.** Elenco dei sette riquadri in [`CONTENUTI.md`](CONTENUTI.md) §5. |
+| 01 | Privacy policy | Da scrivere sul negozio del cliente, al lancio, sul trattamento reale. Quella che si vede oggi è un'informativa di prova sul negozio di sviluppo: serve a verificare il meccanismo, non è un testo da correggere. |
+| 02 | Termini e condizioni | **Da scrivere, al lancio.** Elenco dei sette riquadri già pronto da inoltrare in [`CONTENUTI.md`](CONTENUTI.md) §5. |
 | 03 | GDPR | **Si applica**: si vende a consumatori in Italia. Il sito raccoglie pochissimo (vedi 04 e 11); il grosso del trattamento avviene su Shopify, dove stanno ordini e clienti. |
 | 04 | Consenso ai cookie | **Non necessario oggi**, perché non ci sono cookie né tracciamento. In `localStorage` restano l'id del carrello e il modo di controllo scelto da chi naviga: tecnici, esenti. Se un giorno entra un analytics, il consenso diventa obbligatorio. |
 | 05 | Base giuridica | **Del venditore.** Per gli ordini di norma è il contratto; per fatture e registri, l'obbligo di legge. |
@@ -68,4 +68,9 @@ a chi vende; i testi e le procedure li scrive lui col suo consulente.
 1. **Installare Vercel Analytics**, col suo contorno. Non è urgente, ma è deciso.
 2. **Al lancio, nello stesso commit:** togliere `noindex` (meta + header), aggiungere `robots.txt`
    e `sitemap.xml`, mettere `og:image` e il set di favicon.
-3. **Dal venditore:** i sette testi legali, l'indirizzo reale, i DPA con Shopify e Vercel.
+3. **Dal venditore, al lancio:** i sette testi legali e l'indirizzo reale, sul **suo**
+   negozio. I DPA con Shopify e Vercel invece servono comunque, a prescindere dal lancio.
+
+> **Un negozio alla volta.** Fino al prototipo completo quello di riferimento è
+> `into-industries-dev`; il negozio del cliente resta vuoto fino alla 8c. La regola, e il
+> motivo per cui è scritta, stanno in [`PLAN-8.md`](PLAN-8.md) §4-bis.

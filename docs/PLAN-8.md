@@ -82,6 +82,28 @@ La nota "Prezzi dimostrativi" sparisce solo quando i prezzi vengono davvero da S
 | **8e** | Messa in vendita: tolto `noindex`, dominio, ordine reale di piccolo importo + rimborso | tutto quanto sopra | Un ordine vero completato e rimborsato, ricevuto nel pannello del cliente |
 | **8f** | **Lingua inglese, dopo il lancio** (deciso dall'utente il 2026-10-16): testi del sito in due lingue in `storeConfig`, selettore di lingua, prezzi formattati per lingua, `@inContext(language:)` verso Shopify; su Shopify traduzioni di capi e varianti (app "Translate & Adapt") e inglese pubblicato solo quando il sito lo supporta | testi inglesi dal cliente (capi, lookbook, brand story, pagine legali), chiesti insieme al catalogo | Sito e cassa coerenti in italiano e in inglese; nessun testo che resta in una lingua sola |
 
+## 4-bis. Un negozio alla volta (regola, dal 2026-10-30)
+
+Esistono due negozi Shopify e **solo uno per volta è quello di riferimento**:
+
+- **fino al prototipo completo: `into-industries-dev`**, il negozio di sviluppo. È l'host
+  in `storeConfig.commerce.shopify.domain` e nella CSP di `vercel.json`, l'unico che il
+  sito interroga, l'unico che le suite verificano. Ha informative di prova, che bastano
+  a verificare il meccanismo.
+- **il negozio del cliente è un'annotazione**, non un lavoro aperto: esiste, è vuoto, e i
+  suoi dati stanno in §6. Non si interroga, non si popola, non ci si scrivono le
+  informative finché non si arriva alla 8c.
+
+**Il passaggio è la 8c, ed è un commit solo**: dominio, token pubblico e `connect-src`
+della CSP cambiano insieme. Separarli significa un carrello che smette di funzionare in
+silenzio — il sito carica, i capi si vedono, "Aggiungi al carrello" non fa niente.
+
+> Perché c'è scritto: il 2026-10-29 questa regola era implicita, e non ha retto. Il
+> negozio del cliente era raggiungibile e `check:catalog` sapeva interrogarlo, quindi è
+> stato interrogato; dai suoi 7 errori e 6 avvisi è nato un piano di lavoro che nessuno
+> aveva chiesto, due fasi in anticipo. Che una verifica si possa fare non vuol dire che
+> sia il momento di farla.
+
 ## 5. Rischi
 
 | Rischio | Mitigazione |
