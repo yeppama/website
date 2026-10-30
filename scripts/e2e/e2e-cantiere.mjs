@@ -7,7 +7,7 @@
  *   node scripts/e2e/e2e-cantiere.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
 
 // Il config letto qui deve essere quello della pagina: allestimento del cantiere e
 // contenuto della build. Il `.env` che portava VITE_CONTENT non è più tracciato
@@ -22,7 +22,8 @@ const { storeConfig } = await import('../../src/config/storeConfig.js')
 const { circleOverlapsCollider } = await import('../../src/lib/geometry.js')
 const { focusItemPose } = await import('../../src/lib/focusItems.js')
 
-const [RAW_BASE, OUT] = process.argv.slice(2)
+const [RAW_BASE, RAW_OUT] = process.argv.slice(2)
+const OUT = outDir(RAW_OUT)
 const BASE = localBase(RAW_BASE)
 const C = storeConfig.copy
 const R = storeConfig.navigation.player.radius

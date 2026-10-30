@@ -4,9 +4,10 @@
  *   node scripts/e2e/shots-demo.mjs <base> <cartella-output> [parametri extra, es. "&commerce=mock"]
  */
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
 
-const [RAW_BASE, OUT, EXTRA = ''] = process.argv.slice(2)
+const [RAW_BASE, RAW_OUT, EXTRA = ''] = process.argv.slice(2)
+const OUT = outDir(RAW_OUT)
 const BASE = localBase(RAW_BASE)
 const browser = await chromium.launch({
   executablePath: chromiumPath(),

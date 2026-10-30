@@ -1,6 +1,7 @@
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
-const [RAW_BASE, OUT, ...poses] = process.argv.slice(2)
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
+const [RAW_BASE, RAW_OUT, ...poses] = process.argv.slice(2)
+const OUT = outDir(RAW_OUT)
 const BASE = localBase(RAW_BASE)
 const browser = await chromium.launch({
   executablePath: chromiumPath(),

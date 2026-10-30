@@ -7,12 +7,12 @@
  *   node scripts/e2e/e2e-landscape.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
 import { storeConfig } from '../../src/config/storeConfig.js'
 import { tokens } from '../../src/config/designTokens.js'
 import { fovForAspect } from '../../src/lib/framing.js'
 
-const BASE = localBase(process.argv[2]), OUT = process.argv[3]
+const BASE = localBase(process.argv[2]), OUT = outDir(process.argv[3])
 const browser = await chromium.launch({
   executablePath: chromiumPath(),
   args: chromiumArgs(),

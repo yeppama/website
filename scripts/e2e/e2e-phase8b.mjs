@@ -1,5 +1,5 @@
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
 import { storeConfig } from '../../src/config/storeConfig.js'
 
 /**
@@ -8,7 +8,7 @@ import { storeConfig } from '../../src/config/storeConfig.js'
  * sviluppo (innocui) e apre la cassa senza pagare: il pagamento di prova lo fa
  * l'utente. Se Shopify non è raggiungibile, lo dice e non finge.
  */
-const BASE = localBase(process.argv[2]), OUT = process.argv[3]
+const BASE = localBase(process.argv[2]), OUT = outDir(process.argv[3])
 // argv[4] forza il paese (diagnosi, es. US finché il negozio non vende in IT).
 const COUNTRY = process.argv[4] ?? null
 const browser = await chromium.launch({

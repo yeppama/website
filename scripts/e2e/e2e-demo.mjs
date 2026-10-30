@@ -5,10 +5,11 @@
  *   VITE_CONTENT=demo node scripts/e2e/e2e-demo.mjs <base> <cartella-output>
  */
 import { chromium } from 'playwright-core'
-import { chromiumArgs, chromiumPath, localBase } from './launchOptions.mjs'
+import { chromiumArgs, chromiumPath, localBase, outDir } from './launchOptions.mjs'
 import { storeConfig } from '../../src/config/storeConfig.js'
 
-const [RAW_BASE, OUT] = process.argv.slice(2)
+const [RAW_BASE, RAW_OUT] = process.argv.slice(2)
+const OUT = outDir(RAW_OUT)
 const BASE = localBase(RAW_BASE)
 const C = storeConfig.copy
 const browser = await chromium.launch({

@@ -43,3 +43,12 @@ export function localBase(value) {
  */
 export const chromiumPath = () =>
   process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+
+/**
+ * Cartella degli screenshot. Senza terzo argomento le suite scrivevano in
+ * `${undefined}/...`, cioe' creavano una cartella chiamata "undefined" nella
+ * radice del repository: succedeva a ogni esecuzione a mano, ed e' successo due
+ * volte il 2026-10-30. Il default e' `e2e-out`, che e' gia' il nome usato in CI
+ * e sta gia' in .gitignore.
+ */
+export const outDir = (value) => value || 'e2e-out'
