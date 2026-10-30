@@ -63,6 +63,7 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 | capire perché una cosa è com'è, o cosa ha deciso l'utente e quando | `docs/STORIA.md` |
 | toccare header, CSP, flag di debug o la catena di build | `docs/SICUREZZA.md` |
 | capire cosa manca prima di vendere (SEO, condivisione, legale) | `docs/LANCIO.md` |
+| **sapere cosa deve fare l'utente, e come** | **`docs/PER-L-UTENTE.md`** (guida passo passo) |
 | mettere il sito in inglese | `docs/PIANO-INGLESE.md` (Fase 8f, non avviata) |
 | lavorare su e-commerce / Shopify | `docs/PLAN-8.md` |
 | misure di prestazioni | `docs/PERF.md` |

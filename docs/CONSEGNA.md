@@ -80,6 +80,9 @@ documentazione) sono fatte. Resta poco, e niente di urgente:
 
 ## 5. Cosa può fare solo l'utente
 
+> Dal 2026-10-30 ognuna di queste voci ha istruzioni passo passo in
+> [`PER-L-UTENTE.md`](PER-L-UTENTE.md): cosa fare, quanto costa, cosa sblocca.
+
 - **Admin Shopify:** verificare che il canale Headless non abbia scope sui
   clienti (`unauthenticated_*_customers`). Per la 8c serve un token nuovo del
   negozio del cliente.
