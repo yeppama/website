@@ -122,7 +122,7 @@ modulo tiene il percorso dell'eseguibile, sovrascrivibile con `CHROMIUM_PATH`.
 > sull'indirizzo — fra questi le due suite che si eseguono più spesso. Ora li usano tutti, e
 > `shots-cantiere` smette di ignorare `CHROMIUM_PATH`, che aveva il percorso del container scritto
 > dentro. Rieseguite dopo il cambio, con la sandbox attiva: cantiere 47/47, demo 15/15,
-> landscape 50/50, navfix 18/18, phase8a 50/50, phase8b 11/12 (la cassa vuole `STORE_PASSWORD`).
+> landscape 50/50, navfix 18/18, phase8a 50/50, phase8b 12/12 dal 2026-10-30 (con `STORE_PASSWORD`).
 
 ## Dipendenze (passata del 2026-10-29)
 

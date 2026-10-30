@@ -104,7 +104,7 @@ La lista è corta, ed è corta perché è stata consumata.
 | Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
 | ~~Scope del canale Headless su `into-industries-dev`~~ | — | **Fatto il 2026-10-30**: i sei non usati tolti dall'amministrazione, `npm run check:scopes` verde, `e2e-phase8b` 11/12 come prima |
 | Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
-| `STORE_PASSWORD`, token Vercel | utente | Vedi `PER-L-UTENTE.md` §1. `gh` CLI e allowlist dei permessi: **fatti il 2026-10-30** |
+| Token Vercel | utente | Vedi `PER-L-UTENTE.md` §1.4. `gh` CLI, allowlist dei permessi e `STORE_PASSWORD`: **fatti il 2026-10-30** |
 
 ## 8. Trappole già pagate, da non ripagare
 
@@ -154,8 +154,9 @@ risultato: 10 suite su 10.
 Fuori da quel giro, da eseguire a mano:
 
 - `e2e-phase6` (prestazioni): `node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`
-- `e2e-phase8b` (dal vivo su Shopify): 11 su 12 il 2026-10-29. L'unica rossa è la cassa,
-  che vuole `STORE_PASSWORD` del negozio di sviluppo.
+- `e2e-phase8b` (dal vivo su Shopify): **12 su 12 il 2026-10-30**, cassa compresa, con
+  `STORE_PASSWORD` nell'ambiente. Senza quella variabile sono 11 su 12 e la suite
+  dichiara la cassa non verificata invece di fingere.
 - `npm run check:scopes` (dal vivo su Shopify): cosa può fare il token pubblico. Rosso
   il 2026-10-30 con cinque permessi attivi e non usati, `read_customers` compreso. Si
   rilancia dopo aver tolto le caselle, e di nuovo alla 8c sul negozio del cliente.

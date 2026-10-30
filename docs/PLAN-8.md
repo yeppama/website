@@ -147,6 +147,13 @@ e svuotato, pagine legali lette dal vivo. **Non verificata la cassa:** il negozi
 protetto da password e la suite lo dichiara invece di fingere; si verifica passando
 `STORE_PASSWORD` nell'ambiente.
 
+**Cassa verificata il 2026-10-30**, con `STORE_PASSWORD` dato dall'utente: `e2e-phase8b`
+**12 su 12**. La suite supera il muro della vetrina, apre `/checkouts/cn/…` e ci ritrova
+capo, taglia e prezzo del carrello in EUR (Heavy Hoodie S, 567 EUR di subtotale).
+Nessun errore in console. Da qui il percorso d'acquisto è verificato per intero in
+automatico: capo nella scena → scheda → carrello → cassa di Shopify. Resta fuori solo il
+pagamento, che l'utente ha fatto a mano una volta col gateway di prova (ordine #1001).
+
 **8d eseguita il 2026-10-29, per la parte che è codice.** Le pagine legali si raggiungono dal menu e dal
 carrello (`CartSheet`, sotto "Vai al pagamento": la scheda si apre sopra il carrello e Indietro ci riporta,
 merce dentro); alla cassa ci pensa Shopify. Sulla seconda metà della Definition of Done la risposta è che

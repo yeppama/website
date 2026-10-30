@@ -53,7 +53,7 @@ Questo file non lo scrivo io: un agente che si allarga i permessi da solo e'
 esattamente la cosa da non permettere, e il sistema me lo impedisce. Il contenuto lo
 preparo, incolla l'utente.
 
-### 1.3 La password del negozio di sviluppo · 1 minuto
+### 1.3 ~~La password del negozio di sviluppo~~ · **fatto il 2026-10-30**
 
 **Quale dei due negozi:** quello di **sviluppo**, `into-industries-dev.myshopify.com` —
 non quello del cliente. È il negozio che `e2e-phase8b` interroga, perché è l'host scritto
@@ -69,9 +69,14 @@ Poi, prima di lanciare le suite:
 $env:STORE_PASSWORD = "la-password"
 ```
 
-**Cosa si sblocca:** l'unica verifica rossa di `e2e-phase8b`, cioè la cassa. Oggi la
-suite dichiara "protetta da password, non verificata" invece di fingere che vada bene —
-ma resta non verificata.
+**Cosa ha sbloccato:** la cassa. `e2e-phase8b` e' passata da **11/12 a 12/12** il
+2026-10-30, con la riga che mancava da sempre: *"cassa dal vivo: si apre la cassa
+Shopify col capo, la taglia e il prezzo del carrello, in EUR — /checkouts/cn/… · Heavy
+Hoodie S"*. E' la prima volta che il percorso d'acquisto completo viene verificato in
+automatico, dal capo nella scena fino alla cassa di Shopify.
+
+La password resta una variabile d'ambiente della singola finestra, mai un file: il
+comando sopra va ridato a ogni sessione in cui serve.
 
 ### 1.4 Un token Vercel · 5 minuti
 
