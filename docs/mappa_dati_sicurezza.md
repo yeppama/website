@@ -250,14 +250,19 @@ Perché un documento che descrive solo l'oggi invecchia male.
 
 ## 6. Cosa resta da confermare
 
-Tre cose che non si deducono dal codice:
+Due cose che non si deducono dal codice, e che **restano aperte di proposito** finché
+non arrivano i dati reali:
 
 1. **Configurazione Vercel**: piano, team proprietario del progetto e regione.
 2. **Identità del titolare del trattamento**: ragione sociale, sede, partita IVA del
    venditore. Serve anche per le pagine legali, ed è **obbligatoria** per vendere online
    in UE.
-*(La terza voce di questo elenco — gli scope del canale Headless — è stata verificata e
-corretta il 2026-10-30: vedi §4.)*
+
+Nel documento sono marcate `[DA CONFERMARE]` al §2, nella tabella dei terzi: finché c'è
+quella marcatura, quelle due righe non vanno usate come criterio di giudizio.
+
+Una terza voce era in questo elenco e non c'è più: gli scope del canale Headless, letti
+e corretti il 2026-10-30 (§4).
 
 ---
 
