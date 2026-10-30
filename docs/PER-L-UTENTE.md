@@ -115,7 +115,32 @@ bisogno dei dati dei clienti, e un token pubblico che li può leggere è un toke
 pubblico che li espone — il token sta nel codice del sito, lo legge chiunque apra gli
 strumenti del browser.
 
-Servono solo: prodotti, collezioni, carrello, checkout, pagine legali.
+**Cosa serve davvero, ricavato dal codice** (`src/commerce/shopify.js`, 2026-10-30:
+tutte le chiamate alla Storefront API stanno in quel file). Quattro permessi, non uno
+di piu':
+
+| Permesso | Perche' | Dove nel codice |
+|---|---|---|
+| `unauthenticated_read_product_listings` | catalogo: `product(handle:)`, varianti, prezzi, `availableForSale`, opzioni. Nello schema di Shopify questo permesso copre anche le collezioni, che il sito oggi non interroga | `PRODUCT_FIELDS`, `getProducts` |
+| `unauthenticated_write_checkouts` | creare il carrello e modificarne le righe: `cartCreate`, `cartLinesAdd`, `cartLinesUpdate`, `cartLinesRemove` | `createCart`, `addLines`, `updateLines`, `removeLines` |
+| `unauthenticated_read_checkouts` | rileggere il carrello al rientro sul sito: `cart(id:)` | `getCart` |
+| `unauthenticated_read_content` | le sette pagine legali, lette da `shop { ...Policy { title body } }` | `getPolicies`, campi in `storeConfig.commerce.policies` |
+
+**Non devono esserci, e sono i tre che contano:**
+`unauthenticated_read_customers`, `unauthenticated_write_customers`,
+`unauthenticated_read_customer_tags`. Il sito non ha nessuna funzione di account: non
+c'e' login, non c'e' registrazione, non c'e' storico ordini. Un token pubblico che puo'
+leggere i clienti e' un token pubblico che li espone, e quel token sta nel codice del
+sito: lo legge chiunque apra gli strumenti del browser.
+
+**Non servono, e se ci sono si possono togliere:** `read_product_inventory` (il sito usa
+`availableForSale`, che e' un si/no, non le quantita'), `read_product_tags`,
+`read_product_pickup_locations`, `read_selling_plans`, `read_metaobjects`,
+`read_bundles`, `read_shop_pay_installments_pricing`.
+
+Nell'amministrazione i permessi possono comparire con etichette in italiano invece dei
+nomi tecnici. Se non trovi la corrispondenza, copiami l'elenco come lo vedi e lo
+confronto io voce per voce.
 
 ### 2.2 Vercel e Shopify: i DPA · 15 minuti
 
