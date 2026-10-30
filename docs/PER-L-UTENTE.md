@@ -97,10 +97,20 @@ il token che mi dai può fare molto di più: per questo vale l'ambito ristretto 
 scadenza breve. Se preferisci non darlo, l'alternativa è che continui a guardare tu
 l'anteprima e a dirmi cosa vedi — è solo più lento, non è un blocco.
 
-**Cosa si sblocca:** oggi non vedo né le anteprime né la produzione — `*.vercel.app`
-non è raggiungibile da qui — e ogni volta ti chiedo di guardare tu. Col token leggo lo
-stato dei deploy dopo un push, verifico gli header sul dominio vero (non solo in
-locale) e ti do già pronto l'indirizzo dell'anteprima da mandare al cliente.
+**Cosa si sblocca davvero — molto meno di quanto scrivevo qui il 2026-10-30.** Quella
+frase ("non vedo né le anteprime né la produzione") era vera nel container. Da Windows
+no: verificato lo stesso giorno, `vercel.com` risponde, le anteprime si aprono **senza
+login**, e lo stato dei deploy con i loro indirizzi si legge con `gh` dai Deployment di
+GitHub. Quindi, senza nessun token, da qui si fa già:
+
+- vedere se l'ultimo push è stato pubblicato, e con che SHA;
+- aprire anteprima e produzione e leggerne gli header veri;
+- dare l'indirizzo dell'anteprima da mandare al cliente.
+
+Restano fuori solo le cose che stanno dentro Vercel e non nel sito pubblicato:
+variabili d'ambiente del progetto, impostazioni, domini, log di runtime, e far ripartire
+un deploy. **Finché non serve una di queste, il token non serve** — ed è un token che
+nel suo ambito può pubblicare e cancellare progetti. Meglio non crearlo per abitudine.
 
 ---
 

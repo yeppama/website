@@ -83,7 +83,7 @@
 - Shopify con `@inContext(language: IT)` su un negozio senza italiano risponde nella lingua predefinita, senza errore (verificato).
 - `pkill -f "port 4173"` uccide anche la shell che lo esegue (exit 144), perché la sua riga contiene la stessa stringa: è innocuo se è l'unico comando, ma poi va controllato con `curl` che il server sia davvero fermo.
 - Un workflow con molti agenti può fermarsi per il limite di utilizzo della sessione: il primo controllo completo ha finito 2 agenti su 14. Dichiararlo, non presentare la parte fatta come completa.
-- Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch).
+- Dal container non sono raggiungibili `*.vercel.app`, `vercel.com`, Instagram, né l'API GitHub `/pages`: lo stato dei deploy si legge dai Deployment di GitHub (`ref` = SHA, non nome del branch). **Vale per il container, non per Windows:** il 2026-10-30, da questa macchina, `vercel.com` risponde 200 e le anteprime si aprono senza login. La riga resta perché il modo di leggere i deploy dai Deployment di GitHub è comodo comunque, ed è l'unico che funziona in entrambi i posti.
 
 **Sicurezza e robustezza** (passata del 2026-10-28, dettaglio in `SICUREZZA.md`)
 - Una chiave presa dalla query string che indicizza un oggetto di config va cercata con `Object.hasOwn`: `constructor`, `__proto__`, `toString` sono chiavi valide e il valore che tornano è truthy. `?debug=constructor` mandava la camera su `new Vector3(...undefined)`.
