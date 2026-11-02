@@ -332,6 +332,44 @@ const legalButtons = (page) => page.getByTestId('menu-legal').getByRole('button'
   await ctx.close()
 }
 
+// Cassa senza URL valido (audit 2026-11-02, T1-bis): un checkoutUrl scartato da
+// safeCheckoutUrl non deve lasciare un bottone attivo e muto. Shopify è finto
+// (page.route): il carrello salvato torna con un URL su un altro host, poi con
+// quello del negozio.
+for (const [caso, host, attivo] of [['host estraneo', 'evil.example', false], ['host del negozio', storeConfig.commerce.shopify.domain, true]]) {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
+  const page = await ctx.newPage()
+  page.on('pageerror', (e) => consoleErrors.push(`[checkout-${caso}] ${e.message}`))
+  await page.addInitScript((key) => { try { localStorage.setItem(key, 'gid://shopify/Cart/finto') } catch { /* niente */ } }, storeConfig.commerce.cartStorageKey)
+  await page.route('**/api/*/graphql.json', (route) => {
+    const q = route.request().postDataJSON()?.query ?? ''
+    if (q.includes('query Cart')) {
+      return route.fulfill({ json: { data: { cart: {
+        id: 'gid://shopify/Cart/finto', checkoutUrl: `https://${host}/cart/c/finto`, totalQuantity: 1,
+        cost: { subtotalAmount: { amount: '189.0', currencyCode: 'EUR' } },
+        lines: { nodes: [{ id: 'gid://line/1', quantity: 1, merchandise: { id: 'gid://v/1', price: { amount: '189.0', currencyCode: 'EUR' },
+          selectedOptions: [{ name: 'Taglia', value: 'M' }, { name: 'Colore', value: 'Black' }], product: { handle: hoodie.commerce.handle, title: hoodie.name } } }] },
+      } } } })
+    }
+    if (q.includes('query Policies')) return route.fulfill({ json: { data: { shop: {} } } })
+    return route.fulfill({ json: { data: { localization: { availableCountries: [{ isoCode: 'IT' }] } } } })
+  })
+  await page.goto(BASE + '?debug=x&tier=low&commerce=shopify', { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
+  await page.waitForFunction(() => window.__cart?.getState().cart?.lines?.length === 1, null, { timeout: 20000 })
+  await page.evaluate(() => window.__stores.app.getState().openDialog('cart', 'cart'))
+  const btn = page.getByTestId('cart-checkout')
+  await btn.waitFor({ timeout: 10000 })
+  const msg = await page.getByTestId('cart-checkout-unavailable').isVisible().catch(() => false)
+  if (attivo) {
+    ok(`cassa (${caso}): bottone attivo, nessun avviso`, !(await btn.isDisabled()) && !msg)
+  } else {
+    ok(`cassa (${caso}): bottone spento e avviso visibile`, await btn.isDisabled() && msg &&
+      (await page.getByTestId('cart-checkout-unavailable').textContent()).trim() === T.checkoutUnavailable)
+  }
+  await ctx.close()
+}
+
 // Telefono: scheda legale senza scorrimento orizzontale.
 {
   const { ctx, page } = await open('legal-mobile', { mobile: true })

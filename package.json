@@ -13,6 +13,7 @@
     "test:nav": "node scripts/test-navigation.mjs",
     "test:device": "node scripts/test-device.mjs",
     "test:commerce": "node scripts/test-commerce.mjs",
+    "test:scopes": "node scripts/test-check-scopes.mjs",
     "test:catalog": "node scripts/test-catalog.mjs",
     "catalog:template": "node scripts/catalog/make-template.mjs",
     "catalog:import": "node scripts/catalog/import.mjs",

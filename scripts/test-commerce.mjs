@@ -52,7 +52,11 @@ await test('richiesta: endpoint con versione, token pubblico nell\'header, paese
   assert.equal(c.headers['X-Shopify-Storefront-Access-Token'], 'public-token')
   assert.equal(c.variables.country, 'IT')
   assert.match(c.query, /@inContext\(country: \$country\)/)
-  assert.match(c.query, /p0: product\(handle: "heavy-hoodie"\)/)
+  // Gli handle viaggiano come variabili, mai nel testo della query (T18).
+  assert.match(c.query, /p0: product\(handle: \$h0\)/)
+  assert.match(c.query, /\$h0: String!/)
+  assert.equal(c.variables.h0, 'heavy-hoodie')
+  assert.ok(!c.query.includes('heavy-hoodie'), 'handle nel testo della query')
 })
 
 await test('catalogo: varianti Shopify tradotte negli id di taglia e colore di storeConfig', async () => {
@@ -88,7 +92,7 @@ await test('carrello: aggiunta tradotta in CartLineInput, risposta nel formato d
 await test('cassa: un checkoutUrl non https o di un altro dominio viene scartato', async () => {
   // L'URL finisce in window.location.assign. Oggi arriva dalla Storefront API
   // su HTTPS, quindi è attendibile; il controllo serve al giorno in cui non lo
-  // fosse. Senza URL valido il carrello resta senza cassa e il bottone sparisce.
+  // fosse. Senza URL valido il carrello resta senza cassa e il bottone si disabilita.
   const v = variant('gid://v/1', 'M', 'Black')
   const ostili = ['javascript:alert(1)', 'https://evil.example/cart/c/1', 'http://example.myshopify.com/cart/c/1', '']
   for (const url of ostili) {
@@ -99,6 +103,28 @@ await test('cassa: un checkoutUrl non https o di un altro dominio viene scartato
     assert.equal(cart.checkoutUrl, null, `doveva scartare ${url || '(vuoto)'}`)
   }
   return `${ostili.length} URL scartati, quello del negozio resta`
+})
+
+await test('cassa: un host elencato in checkoutHosts (dominio proprio del negozio) è accettato', async () => {
+  // Alla 8c Shopify manda il checkoutUrl sul dominio primario del negozio: senza
+  // la lista la cassa si chiuderebbe in silenzio (audit 2026-11-02, T1-bis).
+  const v = variant('gid://v/1', 'M', 'Black')
+  const conLista = { ...shopify, checkoutHosts: ['shop.cliente.example'] }
+  const casi = [
+    ['https://shop.cliente.example/cart/c/1', 'https://shop.cliente.example/cart/c/1'],
+    ['https://SHOP.cliente.example/cart/c/1', 'https://shop.cliente.example/cart/c/1'],
+    ['https://shop.cliente.example.evil.example/cart/c/1', null],
+    ['https://evil.example/cart/c/1', null],
+    ['http://shop.cliente.example/cart/c/1', null],
+  ]
+  for (const [url, atteso] of casi) {
+    const node = { ...cartNode([{ id: 'gid://line/1', quantity: 1, v }]), checkoutUrl: url }
+    const f = fakeFetch(() => ({ data: { cartLinesAdd: { cart: node, userErrors: [] } } }))
+    const p = createShopifyProvider({ products: storeConfig.products, shopify: conLista, country: 'IT', fetchImpl: f.fn })
+    const cart = await p.addLines('gid://shopify/Cart/c1', [{ variantId: 'gid://v/1', quantity: 1 }])
+    assert.equal(cart.checkoutUrl, atteso, url)
+  }
+  return `${casi.length} casi: dominio proprio accettato, sottodomini e altri host no`
 })
 
 await test('errori: userErrors, errori GraphQL e HTTP diventano eccezioni', async () => {

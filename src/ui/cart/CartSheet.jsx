@@ -40,10 +40,15 @@ export default function CartSheet({ headingId }) {
   const loadPolicies = useLegalStore((s) => s.load)
   useEffect(() => { loadPolicies() }, [loadPolicies])
 
+  // Senza un checkoutUrl valido (scartato da safeCheckoutUrl, o assente) il bottone
+  // non deve restare attivo e muto: si disabilita e lo dice (audit 2026-11-02, T1-bis).
+  const canCheckout = mock || Boolean(cart?.checkoutUrl)
   const checkout = () => {
-    if (!cart?.checkoutUrl) return
     // Nel negozio di prova non esiste una cassa: si dice cosa succederebbe.
+    // Prima del controllo sull'URL, così la nota compare anche se il carrello
+    // finto non ne ha uno.
     if (mock) { setCheckoutNote(t.mockCheckout); return }
+    if (!cart?.checkoutUrl) return
     window.location.assign(cart.checkoutUrl)
   }
 
@@ -108,7 +113,12 @@ export default function CartSheet({ headingId }) {
               </p>
             </div>
             <p className="micro mt-2">{t.taxNote}</p>
-            <Button variant="primary" className="mt-4 w-full" disabled={pending} onClick={checkout}>{t.checkout}</Button>
+            <Button variant="primary" className="mt-4 w-full" disabled={pending || !canCheckout} onClick={checkout}
+                    aria-describedby={!canCheckout && !pending ? 'cart-checkout-unavailable' : undefined}
+                    data-testid="cart-checkout">{t.checkout}</Button>
+            {!canCheckout && !pending && (
+              <p id="cart-checkout-unavailable" className="micro mt-2" role="status" data-testid="cart-checkout-unavailable">{t.checkoutUnavailable}</p>
+            )}
             {checkoutNote && <p className="micro mt-3" role="status" style={{ color: 'var(--color-accent-flame)' }}>{checkoutNote}</p>}
             {policies.length > 0 && (
               <nav className="mt-4" aria-labelledby="cart-legal" data-testid="cart-legal">

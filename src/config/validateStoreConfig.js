@@ -241,6 +241,14 @@ export function validateStoreConfig(config) {
   if (c?.shopify && !(c.shopify.optionNames?.size?.length && c.shopify.optionNames?.color?.length)) {
     fail('I24', 'commerce.shopify.optionNames: servono i nomi delle opzioni di taglia e colore')
   }
+  // Un host della cassa scritto male (con https:// o un percorso) non coincide mai
+  // con url.hostname: la cassa si chiuderebbe in silenzio invece di aprirsi.
+  const hostRe = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/
+  if (c?.shopify?.checkoutHosts !== undefined) {
+    if (!Array.isArray(c.shopify.checkoutHosts) || !c.shopify.checkoutHosts.every((h) => typeof h === 'string' && hostRe.test(h))) {
+      fail('I24', 'commerce.shopify.checkoutHosts: solo nomi host in minuscolo, senza protocollo né percorso')
+    }
+  }
 
   // I25 — pagine legali: ogni voce legge un campo che la Storefront API espone davvero
   // (verificato sul negozio di sviluppo il 2026-10-16), ha un'etichetta nel menu e un id unico.

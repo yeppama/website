@@ -20,7 +20,18 @@
  */
 import { storeConfig } from '../src/config/storeConfig.js'
 
-const { domain, storefrontToken, apiVersion } = storeConfig.commerce.shopify
+// Stessa precedenza del sito (src/commerce/index.js) e di catalog/check.mjs: se
+// una build prende dominio o token da VITE_SHOPIFY_*, il controllo deve sondare
+// quel token, non quello scritto in storeConfig. Altrimenti darebbe "a posto" su
+// un token diverso da quello pubblicato (audit 2026-11-02, S2).
+const cfg = storeConfig.commerce.shopify
+const pick = (name, fallback) => (process.env[name] ? { value: process.env[name], from: name } : { value: fallback, from: 'storeConfig' })
+const D = pick('VITE_SHOPIFY_DOMAIN', cfg.domain)
+const T = pick('VITE_SHOPIFY_STOREFRONT_TOKEN', cfg.storefrontToken)
+const V = pick('VITE_SHOPIFY_API_VERSION', cfg.apiVersion)
+const domain = D.value
+const storefrontToken = T.value
+const apiVersion = V.value
 const endpoint = `https://${domain}/api/${apiVersion}/graphql.json`
 
 // Le quattro chiamate che il sito fa davvero (src/commerce/shopify.js) e le
@@ -60,7 +71,9 @@ async function consentito(query) {
 // `write_checkouts` non ha una query che lo riveli senza creare un carrello:
 // lo copre e2e-phase8b, che un carrello lo crea davvero.
 const problemi = []
-console.log(`Negozio: ${domain} · API ${apiVersion}\n`)
+console.log(`Negozio: ${domain} · API ${apiVersion}`)
+// La fonte di ogni valore, mai il token: l'output finisce in chat e nei log.
+console.log(`Fonti: dominio da ${D.from} · token da ${T.from} · versione da ${V.from}\n`)
 
 console.log('Permessi che servono al sito:')
 for (const [nome, query] of RICHIESTI) {

@@ -186,6 +186,11 @@ export const storeConfig = {
       testMode: true,
       // Nomi delle opzioni Shopify che corrispondono a taglia e colore.
       optionNames: { size: ['Taglia', 'Size'], color: ['Colore', 'Color'] },
+      // Host della cassa oltre a `domain`. Con un dominio personalizzato Shopify
+      // manda il checkoutUrl sul dominio primario (es. 'shop.cliente.it'): alla 8c
+      // va aggiunto qui, nello stesso commit di dominio, token e CSP. Vuoto = solo
+      // `domain`. Solo nomi host, senza protocollo né percorso.
+      checkoutHosts: [],
     },
   },
 
@@ -795,6 +800,7 @@ export const storeConfig = {
       subtotal: 'Subtotale',
       taxNote: 'IVA inclusa. Spedizione calcolata al pagamento.',
       checkout: 'Vai al pagamento',
+      checkoutUnavailable: 'Il pagamento non è disponibile in questo momento. Riprova tra poco.',
       mockBanner: 'Negozio di prova: nessun pagamento reale',
       devStoreBanner: 'Negozio Shopify di sviluppo: solo pagamenti di prova',
       mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',

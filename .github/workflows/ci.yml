@@ -49,6 +49,9 @@ jobs:
       - name: Contratto del commercio (senza rete)
         run: npm run test:commerce
 
+      - name: Controllo degli scope sul token della build (senza rete)
+        run: npm run test:scopes
+
       - name: Import del catalogo
         run: npm run test:catalog
 
