@@ -14,6 +14,9 @@ cliente lo compila e lo rimanda con la cartella "foto"; `npm run catalog:import`
 
 Si può mandare tutto in chat: testi incollati, file allegati. Una cartella condivisa va bene uguale.
 
+**Da mandare al cliente c'è già un testo pronto:** [`MESSAGGIO-AL-CLIENTE.md`](MESSAGGIO-AL-CLIENTE.md),
+scritto da questo elenco. Si aggiorna di qui, non si riscrive da capo.
+
 **Lingua inglese (fase 8f, dopo il lancio, decisa il 2026-10-16):** chiedere fin da ora al cliente ogni testo
 anche in inglese (descrizioni e dettagli dei capi, nomi dei colori se cambiano, lookbook, brand story, pagine
 legali). Il lancio è in italiano; i testi inglesi raccolti insieme al catalogo evitano un secondo giro col cliente.
