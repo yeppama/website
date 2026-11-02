@@ -43,6 +43,9 @@ jobs:
       - name: Logica di navigazione
         run: npm run test:nav
 
+      - name: Vai a, una sola voce "sei qui" (negozio e cantiere)
+        run: npm run test:quicktravel
+
       - name: Scelta del tier per dispositivo
         run: npm run test:device
 

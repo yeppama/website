@@ -14,6 +14,8 @@ import { commerceActive } from '../../commerce/index.js'
  * `auto` solo sugli elementi interattivi: il resto dello schermo resta libero
  * per il Pointer Lock (desktop) e per tap e trascinamento (mobile).
  */
+const diagnostics = typeof window !== 'undefined' && /[?&](debug|perf|bench)=/.test(window.location.search)
+
 function Crosshair() {
   const w = 18
   return (
@@ -124,7 +126,9 @@ export default function Hud({ device }) {
           <div className="flex items-end justify-between gap-4">
             <Minimap />
             <div className="text-right">
-              <p className="micro">{device.isTouch ? copy.inputTouch : copy.inputPointer} · {copy.tier} {device.tier}</p>
+              {/* Tipo di input e tier sono dati di diagnosi: solo con ?debug o ?perf
+                  (audit 2026-11-02, N4). Le coordinate del marchio restano. */}
+              {diagnostics && <p className="micro">{device.isTouch ? copy.inputTouch : copy.inputPointer} · {copy.tier} {device.tier}</p>}
               <p className="micro mt-1">{brand.origin.coords}</p>
             </div>
           </div>

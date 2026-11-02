@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { currentQuickTravelId } from '../../lib/navigator.js'
 import { useLegalStore } from '../../state/useLegalStore.js'
 import { useShownPrice } from '../../state/useCartStore.js'
 import { useFocusTrap } from '../primitives/useFocusTrap.js'
@@ -21,7 +22,7 @@ export default function MenuDrawer() {
   const open = useAppStore((s) => s.menuOpen)
   const close = useAppStore((s) => s.closeMenu)
   const issue = usePlayerStore((s) => s.issue)
-  const zoneId = usePlayerStore((s) => s.zoneId)
+  const hereId = usePlayerStore((s) => currentQuickTravelId(storeConfig.navigation.quickTravel, storeConfig.navigation.waypoints, s.zoneId, s.pose))
   const openDialog = useAppStore((s) => s.openDialog)
   const panel = useRef(null)
   const legal = useLegalStore()
@@ -73,7 +74,7 @@ export default function MenuDrawer() {
           {/* Teletrasporto verso le destinazioni sicure configurate (Fase 3). */}
           <ul className="grid gap-px bg-line-subtle">
             {quickTravel.map((qt, i) => {
-              const here = Boolean(zoneId) && qt.zoneId === zoneId
+              const here = qt.id === hereId
               return (
                 <li key={qt.id}>
                   <button
@@ -92,7 +93,9 @@ export default function MenuDrawer() {
                         {qt.label}
                       </span>
                     </span>
-                    <span className="micro">{here ? `● ${storeConfig.copy.hud.youAreHere}` : qt.waypointId}</span>
+                    {/* Solo "sei qui": l'id del waypoint era un dato tecnico, letto ad alta
+                        voce dai lettori di schermo (audit 2026-11-02, N4). */}
+                    {here && <span className="micro">● {storeConfig.copy.hud.youAreHere}</span>}
                   </button>
                 </li>
               )

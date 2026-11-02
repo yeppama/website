@@ -132,6 +132,17 @@ const project = (page, [x, y, z]) => page.evaluate(([x, y, z]) => {
   const pt = await pos(page)
   const fadeSeen = await page.evaluate(() => window.__fadeSeen)
   ok('desktop: "Vai a → Nuovi Arrivi" teletrasporta al waypoint, con dissolvenza', Math.hypot(pt.x + 6.5, pt.z - 9) < 0.05 && fadeSeen, `dissolvenza osservata: ${fadeSeen}`)
+  // Audit 2026-11-02, N5: l'arrivo si annuncia (regione role=status di NoticeToast).
+  const arrival = await page.evaluate(() => window.__stores.app.getState().notice?.text ?? '')
+  ok('desktop: dopo il teletrasporto si annuncia dove si è arrivati', arrival.startsWith(storeConfig.copy.hud.arrivedAt) && arrival.includes('Nuovi Arrivi'), arrival)
+  // Audit 2026-11-02, N3/N4: nel menu una sola voce "sei qui", e niente id tecnici.
+  await page.getByRole('button', { name: /^menu$/i }).click()
+  const menuTravel = await page.evaluate(() => ({
+    current: document.querySelectorAll('#menu-drawer [aria-current="true"]').length,
+    text: document.querySelector('#menu-drawer section')?.textContent ?? '',
+  }))
+  ok('menu: una sola voce "sei qui" e nessun id di waypoint', menuTravel.current === 1 && !/wp-/.test(menuTravel.text), JSON.stringify(menuTravel))
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300)
   const st = await page.evaluate(() => window.__stores.player.getState())
   ok('desktop: vicino all\'espositore l\'hotspot diventa attivo', st.activePoiId === 'poi-new-01', `activePoiId = ${st.activePoiId}`)
   // Dalla Fase 4 l'esame esiste: il prompt mostra il comando, non più "in arrivo".

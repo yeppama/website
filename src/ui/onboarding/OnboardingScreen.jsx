@@ -122,7 +122,14 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
             {ready ? variant.cta : copy.loading}
           </Button>
           <div className="min-w-40 flex-1">
-            <div className="h-px w-full bg-line-subtle">
+            {/* Barra con semantica: chi usa un lettore di schermo sente l'avanzamento
+                quando ci arriva, e "pronto" arriva da solo quando la scena c'è
+                (audit 2026-11-02, N6). La percentuale non è una regione live: a ogni
+                stadio sarebbe un annuncio. */}
+            <div className="h-px w-full bg-line-subtle" role="progressbar" aria-label={copy.loading}
+                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(shown * 100)}
+                 aria-valuetext={ready ? copy.ready : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
+                 data-testid="loading-progress">
               <div
                 className="h-px bg-accent-flame transition-[width] duration-300"
                 style={{ width: `${Math.round(shown * 100)}%` }}
@@ -131,6 +138,7 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
             <p className="micro mt-2">
               {ready ? copy.ready : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
             </p>
+            <p className="sr-only" role="status" data-testid="loading-status">{ready ? copy.ready : ''}</p>
           </div>
         </div>
       </div>

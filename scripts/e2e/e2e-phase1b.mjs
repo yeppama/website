@@ -43,6 +43,12 @@ await session('desktop', { viewport: { width: 1440, height: 900 } }, async (page
   await cta.waitFor({ state: 'visible' })
   for (let i = 0; i < 40 && await cta.isDisabled(); i++) await page.waitForTimeout(250)
   if (await cta.isDisabled()) problems.push('[desktop] il bottone Entra non si è mai abilitato')
+  // Audit 2026-11-02, N6: barra con semantica e annuncio di "pronto".
+  const prog = await page.evaluate(() => {
+    const bar = document.querySelector('[data-testid="loading-progress"]')
+    return { role: bar?.getAttribute('role'), now: bar?.getAttribute('aria-valuenow'), status: document.querySelector('[data-testid="loading-status"]')?.textContent ?? '' }
+  })
+  if (prog.role !== 'progressbar' || prog.now !== '100' || !prog.status) problems.push(`[desktop] caricamento senza semantica: ${JSON.stringify(prog)}`)
   // Proprietà vera: una riga è "in arrivo" SE E SOLO SE la sua funzione è spenta.
   const lines = await page.locator('li[data-active]').evaluateAll((els) => els.map((e) => ({ text: e.textContent, active: e.dataset.active === 'true' })))
   const cfg = (await import(new URL('../../src/config/storeConfig.js', import.meta.url))).storeConfig

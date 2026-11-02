@@ -709,6 +709,8 @@ export const storeConfig = {
       lockPromptSub: 'WASD per muoverti · ESC per liberare il cursore',
       // Titolo della vista di esplorazione, solo per i lettori di schermo.
       heading: 'INTO industries, negozio 3D',
+      // Annuncio dopo un teletrasporto ("Sei in Catene"), anche per i lettori di schermo.
+      arrivedAt: 'Sei in',
       quickTravel: 'Vai a',
       minimap: 'pianta',
       zones: 'zone',

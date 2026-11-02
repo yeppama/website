@@ -1,5 +1,6 @@
 import { storeConfig } from '../../config/storeConfig.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
+import { currentQuickTravelId } from '../../lib/navigator.js'
 
 /**
  * Barra di teletrasporto (mobile). Solo destinazioni sicure configurate in
@@ -8,8 +9,9 @@ import { usePlayerStore } from '../../state/usePlayerStore.js'
  */
 export default function QuickTravelBar() {
   const issue = usePlayerStore((s) => s.issue)
-  const zoneId = usePlayerStore((s) => s.zoneId)
-  const { quickTravel } = storeConfig.navigation
+  const { quickTravel, waypoints } = storeConfig.navigation
+  // Selettore che restituisce un id: si ridisegna solo quando cambia la voce, non a ogni posa.
+  const hereId = usePlayerStore((s) => currentQuickTravelId(quickTravel, waypoints, s.zoneId, s.pose))
 
   return (
     // Colonne uguali che riempiono la larghezza: una voce tagliata dal bordo
@@ -17,7 +19,7 @@ export default function QuickTravelBar() {
     <nav aria-label={storeConfig.copy.hud.quickTravel} className="pointer-events-auto">
       <ul className="grid gap-px bg-line-subtle" style={{ gridTemplateColumns: `repeat(${quickTravel.length}, minmax(0, 1fr))` }}>
         {quickTravel.map((qt) => {
-          const here = Boolean(zoneId) && qt.zoneId === zoneId
+          const here = qt.id === hereId
           return (
             <li key={qt.id} className="flex">
               <button

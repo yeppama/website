@@ -19,6 +19,8 @@ const SPRINT = new Set(['ShiftLeft', 'ShiftRight'])
 // Solo E, non Invio: Invio è l'azione predefinita del bottone che ha il focus,
 // e intercettarlo qui spegnerebbe i comandi dell'interfaccia.
 const ACTIVATE = new Set(['KeyE'])
+const OWNS_KEYS = 'input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="radio"], [role="slider"], [role="listbox"], [role="option"], [role="combobox"], [role="spinbutton"], [role="menuitem"], [role="tab"]'
+const ownsKeys = (el) => Boolean(el && el !== document.body && el.closest?.(OWNS_KEYS))
 // Un gesto che non ha mai ricevuto pointerup/pointercancel (notifica di sistema
 // a metà tocco, puntatore perso) bloccava ogni tocco successivo come "un solo
 // dito alla volta", fino al reload. Se il puntatore non è più catturato, il
@@ -311,6 +313,11 @@ export default function PlayerController({ config, device }) {
     const r = rt.current
     const down = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      // Un controllo che usa già quei tasti (radio a frecce, campi di testo,
+      // cursori) se li tiene: la freccia sceglie l'opzione, non muove il player.
+      // Sui bottoni dell'HUD i tasti restano al player, perché è lì che torna il
+      // focus dopo il Focus Mode o un teletrasporto (audit 2026-11-02, N9).
+      if (ownsKeys(document.activeElement)) return
       if (SPRINT.has(e.code)) { r.sprint = true; return }
       // preventDefault solo quando il tasto viene davvero consumato.
       if (ACTIVATE.has(e.code)) {
@@ -660,6 +667,11 @@ export default function PlayerController({ config, device }) {
       cancelRoute()
       r.teleport = null
       usePlayerStore.setState({ fading: false })
+      // Il lettore di schermo non vede la scena: senza un annuncio il teletrasporto
+      // è silenzioso. Si dice dove si è arrivati (audit 2026-11-02, N5).
+      const qt = config.navigation.quickTravel.find((q) => q.waypointId === w.id)
+      const label = qt?.label ?? w.label ?? zoneAt([r.pos.x, r.pos.z], config.environment.zones)?.label
+      if (label) notify(`${config.copy.hud.arrivedAt} ${label}`)
     }
 
     // Il tempo reale del frame, recuperato a passi brevi (vedi navigation.input).

@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:nav": "node scripts/test-navigation.mjs",
+    "test:quicktravel": "node scripts/test-quicktravel.mjs",
     "test:device": "node scripts/test-device.mjs",
     "test:commerce": "node scripts/test-commerce.mjs",
     "test:scopes": "node scripts/test-check-scopes.mjs",
