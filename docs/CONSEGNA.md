@@ -9,7 +9,7 @@ rimasto aperto e in che ordine conviene affrontarlo.
 | | |
 |---|---|
 | `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ferma a `7f87699` del 2026-10-28. **Non ha niente del lavoro del 29 e del 30.** |
-| `sviluppo` | **Branch di lavoro.** Ultimo commit `38983f2`, già su GitHub. **90 commit davanti a `main`.** Ogni push crea un'anteprima Vercel e fa girare la CI. |
+| `sviluppo` | **Branch di lavoro**, tutto su GitHub. **Oltre novanta commit davanti a `main`** — il numero esatto è `git rev-list --count main..sviluppo`, e invecchia a ogni push. Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | tag `archivio-docs-ristrutturati` | Due commit di riordino documenti del 2026-10-16, mai uniti. Il branch è stato cancellato, il tag li tiene raggiungibili. |
 
 GitHub Pages è spento dal 2026-10-28. La CI gira su GitHub Actions a ogni push:
