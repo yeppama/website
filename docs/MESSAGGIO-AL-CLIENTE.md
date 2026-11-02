@@ -3,13 +3,24 @@
 Scritto il 2026-11-02 a partire da [`CONTENUTI.md`](CONTENUTI.md): formati, campi e
 numeri vengono da lì, non sono inventati. Lo manda l'utente, non il sito.
 
-## Due cose da fare prima di spedirlo
+## Una cosa da fare prima di spedirlo
 
-1. **Sostituire `<indirizzo>`** con l'anteprima corrente. Le anteprime Vercel cambiano
-   a ogni push: l'indirizzo buono si legge dai Deployment di GitHub
-   (`gh api repos/:owner/:repo/deployments`) o dal pannello di Vercel.
-2. **Allegare [`modello-catalogo-INTO.xlsx`](modello-catalogo-INTO.xlsx)**, altrimenti
-   il punto 2 chiede un file che il cliente non ha.
+**Allegare [`modello-catalogo-INTO.xlsx`](modello-catalogo-INTO.xlsx)**, altrimenti il
+punto 2 chiede un file che il cliente non ha.
+
+## L'indirizzo nel messaggio
+
+È `https://website-git-sviluppo-yeppama.vercel.app`, l'**alias di branch** che Vercel
+tiene su `sviluppo`: non cambia a ogni push, a differenza dell'indirizzo del singolo
+deployment (`website-<hash>-yeppama.vercel.app`), che invece invecchia subito. Verificato
+il 2026-11-02: l'alias serve esattamente la stessa build dell'ultimo commit (stesso
+`assets/index-*.js`) ed è `noindex`.
+
+Il rovescio della medaglia: l'alias **segue il branch**. Quello che vede il cliente
+cambia a ogni push, compreso un push fatto male. Se serve un indirizzo che non si muove
+— per esempio mentre il cliente guarda e decide fra i due allestimenti — si usa quello
+del singolo deployment, che si legge con
+`gh api repos/:owner/:repo/deployments` e poi `.../statuses`.
 
 ## Tre scelte fatte scrivendolo
 
@@ -44,8 +55,11 @@ Te lo scrivo in ordine: le prime due cose sbloccano tutto il resto.
 
 Ne abbiamo preparati due, stesso negozio, due allestimenti:
 
-  A. Il negozio pulito       <indirizzo>
-  B. "Cantiere", più grezzo  <indirizzo>?allestimento=cantiere
+  A. Il negozio pulito
+     https://website-git-sviluppo-yeppama.vercel.app
+
+  B. "Cantiere", più grezzo
+     https://website-git-sviluppo-yeppama.vercel.app/?allestimento=cantiere
 
 Finché non scegli, ogni modifica va fatta e verificata su tutti e due:
 sceglierne uno dimezza i tempi da qui alla fine. È la cosa che ci costa
