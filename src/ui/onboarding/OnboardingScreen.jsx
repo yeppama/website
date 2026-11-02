@@ -34,7 +34,10 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
   return (
     // Scorre se lo schermo è basso: un telefono in orizzontale è alto ~390 px e
     // senza scorrimento il pulsante "Entra" finiva fuori schermo, irraggiungibile.
-    <div
+    // section con etichetta: è un punto di riferimento, così il contenuto non
+    // resta fuori da ogni landmark (axe "region", audit 2026-11-02 N10).
+    <section
+      aria-label={copy.eyebrow}
       className="fixed inset-0 overflow-y-auto overscroll-contain bg-bg-base"
       style={{ zIndex: 'var(--z-onboarding)' }}
     >
@@ -137,6 +140,6 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
         <p className="micro text-right">{brand.credit}</p>
       </footer>
       </div>
-    </div>
+    </section>
   )
 }

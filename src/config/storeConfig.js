@@ -707,6 +707,8 @@ export const storeConfig = {
       noZone: 'Corridoio',
       lockPrompt: 'Click per guardarti attorno',
       lockPromptSub: 'WASD per muoverti · ESC per liberare il cursore',
+      // Titolo della vista di esplorazione, solo per i lettori di schermo.
+      heading: 'INTO industries, negozio 3D',
       quickTravel: 'Vai a',
       minimap: 'pianta',
       zones: 'zone',

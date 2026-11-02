@@ -45,7 +45,9 @@ export default function MenuDrawer() {
         aria-label={menu.closeLabel}
         tabIndex={-1}
       />
-      <aside
+      {/* div e non aside: un <aside> ha già il ruolo "complementary" e role="dialog"
+          sopra non è ammesso (axe, audit 2026-11-02 N10). */}
+      <div
         id="menu-drawer"
         ref={panel}
         tabIndex={-1}
@@ -155,7 +157,7 @@ export default function MenuDrawer() {
             )}
           </section>
         )}
-      </aside>
+      </div>
     </div>
   )
 }

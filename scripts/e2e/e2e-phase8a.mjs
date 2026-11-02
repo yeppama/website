@@ -29,7 +29,9 @@ async function open(name, { query = '?debug=x&tier=low&commerce=mock', mobile, v
   await page.goto(BASE + query, { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
   await page.waitForFunction(() => window.__player && window.__stores, null, { timeout: 20000 })
-  return { ctx, page }
+  // Dove sta il focus appena entrati (audit 2026-11-02, N2): lo controlla chi apre.
+  const entryFocus = await waitUntil(page, () => document.activeElement?.dataset?.testid === 'hud-heading', null, 5000)
+  return { ctx, page, entryFocus }
 }
 const waitUntil = (page, fn, arg, timeout = 15000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true).catch(() => false)
 const dialog = (page) => page.locator('[role="dialog"][data-dialog]')
@@ -51,7 +53,8 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
 // ============================ DESKTOP, NEGOZIO DI PROVA ============================
 {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
-  const { page } = await open('desktop', { context: ctx })
+  const { page, entryFocus } = await open('desktop', { context: ctx })
+  ok('ingresso: il focus va sul titolo della vista, non sul body', entryFocus)
   await waitUntil(page, () => window.__cart.getState().catalogStatus === 'ready')
   ok('negozio di prova: catalogo caricato dal fornitore', await page.evaluate(() => Object.keys(window.__cart.getState().catalog).length) === storeConfig.products.length)
   const cartBtn = page.getByTestId('cart-button')
@@ -94,6 +97,19 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   for (let i = 0; i < 25; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => document.querySelector('[role="dialog"][data-dialog]')?.contains(document.activeElement)))) escaped++ }
   ok('carrello: Tab resta dentro la finestra', escaped === 0, `${escaped} uscite`)
 
+  // Audit 2026-11-02, T4: + premuto da tastiera due volte di seguito, il focus resta sul +.
+  {
+    const plus = page.getByTestId('cart-line').first().getByRole('button', { name: new RegExp(`^${T.increase}`) })
+    await plus.focus()
+    await page.keyboard.press('Enter'); await notPending(page)
+    await page.keyboard.press('Enter'); await notPending(page)
+    ok('carrello: + due volte da tastiera, il focus resta sul +', await plus.evaluate((b) => b === document.activeElement))
+    const minus = page.getByTestId('cart-line').first().getByRole('button', { name: new RegExp(`^${T.decrease}`) })
+    await minus.focus()
+    await page.keyboard.press('Enter'); await notPending(page)
+    await page.keyboard.press('Enter'); await notPending(page)
+  }
+
   // Quantità: +, −, massimo, rimozione.
   const first = page.getByTestId('cart-line').first()
   await first.getByRole('button', { name: new RegExp(`^${T.increase}`) }).click(); await notPending(page)
@@ -107,6 +123,9 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   ok('carrello: al massimo il + è spento', await first.getByRole('button', { name: new RegExp(`^${T.increase}`) }).isDisabled())
   await first.getByRole('button', { name: new RegExp(`^${T.remove}`) }).click(); await notPending(page)
   ok('carrello: "Rimuovi" toglie la riga', (await page.getByTestId('cart-line').count()) === 1)
+  // Audit 2026-11-02, T4: la riga rimossa portava via il bottone col focus; ora va sul titolo.
+  ok('carrello: dopo "Rimuovi" il focus è sul titolo della scheda', await waitUntil(page,
+    () => document.activeElement?.tagName === 'H2' && document.querySelector('[role="dialog"][data-dialog]')?.contains(document.activeElement), null, 5000))
 
   // Cassa di prova: nessuna navigazione, solo l'avviso.
   const url0 = page.url()

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { commerceMode, testBanner } from '../../commerce/index.js'
@@ -30,6 +30,19 @@ export default function CartSheet({ headingId }) {
   const openDialog = useAppStore((s) => s.openDialog)
   const closeDialogs = useAppStore((s) => s.closeDialogs)
   const [checkoutNote, setCheckoutNote] = useState(null)
+  const continueRef = useRef(null)
+  // Dopo una rimozione il bottone che aveva il focus sparisce con la riga: il focus
+  // va sul titolo della scheda, o su "Continua" se il carrello è rimasto vuoto,
+  // invece di cadere sul <body> fuori dalla finestra (audit 2026-11-02, T4).
+  const afterRemoval = () => requestAnimationFrame(() => {
+    const empty = (useCartStore.getState().cart?.lines?.length ?? 0) === 0
+    ;(empty ? continueRef.current : document.getElementById(headingId))?.focus({ preventScroll: true })
+  })
+  const removeLine = async (id) => { if (await remove(id)) afterRemoval() }
+  const changeQuantity = async (line, quantity) => {
+    const ok = await setQuantity(line.id, quantity)
+    if (ok && quantity <= 0) afterRemoval()
+  }
   const lines = cart?.lines ?? []
   const mock = commerceMode() === 'mock'
   // Fase 8d: le pagine legali si raggiungono dal menu e dalla cassa. Qui è
@@ -54,19 +67,21 @@ export default function CartSheet({ headingId }) {
 
   return (
     <div className="mx-auto grid max-w-2xl gap-6" aria-busy={pending}>
-      <header>
+      {/* div e non header: dentro la finestra un <header> diventa un secondo
+          punto di riferimento "banner" della pagina (axe, audit 2026-11-02 N10). */}
+      <div>
         {testBanner() && <p className="micro mb-2" style={{ color: 'var(--color-accent-flame)' }}>{testBanner()}</p>}
         <h2 id={headingId} tabIndex={-1}
             className="font-display font-black uppercase leading-none text-text-primary outline-none"
             style={{ fontSize: 'var(--text-xl)', letterSpacing: 'var(--tracking-tight)' }}>
           {t.title}
         </h2>
-      </header>
+      </div>
 
       {lines.length === 0 ? (
         <div className="grid justify-items-start gap-4">
           <p className="text-text-secondary" style={{ fontSize: 'var(--text-sm)' }}>{t.empty}</p>
-          <Button onClick={closeDialogs}>{t.continue}</Button>
+          <Button ref={continueRef} onClick={closeDialogs}>{t.continue}</Button>
         </div>
       ) : (
         <>
@@ -91,13 +106,15 @@ export default function CartSheet({ headingId }) {
                     <p className="micro mt-1 text-text-primary">{formatPrice(line.merchandise.price, locale)}</p>
                   </div>
                   <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
-                    <Button aria-label={`${t.decrease}: ${line.merchandise.title}`} disabled={pending}
-                            onClick={() => setQuantity(line.id, line.quantity - 1)}>−</Button>
+                    {/* aria-disabled e non disabled: il bottone premuto resta col focus
+                        mentre il fornitore risponde (Button.jsx). */}
+                    <Button aria-label={`${t.decrease}: ${line.merchandise.title}`} aria-disabled={pending || undefined}
+                            onClick={() => changeQuantity(line, line.quantity - 1)}>−</Button>
                     <span className="min-w-[2ch] text-center font-mono text-text-primary" aria-label={t.quantity} data-testid="cart-qty">{line.quantity}</span>
-                    <Button aria-label={`${t.increase}: ${line.merchandise.title}`} disabled={pending || line.quantity >= maxQuantity}
+                    <Button aria-label={`${t.increase}: ${line.merchandise.title}`} aria-disabled={pending || line.quantity >= maxQuantity || undefined}
                             title={line.quantity >= maxQuantity ? t.maxReached : undefined}
-                            onClick={() => setQuantity(line.id, line.quantity + 1)}>+</Button>
-                    <Button className="ml-auto sm:ml-2" disabled={pending} onClick={() => remove(line.id)}
+                            onClick={() => changeQuantity(line, line.quantity + 1)}>+</Button>
+                    <Button className="ml-auto sm:ml-2" aria-disabled={pending || undefined} onClick={() => removeLine(line.id)}
                             aria-label={`${t.remove}: ${line.merchandise.title}`}>{t.remove}</Button>
                   </div>
                 </li>

@@ -23,6 +23,7 @@ export default function FocusPanel({ device }) {
   const openDialog = useAppStore((s) => s.openDialog)
   const setPanelRect = useAppStore((s) => s.setFocusPanelRect)
   const exitButton = useRef(null)
+  const opener = useRef(null)
   const panel = useRef(null)
   const visible = focus.state === 'entering' || focus.state === 'focused'
 
@@ -43,9 +44,25 @@ export default function FocusPanel({ device }) {
     if (!visible) return
     const onKey = (e) => { if (e.key === 'Escape') exitFocus() }
     window.addEventListener('keydown', onKey)
+    // All'uscita il focus torna a chi ha aperto il Focus (l'invito di prossimità o
+    // il bottone del menu); se non c'è più, al bottone del menu. Senza, cadeva sul
+    // <body> e chi usa la tastiera ripartiva da zero (audit 2026-11-02, N2).
+    // Si restituisce a transizione finita (stato 'idle'): durante l'uscita l'HUD è
+    // ancora `invisible` e un elemento nascosto non prende il focus.
+    if (!opener.current) opener.current = document.activeElement
     exitButton.current?.focus({ preventScroll: true })
     return () => window.removeEventListener('keydown', onKey)
   }, [visible, exitFocus])
+
+  useEffect(() => {
+    if (focus.state !== 'idle' || !opener.current) return
+    const was = opener.current
+    opener.current = null
+    requestAnimationFrame(() => {
+      const back = was.isConnected && was !== document.body && was.getClientRects().length ? was : document.querySelector('[aria-controls="menu-drawer"]')
+      back?.focus?.({ preventScroll: true })
+    })
+  }, [focus.state])
 
   if (!visible) return null
 
@@ -90,10 +107,14 @@ export default function FocusPanel({ device }) {
 
         <div className="mt-4 flex items-center justify-between gap-3 short:mt-2">
           <PriceTag product={product} />
+          {/* role="img" sul campione dentro il <li>, non sul <li>: un <li> con un
+              altro ruolo rompe la lista (axe, audit 2026-11-02 N10). */}
           <ul className="flex gap-2" aria-label={copy.colorways}>
             {product.colorways.map((cw) => (
-              <li key={cw.id} title={cw.label} role="img" aria-label={cw.label}
-                  className="h-4 w-4 border border-line-strong" style={{ background: cw.swatch }} />
+              <li key={cw.id} className="flex">
+                <span title={cw.label} role="img" aria-label={cw.label}
+                      className="h-4 w-4 border border-line-strong" style={{ background: cw.swatch }} />
+              </li>
             ))}
           </ul>
         </div>

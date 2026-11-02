@@ -162,8 +162,10 @@ export default function ProductSheet({ product, headingId }) {
           </p>
           {active ? (
             <>
+              {/* Durante l'aggiunta aria-disabled, non disabled: il bottone appena
+                  premuto tiene il focus (Button.jsx; audit 2026-11-02, N2). */}
               <Button variant="primary" className="mt-3 w-full" onClick={addToCart}
-                      disabled={unavailable || pending || !variant?.available} data-testid="add-to-cart">
+                      disabled={unavailable || !variant?.available} aria-disabled={pending || undefined} data-testid="add-to-cart">
                 {pending ? tc.adding : !sizeId ? tc.chooseSize : variant && !variant.available ? tc.soldOut : tc.add}
               </Button>
               {unavailable && (

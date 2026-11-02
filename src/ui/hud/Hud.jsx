@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { brandMotif } from '../../config/designTokens.js'
 import { useAppStore } from '../../state/useAppStore.js'
@@ -85,11 +86,20 @@ export default function Hud({ device }) {
   const zone = storeConfig.environment.zones.find((z) => z.id === zoneId)
   const poi = storeConfig.pois.find((p) => p.id === activePoiId)
 
+  // All'ingresso l'onboarding sparisce col bottone "Entra" che aveva il focus: senza
+  // un punto d'arrivo il focus cadeva sul <body> e la vista non aveva nessun titolo.
+  // Un titolo per i lettori di schermo, che riceve il focus (audit 2026-11-02, N2).
+  const heading = useRef(null)
+  useEffect(() => {
+    if (!document.activeElement || document.activeElement === document.body) heading.current?.focus({ preventScroll: true })
+  }, [])
+
   return (
     <>
       {keyboard && locked && !inFocus && <Crosshair />}
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
+        <h1 ref={heading} tabIndex={-1} className="sr-only" data-testid="hud-heading">{copy.heading}</h1>
         <header className="flex items-start justify-between gap-4">
           <div>
             <p className="font-display font-black uppercase leading-none text-text-primary"
