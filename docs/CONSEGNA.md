@@ -1,4 +1,4 @@
-# CONSEGNA — stato e cosa resta, al 2026-10-30
+# CONSEGNA — stato e cosa resta, al 2026-11-02
 
 Scritto per una sessione nuova che riprende il lavoro da zero. Si legge dopo
 `CONTEXT.md`, che resta la fonte dello stato corrente; qui c'è cosa è successo, cosa è
@@ -9,7 +9,7 @@ rimasto aperto e in che ordine conviene affrontarlo.
 | | |
 |---|---|
 | `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ferma a `7f87699` del 2026-10-28. **Non ha niente del lavoro del 29 e del 30.** |
-| `sviluppo` | **Branch di lavoro.** Ultimo commit `f5abc2f`, già su GitHub. **73 commit davanti a `main`.** Ogni push crea un'anteprima Vercel e fa girare la CI. |
+| `sviluppo` | **Branch di lavoro.** Ultimo commit `38983f2`, già su GitHub. **90 commit davanti a `main`.** Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | tag `archivio-docs-ristrutturati` | Due commit di riordino documenti del 2026-10-16, mai uniti. Il branch è stato cancellato, il tag li tiene raggiungibili. |
 
 GitHub Pages è spento dal 2026-10-28. La CI gira su GitHub Actions a ogni push:
@@ -31,7 +31,41 @@ Tre, e tutte e tre sono state imparate pagando:
    senza parametri, cantiere con `?allestimento=cantiere`. Ogni verifica si fa su tutti
    e due — è il motivo per cui il giro completo delle suite dura sedici minuti.
 
-## 3. Cosa è cambiato il 2026-10-29 e il 2026-10-30
+## 3-bis. Il pomeriggio del 2026-10-30 (17 commit)
+
+Giornata di verifiche, non di funzionalità nuove: quasi tutto quello che c'era
+scritto come "da controllare" è stato controllato, e due cose non erano come dicevano
+i documenti.
+
+- **`75135a3` — le suite col browser hanno un workflow loro**, `e2e.yml`, con
+  `paths-ignore` sui documenti: GitHub filtra i percorsi per workflow, non per job.
+  **Verificato in entrambe le direzioni:** un push di soli documenti fa partire solo
+  `CI` (ventina di secondi), e il primo push che tocca del codice ha fatto partire
+  `e2e`, chiuso verde in 15m53s con tutte e dieci le suite.
+- **`b1ac600` … `b04ff5c` — gli scope del canale Headless non erano a posto.** Dei 16
+  ne erano attivi 10, fra cui `read_customers` e `write_customers`, che il sito non
+  usa. Tolti tutti e sei i non necessari. Dettaglio e gravità reale in `SICUREZZA.md`
+  righe 4 e 7; la lista dei quattro che servono è in `PER-L-UTENTE.md` §2.1 e, per la
+  8c, in `PLAN-8.md`.
+- **`28a85c0` — `npm run check:scopes`**: un comando che chiede al negozio cosa può
+  fare il token, invece di fidarsi di una lettura a mano. Fuori dalla CI, come
+  `check:catalog`. Alla 8c si rilancia sul negozio del cliente.
+- **`7143e67` — la cassa è verificata.** Con `STORE_PASSWORD` dato dall'utente,
+  `e2e-phase8b` passa da 11/12 a **12/12**: è la prima volta che il percorso d'acquisto
+  completo, dal capo nella scena alla cassa di Shopify, viene verificato in automatico.
+- **`c2736bd` — niente più cartella `undefined`.** `outDir` in `launchOptions.mjs`
+  manda gli screenshot in `e2e-out/` quando non si passa il terzo argomento.
+- **`38983f2` — `docs/AUDIT-CARRELLO.md`**, il carrello per intero per un revisore
+  esterno. È una fotografia, lo dichiara in testa.
+- **`e32e7f8`, `a7f7714`, `3c23491`** — `docs/mappa_dati_sicurezza.md`, scritto da una
+  sessione parallela che lavorava nella stessa cartella.
+
+Due note di processo: la **Parte 1 di `PER-L-UTENTE.md` è chiusa** (`gh`, permessi,
+`STORE_PASSWORD` fatti; token Vercel escluso, §6), e due documenti dicevano cose non
+più vere — che da qui Vercel non si raggiunge, e che il token Vercel serviva a vedere
+le anteprime. Corretti.
+
+## 3. Cosa è cambiato il 2026-10-29 e il 2026-10-30 (mattina)
 
 Diciotto commit. I quattro che cambiano come si lavora:
 
@@ -77,12 +111,8 @@ La lista è corta, ed è corta perché è stata consumata.
 - **Peso del bundle**: il chunk della scena è 1,08 MB (293 kB gzip), sopra la soglia di
   Vite. Sconsigliato finché non ci sono misure su telefoni veri: si ottimizzerebbe alla
   cieca, e il progetto ha già pagato un `manualChunks` che annullava il lazy import.
-- ~~**Un push di soli documenti fa girare 16 minuti di suite e2e.**~~ Fatto il
-  2026-10-30: le suite col browser hanno il loro workflow
-  (`.github/workflows/e2e.yml`) con `paths-ignore` su `**/*.md` e `docs/**`, perché
-  GitHub filtra i percorsi per workflow e non per job. `ci.yml` continua a girare su
-  tutto. Da verificare al primo push di solo codice: che il workflow `e2e` parta
-  davvero.
+- ~~**Un push di soli documenti fa girare 16 minuti di suite e2e.**~~ Fatto e
+  verificato il 2026-10-30 (vedi §3-bis): niente più da controllare qui.
 - **ESLint 10**: bloccato dai plugin, non da noi (jsx-a11y arriva a `^9`, plugin-react a
   `^9.7`). Si rivaluta quando pubblicano il peer su `^10`.
 

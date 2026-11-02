@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-10-30 · branch di lavoro **`sviluppo`** (73 commit davanti) · `main` = produzione, ferma al 2026-10-28.
+> Stato al 2026-11-02 · branch di lavoro **`sviluppo`** (90 commit davanti) · `main` = produzione, ferma al 2026-10-28.
 > Questo file si carica a ogni sessione: contiene solo lo stato vigente. Il resto si legge quando serve (tabella in fondo).
 
 ## 1. Cos'è
