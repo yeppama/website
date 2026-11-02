@@ -48,6 +48,14 @@ La policy è stretta perché il sito non ha niente di esterno da permettere:
   merge di `main` ha portato `productionHeaders()` sul branch di lavoro): prima la suite girava
   senza CSP e non poteva vederlo. Il rendering software non è un caso di scuola qui —
   `getDeviceProfile()` riconosce SwiftShader e lo manda nel tier `low`.
+- **Un errore in console sulle anteprime e' nostro di proposito.** Vercel inietta nelle
+  preview il suo script di feedback (`https://vercel.live/_next-live/feedback/feedback.js`);
+  la CSP lo blocca e la console scrive una violazione. Verificato il 2026-11-02 su entrambi
+  gli allestimenti: e' l'**unico** errore in console, e l'unica conseguenza e' che il
+  widget di commento di Vercel non compare. Non si allarga `script-src` per farlo passare —
+  sarebbe un dominio di terzi autorizzato anche in produzione, per una comodita' che serve a
+  noi e non al sito. Se il widget servisse davvero, si spegne il Vercel Toolbar nelle
+  impostazioni del progetto, non nella CSP.
 - `connect-src` elenca l'host esatto del negozio Shopify, non un carattere jolly. **Col negozio
   del cliente va cambiato nello stesso commit del token nuovo**, o il carrello smette di
   funzionare mentre il sito continua a caricare.

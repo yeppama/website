@@ -31,6 +31,25 @@ Tre, e tutte e tre sono state imparate pagando:
    senza parametri, cantiere con `?allestimento=cantiere`. Ogni verifica si fa su tutti
    e due — è il motivo per cui il giro completo delle suite dura sedici minuti.
 
+## 3-ter. Il 2026-11-02
+
+Nessuna modifica al codice. Tre cose:
+
+- **L'anteprima e' stata guardata davvero**, non solo interrogata: aperta in un browser
+  su `https://website-git-sviluppo-yeppama.vercel.app`, i due allestimenti entrano
+  entrambi nella scena 3D e tutti gli asset rispondono 200 — font, le foto dei 7 capi,
+  grafica alle pareti, e per il cantiere i `.glb` dei capi. Un solo errore in console,
+  ed e' voluto (lo script di feedback di Vercel bloccato dalla CSP: `SICUREZZA.md`).
+- **`docs/MESSAGGIO-AL-CLIENTE.md`**: il testo pronto da mandare al cliente, scritto da
+  `CONTENUTI.md`, con l'indirizzo stabile gia' dentro. Prima di spedirlo resta solo da
+  allegare il modello Excel.
+- **`docs/AUDIT-CARRELLO.md`** del 30 ottobre e' il carrello per intero per un revisore
+  esterno. Fotografia dichiarata, si rigenera invece di aggiornarla.
+
+**Da dove ripartire:** niente e' a meta'. L'albero e' pulito, tutto e' su
+`origin/sviluppo`, l'ultimo giro completo delle dieci suite col browser e' verde
+(15m53s). Il prossimo passo non e' tecnico: e' la risposta del cliente.
+
 ## 3-bis. Il pomeriggio del 2026-10-30 (17 commit)
 
 Giornata di verifiche, non di funzionalità nuove: quasi tutto quello che c'era
