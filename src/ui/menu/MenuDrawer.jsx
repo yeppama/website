@@ -51,11 +51,13 @@ export default function MenuDrawer() {
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={menu.title}
+        aria-labelledby="menu-title"
         className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-line-subtle bg-bg-raised p-6 sm:p-8"
       >
         <div className="flex items-start justify-between gap-4">
-          <p className="micro">{menu.title}</p>
+          {/* h2 e non p: le sezioni sotto sono h3, e senza un h2 sopra i titoli
+              saltavano un livello (axe "heading-order"). */}
+          <h2 id="menu-title" className="micro">{menu.title}</h2>
           {/* Il bottone del HUD resta sotto il pannello: senza questo, l'unico
               modo di chiudere sarebbe Esc o il fondo, non evidenti su touch. */}
           <div className="flex gap-2">

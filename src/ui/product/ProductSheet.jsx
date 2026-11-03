@@ -188,7 +188,8 @@ export default function ProductSheet({ product, headingId }) {
               {t.purchaseClosed}
             </Button>
           )}
-          {!active && <p className="micro mt-3" style={{ opacity: 0.7 }}>{copy.legal.priceNotice}</p>}
+          {/* Senza opacità: il .micro è già al minimo di contrasto (N7). */}
+          {!active && <p className="micro mt-3">{copy.legal.priceNotice}</p>}
         </div>
 
         <div className="short:order-2">

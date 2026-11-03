@@ -101,8 +101,9 @@ export default function Hud({ device }) {
       {keyboard && locked && !inFocus && <Crosshair />}
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
-        <h1 ref={heading} tabIndex={-1} className="sr-only" data-testid="hud-heading">{copy.heading}</h1>
         <header className="flex items-start justify-between gap-4">
+          {/* Dentro l'intestazione: fuori da ogni punto di riferimento axe lo segnala ("region"). */}
+          <h1 ref={heading} tabIndex={-1} className="sr-only" data-testid="hud-heading">{copy.heading}</h1>
           <div>
             <p className="font-display font-black uppercase leading-none text-text-primary"
                style={{ fontSize: 'var(--text-lg)', letterSpacing: 'var(--tracking-brutal)' }}>

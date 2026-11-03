@@ -140,7 +140,7 @@ export default function FocusPanel({ device }) {
         </div>
         {!device.isTouch && <p className="micro mt-3 text-right">{copy.exitHint}</p>}
         {!commerceActive() && (
-          <p className="micro mt-2 short:mt-1.5" style={{ opacity: 0.7 }}>{storeConfig.copy.legal.priceNotice}</p>
+          <p className="micro mt-2 short:mt-1.5">{storeConfig.copy.legal.priceNotice}</p>
         )}
       </section>
     </div>
