@@ -77,20 +77,24 @@ for (const file of files) {
 
 // File vietati già noti nella storia, verificati e documentati: il `.env` del
 // 2026-10-17 conteneva solo VITE_CONTENT=demo (docs/SICUREZZA.md, audit
-// 2026-11-02 §4-bis). Commit e percorso esatti: un altro .env in un altro commit
-// fa fallire il controllo.
-const NOTI_NELLA_STORIA = new Set(['4dd3739 .env'])
+// 2026-11-02 §4-bis). Si riconosce dal blob (il contenuto esatto), non dal
+// commit: in CI lo stesso file compariva sotto un commit che in locale non
+// c'era, e il controllo falliva su un file già verificato. Un .env con un
+// contenuto diverso ha un altro blob e fa fallire il controllo.
+const NOTI_NELLA_STORIA = new Set(['.env 76ca7f0da59bcfdf0177fd7609dfaefe72cb619b'])
 
 // Storia: un segreto tolto da un file resta nei commit di prima. Si leggono le
 // righe aggiunte da ogni commit di ogni branch, file vietati compresi.
 if (history) {
-  const log = execFileSync('git', ['log', '--all', '-p', '--no-color', '--no-ext-diff', '--format=commit %H'], { encoding: 'utf8', maxBuffer: 1 << 30 })
-  let commit = '', file = ''
+  const log = execFileSync('git', ['log', '--all', '-p', '--full-index', '--no-color', '--no-ext-diff', '--format=commit %H'], { encoding: 'utf8', maxBuffer: 1 << 30 })
+  let commit = '', file = '', blob = ''
   for (const riga of log.split('\n')) {
     if (riga.startsWith('commit ')) { commit = riga.slice(7, 14); continue }
+    const idx = riga.match(/^index [0-9a-f]+\.\.([0-9a-f]+)/)
+    if (idx) { blob = idx[1]; continue }
     if (riga.startsWith('+++ b/')) {
       file = riga.slice(6)
-      if (VIETATI.some((r) => r.test(file)) && !AMMESSI.some((r) => r.test(file)) && !NOTI_NELLA_STORIA.has(`${commit} ${file}`)) problemi.push(`${commit} ${file}: file di credenziali nella storia`)
+      if (VIETATI.some((r) => r.test(file)) && !AMMESSI.some((r) => r.test(file)) && !NOTI_NELLA_STORIA.has(`${file} ${blob}`)) problemi.push(`${commit} ${file}: file di credenziali nella storia`)
       continue
     }
     if (!riga.startsWith('+') || riga.startsWith('+++') || file === SE_STESSO) continue
