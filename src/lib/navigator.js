@@ -113,3 +113,23 @@ export function createNavigator(config) {
 
   return { plan, isWalkable, clear, nodes }
 }
+
+/**
+ * Quale voce di "Vai a" segnare come "sei qui". Più destinazioni possono stare
+ * nella stessa zona (nel cantiere Ingresso e Catene): confrontare solo la zona le
+ * segnava tutte e due. Fra quelle della zona corrente vince la più vicina al
+ * player (audit 2026-11-02, N3). Restituisce l'id della voce o null.
+ */
+export function currentQuickTravelId(quickTravel, waypoints, zoneId, pose) {
+  if (!zoneId) return null
+  const inZone = quickTravel.filter((q) => q.zoneId === zoneId)
+  if (inZone.length <= 1) return inZone[0]?.id ?? null
+  let best = null
+  for (const q of inZone) {
+    const p = waypoints.find((w) => w.id === q.waypointId)?.position
+    if (!p) continue
+    const d = Math.hypot(p[0] - pose.x, p[2] - pose.z)
+    if (!best || d < best.d) best = { id: q.id, d }
+  }
+  return best?.id ?? null
+}

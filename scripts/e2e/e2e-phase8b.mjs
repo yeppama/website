@@ -24,6 +24,10 @@ const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
 const page = await ctx.newPage()
 page.on('pageerror', (e) => consoleErrors.push(e.message))
 page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()) })
+// Audit 2026-11-02, T19: varianti scartate perché taglia o colore su Shopify non
+// coincidono con il config. Alla 8c, sul negozio del cliente, devono essere zero.
+const dropped = []
+page.on('console', (m) => { if (m.type() === 'warning' && m.text().includes('senza taglia/colore corrispondenti')) dropped.push(m.text()) })
 let apiVersion = null
 page.on('response', (r) => { if (r.url().includes('/graphql.json')) apiVersion ??= r.headers()['x-shopify-api-version'] })
 const waitUntil = (fn, arg, timeout = 30000) => page.waitForFunction(fn, arg, { timeout, polling: 100 }).then(() => true).catch(() => false)
@@ -73,6 +77,7 @@ if (status !== 'ready') {
     }
   }
   ok('varianti dal vivo: taglie e colori del 3D tutti presenti, disponibilità coerente', gaps.length === 0, gaps.slice(0, 4).join('; '))
+  ok('varianti dal vivo: nessuna scartata per etichette diverse dal config (T19)', dropped.length === 0, dropped.slice(0, 3).join(' | '))
   const currencies = [...new Set(Object.values(cat).flatMap((p) => p.variants.map((v) => v.price.currency)))]
   ok(`valuta dei prezzi = EUR (vendita UE)${COUNTRY ? ` — paese forzato ${COUNTRY}` : ''}`, currencies.length === 1 && currencies[0] === 'EUR', `Shopify restituisce: ${currencies.join(', ')}`)
 
@@ -160,3 +165,7 @@ await browser.close()
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.filter((r) => r[0] === 'ok').length} superati, ${results.filter((r) => r[0] === 'FAIL').length} falliti`)
 console.log(consoleErrors.length ? 'ERRORI CONSOLE:\n' + consoleErrors.join('\n') : 'ERRORI CONSOLE: nessuno')
+
+// Senza questa riga la suite usciva con 0 anche con controlli falliti, e run-all
+// e la CI la davano per superata (trovato il 2026-11-03).
+process.exit(results.some((r) => r[0] === 'FAIL') || consoleErrors.length ? 1 : 0)

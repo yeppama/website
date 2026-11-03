@@ -30,6 +30,7 @@ const CART_FIELDS = `
     nodes {
       id
       quantity
+      cost { totalAmount { amount currencyCode } }
       merchandise {
         ... on ProductVariant {
           id
@@ -89,14 +90,21 @@ export function createShopifyProvider({ products, shopify, country, language = n
    * fonte è la Storefront API su HTTPS, quindi è attendibile; questo controllo
    * serve al giorno in cui non lo fosse — un negozio compromesso, un cambio
    * dell'API — perché un "javascript:" lì dentro verrebbe eseguito nel contesto
-   * del sito. Se l'URL non convince, il carrello resta senza cassa e il bottone
-   * non compare, invece di portare l'utente chissà dove.
+   * del sito. Se l'URL non convince, il carrello resta senza cassa: il bottone
+   * "Vai al pagamento" si disabilita e dice perché (CartSheet), invece di
+   * portare l'utente chissà dove.
    */
+  // Host ammessi per la cassa: il negozio da cui arriva il carrello e, se il
+  // config li elenca, i domini propri del negozio. Con un dominio personalizzato
+  // Shopify restituisce il checkoutUrl sul dominio primario: senza la lista, alla
+  // 8c la cassa si chiuderebbe in silenzio (audit 2026-11-02, T1-bis).
+  const checkoutHosts = new Set([shopify.domain, ...(shopify.checkoutHosts ?? [])].map((h) => String(h).toLowerCase()))
   const safeCheckoutUrl = (raw) => {
     try {
       const url = new URL(String(raw))
-      // Stesso negozio da cui arriva il carrello: niente domini di terzi.
-      return url.protocol === 'https:' && url.hostname === shopify.domain ? url.href : null
+      if (url.protocol === 'https:' && checkoutHosts.has(url.hostname)) return url.href
+      console.warn('shopify: checkoutUrl scartato', url.protocol, url.hostname)
+      return null
     } catch {
       return null
     }
@@ -114,6 +122,8 @@ export function createShopifyProvider({ products, shopify, country, language = n
         id: l.id,
         variantId: l.merchandise.id,
         quantity: l.quantity,
+        // Totale di riga calcolato da Shopify (sconti compresi), non dal sito (T5).
+        total: l.cost?.totalAmount ? money(l.cost.totalAmount) : null,
         merchandise: { productHandle: handle, title: l.merchandise.product.title, size, color, price: money(l.merchandise.price) },
       }
     }),
@@ -135,12 +145,16 @@ export function createShopifyProvider({ products, shopify, country, language = n
 
     async getProducts(handles) {
       if (!handles.length) return []
-      // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca.
-      const fields = handles.map((h, i) => `p${i}: product(handle: ${JSON.stringify(h)}) { ${PRODUCT_FIELDS} }`).join('\n')
-      const data = await request(`query Products($country: CountryCode) @inContext(country: $country) {
+      // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca. Gli
+      // handle viaggiano come variabili, mai dentro il testo della query
+      // (mappa_dati_sicurezza §4; audit 2026-11-02, T18).
+      const decl = handles.map((_, i) => `$h${i}: String!`).join(', ')
+      const fields = handles.map((_, i) => `p${i}: product(handle: $h${i}) { ${PRODUCT_FIELDS} }`).join('\n')
+      const vars = Object.fromEntries(handles.map((h, i) => [`h${i}`, h]))
+      const data = await request(`query Products($country: CountryCode, ${decl}) @inContext(country: $country) {
         localization { availableCountries { isoCode } }
         ${fields}
-      }`, { country })
+      }`, { country, ...vars })
       // Un negozio che non vende nel paese configurato risponde col contesto del
       // suo mercato principale (prezzi in un'altra valuta) e poi dichiara la merce
       // esaurita al carrello. Meglio dirlo subito: il capo risulta non disponibile.
@@ -148,16 +162,20 @@ export function createShopifyProvider({ products, shopify, country, language = n
       if (!countries.includes(country)) {
         throw new Error(`shopify: il negozio non vende in ${country} (mercati attivi: ${countries.join(', ')})`)
       }
-      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => ({
-        handle: p.handle,
-        title: p.title,
-        variants: p.variants.nodes.map((v) => ({
+      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => {
+        const mapped = p.variants.nodes.map((v) => ({
           id: v.id,
           ...optionsOf(p.handle, v.selectedOptions),
           price: money(v.price),
           available: v.availableForSale,
-        })).filter((v) => v.size && v.color),
-      }))
+        }))
+        // Una variante la cui taglia o colore su Shopify non coincide con le
+        // etichette del config ("Medium" invece di "M") sparisce dal sito: lo si
+        // dice, altrimenti il capo sembra solo esaurito (audit 2026-11-02, T19).
+        const dropped = mapped.filter((v) => !v.size || !v.color)
+        if (dropped.length) console.warn(`shopify: ${dropped.length} varianti di ${p.handle} senza taglia/colore corrispondenti`, dropped.map((v) => v.id))
+        return { handle: p.handle, title: p.title, variants: mapped.filter((v) => v.size && v.color) }
+      })
     },
 
     createCart: () => mutate('cartCreate', `

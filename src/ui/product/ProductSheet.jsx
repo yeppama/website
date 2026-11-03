@@ -162,8 +162,10 @@ export default function ProductSheet({ product, headingId }) {
           </p>
           {active ? (
             <>
+              {/* Durante l'aggiunta aria-disabled, non disabled: il bottone appena
+                  premuto tiene il focus (Button.jsx; audit 2026-11-02, N2). */}
               <Button variant="primary" className="mt-3 w-full" onClick={addToCart}
-                      disabled={unavailable || pending || !variant?.available} data-testid="add-to-cart">
+                      disabled={unavailable || !variant?.available} aria-disabled={pending || undefined} data-testid="add-to-cart">
                 {pending ? tc.adding : !sizeId ? tc.chooseSize : variant && !variant.available ? tc.soldOut : tc.add}
               </Button>
               {unavailable && (
@@ -186,7 +188,8 @@ export default function ProductSheet({ product, headingId }) {
               {t.purchaseClosed}
             </Button>
           )}
-          {!active && <p className="micro mt-3" style={{ opacity: 0.7 }}>{copy.legal.priceNotice}</p>}
+          {/* Senza opacità: il .micro è già al minimo di contrasto (N7). */}
+          {!active && <p className="micro mt-3">{copy.legal.priceNotice}</p>}
         </div>
 
         <div className="short:order-2">

@@ -14,7 +14,7 @@ import Button from '../primitives/Button.jsx'
  * Il bottone d'ingresso resta disabilitato finché la scena non è pronta: è anche
  * il gesto esplicito che in Fase 3 servirà ad attivare il Pointer Lock.
  */
-export default function OnboardingScreen({ device, ready, progress, stageLabel, onEnter }) {
+export default function OnboardingScreen({ device, ready, progress, stageLabel, onEnter, onEnterText }) {
   const { brand } = storeConfig.meta
   const copy = storeConfig.copy.onboarding
   const variant = device.isTouch ? copy.mobile : copy.desktop
@@ -34,7 +34,10 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
   return (
     // Scorre se lo schermo è basso: un telefono in orizzontale è alto ~390 px e
     // senza scorrimento il pulsante "Entra" finiva fuori schermo, irraggiungibile.
-    <div
+    // section con etichetta: è un punto di riferimento, così il contenuto non
+    // resta fuori da ogni landmark (axe "region", audit 2026-11-02 N10).
+    <section
+      aria-label={copy.eyebrow}
       className="fixed inset-0 overflow-y-auto overscroll-contain bg-bg-base"
       style={{ zIndex: 'var(--z-onboarding)' }}
     >
@@ -118,8 +121,20 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
           <Button variant="primary" disabled={!ready} onClick={onEnter}>
             {ready ? variant.cta : copy.loading}
           </Button>
+          {/* Sempre attivo, anche durante il caricamento: chi non vuole o non può
+              aspettare il 3D entra subito (audit 2026-11-02, N1). */}
+          {onEnterText && (
+            <Button onClick={onEnterText} data-testid="enter-text-mode">{storeConfig.copy.textMode.enter}</Button>
+          )}
           <div className="min-w-40 flex-1">
-            <div className="h-px w-full bg-line-subtle">
+            {/* Barra con semantica: chi usa un lettore di schermo sente l'avanzamento
+                quando ci arriva, e "pronto" arriva da solo quando la scena c'è
+                (audit 2026-11-02, N6). La percentuale non è una regione live: a ogni
+                stadio sarebbe un annuncio. */}
+            <div className="h-px w-full bg-line-subtle" role="progressbar" aria-label={copy.loading}
+                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(shown * 100)}
+                 aria-valuetext={ready ? copy.ready : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
+                 data-testid="loading-progress">
               <div
                 className="h-px bg-accent-flame transition-[width] duration-300"
                 style={{ width: `${Math.round(shown * 100)}%` }}
@@ -128,6 +143,7 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
             <p className="micro mt-2">
               {ready ? copy.ready : `${stageLabel ?? copy.loading} · ${Math.round(shown * 100)}%`}
             </p>
+            <p className="sr-only" role="status" data-testid="loading-status">{ready ? copy.ready : ''}</p>
           </div>
         </div>
       </div>
@@ -137,6 +153,6 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
         <p className="micro text-right">{brand.credit}</p>
       </footer>
       </div>
-    </div>
+    </section>
   )
 }

@@ -3,6 +3,7 @@ import { storeConfig } from '../../config/storeConfig.js'
 import { pad2 } from '../../lib/format.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useShownPrice } from '../../state/useCartStore.js'
+import { commerceActive } from '../../commerce/index.js'
 import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
@@ -100,6 +101,8 @@ export default function LookbookSheet({ entry, headingId }) {
               <li key={p.id}><LookProduct product={p} onOpen={() => openDialog('product', p.id)} /></li>
             ))}
           </ul>
+          {/* Prezzi dimostrativi dichiarati come nelle altre schede (§4-bis punto 9). */}
+          {!commerceActive() && <p className="micro mt-4" data-testid="lookbook-price-notice">{storeConfig.copy.legal.priceNotice}</p>}
         </section>
       )}
     </div>

@@ -29,7 +29,9 @@ async function open(name, { query = '?debug=x&tier=low&commerce=mock', mobile, v
   await page.goto(BASE + query, { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
   await page.waitForFunction(() => window.__player && window.__stores, null, { timeout: 20000 })
-  return { ctx, page }
+  // Dove sta il focus appena entrati (audit 2026-11-02, N2): lo controlla chi apre.
+  const entryFocus = await waitUntil(page, () => document.activeElement?.dataset?.testid === 'hud-heading', null, 5000)
+  return { ctx, page, entryFocus }
 }
 const waitUntil = (page, fn, arg, timeout = 15000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true).catch(() => false)
 const dialog = (page) => page.locator('[role="dialog"][data-dialog]')
@@ -51,7 +53,8 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
 // ============================ DESKTOP, NEGOZIO DI PROVA ============================
 {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
-  const { page } = await open('desktop', { context: ctx })
+  const { page, entryFocus } = await open('desktop', { context: ctx })
+  ok('ingresso: il focus va sul titolo della vista, non sul body', entryFocus)
   await waitUntil(page, () => window.__cart.getState().catalogStatus === 'ready')
   ok('negozio di prova: catalogo caricato dal fornitore', await page.evaluate(() => Object.keys(window.__cart.getState().catalog).length) === storeConfig.products.length)
   const cartBtn = page.getByTestId('cart-button')
@@ -83,6 +86,14 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   ok('carrello: subtotale = prezzo × 3', (await page.getByTestId('cart-subtotal').textContent()).trim() === price(hoodie.price.amount * 3))
   ok('carrello: righe con taglia e colore leggibili', (await page.getByTestId('cart-line').count()) === 2 &&
     await dialog(page).getByText(`${m.label} · ${hoodie.colorways[0].label}`).isVisible())
+  // Audit 2026-11-02, T5: la riga da 2 pezzi mostra il totale del fornitore e, sotto, il prezzo cadauno.
+  {
+    const two = page.getByTestId('cart-line').filter({ has: page.getByTestId('cart-line-unit') })
+    ok('carrello: riga da 2 pezzi con totale di riga e prezzo cadauno', (await two.count()) === 1 &&
+      (await two.getByTestId('cart-line-total').textContent()).trim() === price(hoodie.price.amount * 2) &&
+      (await two.getByTestId('cart-line-unit').textContent()).trim() === `${price(hoodie.price.amount)} ${T.each}`)
+    ok('prezzi sempre con due decimali (T23)', /[.,]00\s/.test((await page.getByTestId('cart-subtotal').textContent()) + ' '))
+  }
   await page.screenshot({ path: `${OUT}/desktop-cart.png` })
 
   // Movimento sospeso e trappola del focus, come per le altre schede.
@@ -93,6 +104,24 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   let escaped = 0
   for (let i = 0; i < 25; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => document.querySelector('[role="dialog"][data-dialog]')?.contains(document.activeElement)))) escaped++ }
   ok('carrello: Tab resta dentro la finestra', escaped === 0, `${escaped} uscite`)
+
+  // Audit 2026-11-02, T4: + premuto da tastiera due volte di seguito, il focus resta sul +.
+  {
+    const plus = page.getByTestId('cart-line').first().getByRole('button', { name: new RegExp(`^${T.increase}`) })
+    await plus.focus()
+    await page.keyboard.press('Enter'); await notPending(page)
+    await page.keyboard.press('Enter'); await notPending(page)
+    ok('carrello: + due volte da tastiera, il focus resta sul +', await plus.evaluate((b) => b === document.activeElement))
+    // T3: il numero non ha più un aria-label sullo span; il cambio si annuncia.
+    const announce = (await page.getByTestId('cart-announce').textContent()).trim()
+    const qty = (await page.getByTestId('cart-line').first().getByTestId('cart-qty').textContent()).trim()
+    ok('carrello: il cambio di quantità si annuncia ai lettori di schermo', announce.endsWith(`: ${T.quantity} ${qty}`) &&
+      (await page.getByTestId('cart-qty').first().getAttribute('aria-label')) === null, announce)
+    const minus = page.getByTestId('cart-line').first().getByRole('button', { name: new RegExp(`^${T.decrease}`) })
+    await minus.focus()
+    await page.keyboard.press('Enter'); await notPending(page)
+    await page.keyboard.press('Enter'); await notPending(page)
+  }
 
   // Quantità: +, −, massimo, rimozione.
   const first = page.getByTestId('cart-line').first()
@@ -105,8 +134,30 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   const maxQ = await page.evaluate(() => window.__cart.getState().cart.lines[0].quantity)
   ok('carrello: la quantità non supera il massimo del config', maxQ === storeConfig.commerce.maxQuantity, `quantità ${maxQ}`)
   ok('carrello: al massimo il + è spento', await first.getByRole('button', { name: new RegExp(`^${T.increase}`) }).isDisabled())
+  // T6: "quantità massima" visibile e collegato al +, non in un title.
+  {
+    const plusMax = first.getByRole('button', { name: new RegExp(`^${T.increase}`) })
+    const desc = await plusMax.getAttribute('aria-describedby')
+    ok('carrello: "Quantità massima" visibile e legato al + con aria-describedby',
+      desc && await page.locator(`#${desc}`).isVisible() && (await page.locator(`#${desc}`).textContent()).trim() === T.maxReached &&
+      (await plusMax.getAttribute('title')) === null)
+  }
+  // T7: l'errore compare sopra "Vai al pagamento", non in fondo.
+  {
+    await page.evaluate((e) => window.__cart.setState({ error: e }), T.error)
+    const order = await page.evaluate(() => {
+      const err = document.querySelector('[data-testid="cart-error"]'), btn = document.querySelector('[data-testid="cart-checkout"]')
+      return err && btn ? Boolean(err.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING) : null
+    })
+    ok('carrello: l\'errore sta subito sopra "Vai al pagamento"', order === true, String(order))
+    await page.evaluate(() => window.__cart.setState({ error: null }))
+  }
   await first.getByRole('button', { name: new RegExp(`^${T.remove}`) }).click(); await notPending(page)
   ok('carrello: "Rimuovi" toglie la riga', (await page.getByTestId('cart-line').count()) === 1)
+  ok('carrello: la rimozione si annuncia', (await page.getByTestId('cart-announce').textContent()).trim().endsWith(T.removed))
+  // Audit 2026-11-02, T4: la riga rimossa portava via il bottone col focus; ora va sul titolo.
+  ok('carrello: dopo "Rimuovi" il focus è sul titolo della scheda', await waitUntil(page,
+    () => document.activeElement?.tagName === 'H2' && document.querySelector('[role="dialog"][data-dialog]')?.contains(document.activeElement), null, 5000))
 
   // Cassa di prova: nessuna navigazione, solo l'avviso.
   const url0 = page.url()
@@ -159,6 +210,22 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
   ok('ricaricando la pagina il carrello resta', await cartCount(again.page) === before && before > 0, `${before} pezzi`)
   ok('HUD: il numero di pezzi è visibile', (await again.page.getByTestId('cart-button').textContent()).includes(String(before)))
 
+  // Avviso prima di lasciare il sito (richiesta 2026-11-03): con capi nel
+  // carrello il browser chiede conferma; rifiutando si resta, accettando si va.
+  {
+    await again.page.getByTestId('cart-button').click()   // gesto dell'utente: senza, Chrome non mostra l'avviso
+    await again.page.keyboard.press('Escape')
+    const seen = []
+    const stay = (d) => { seen.push(d.type()); d.dismiss() }
+    again.page.on('dialog', stay)
+    const urlBefore = again.page.url()
+    await again.page.evaluate(() => { window.__stillHere = true })
+    await again.page.reload({ timeout: 3000 }).catch(() => {})
+    ok('uscita con carrello pieno: il browser chiede conferma, "resta" tiene la pagina',
+      seen.includes('beforeunload') && again.page.url() === urlBefore && await again.page.evaluate(() => window.__stillHere === true), seen.join(','))
+    again.page.off('dialog', stay)
+  }
+
   // Carrello vuoto.
   const ids = await again.page.evaluate(() => window.__cart.getState().cart.lines.map((l) => l.id))
   for (const id of ids) { await again.page.evaluate((id) => window.__cart.getState().remove(id), id); await notPending(again.page) }
@@ -167,6 +234,15 @@ const notPending = (page) => waitUntil(page, () => !window.__cart.getState().pen
     await dialog(again.page).getByRole('button', { name: T.continue }).isVisible())
   await dialog(again.page).getByRole('button', { name: T.continue }).click()
   ok('"Continua a esplorare" chiude', (await again.page.evaluate(() => window.__stores.app.getState().dialogs.length)) === 0)
+  {
+    const seen = []
+    const watch = (d) => { seen.push(d.type()); d.accept() }
+    again.page.on('dialog', watch)
+    await again.page.evaluate(() => { window.__stillHere = true })
+    await again.page.reload({ waitUntil: 'domcontentloaded' })
+    ok('uscita con carrello vuoto: nessun avviso', seen.length === 0 && await again.page.evaluate(() => window.__stillHere === undefined), seen.join(','))
+    again.page.off('dialog', watch)
+  }
   await ctx.close()
 }
 
@@ -332,6 +408,60 @@ const legalButtons = (page) => page.getByTestId('menu-legal').getByRole('button'
   await ctx.close()
 }
 
+// Cassa senza URL valido (audit 2026-11-02, T1-bis): un checkoutUrl scartato da
+// safeCheckoutUrl non deve lasciare un bottone attivo e muto. Shopify è finto
+// (page.route): il carrello salvato torna con un URL su un altro host, poi con
+// quello del negozio.
+for (const [caso, host, attivo] of [['host estraneo', 'evil.example', false], ['host del negozio', storeConfig.commerce.shopify.domain, true]]) {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 700 } })
+  const page = await ctx.newPage()
+  page.on('pageerror', (e) => consoleErrors.push(`[checkout-${caso}] ${e.message}`))
+  await page.addInitScript((key) => { try { localStorage.setItem(key, 'gid://shopify/Cart/finto') } catch { /* niente */ } }, storeConfig.commerce.cartStorageKey)
+  await page.route('**/api/*/graphql.json', (route) => {
+    const q = route.request().postDataJSON()?.query ?? ''
+    if (q.includes('query Cart')) {
+      return route.fulfill({ json: { data: { cart: {
+        id: 'gid://shopify/Cart/finto', checkoutUrl: `https://${host}/cart/c/finto`, totalQuantity: 1,
+        cost: { subtotalAmount: { amount: '189.0', currencyCode: 'EUR' } },
+        lines: { nodes: [{ id: 'gid://line/1', quantity: 1, cost: { totalAmount: { amount: '189.0', currencyCode: 'EUR' } }, merchandise: { id: 'gid://v/1', price: { amount: '189.0', currencyCode: 'EUR' },
+          selectedOptions: [{ name: 'Taglia', value: 'M' }, { name: 'Colore', value: 'Black' }], product: { handle: hoodie.commerce.handle, title: hoodie.name } } },
+          // Un capo che il config non conosce (T8): titolo come testo, non come bottone muto.
+          { id: 'gid://line/2', quantity: 2, cost: { totalAmount: { amount: '150.0', currencyCode: 'EUR' } }, merchandise: { id: 'gid://v/2', price: { amount: '80.0', currencyCode: 'EUR' },
+          selectedOptions: [{ name: 'Taglia', value: 'M' }], product: { handle: 'capo-sconosciuto', title: 'Capo sconosciuto' } } }] },
+      } } } })
+    }
+    if (q.includes('query Policies')) return route.fulfill({ json: { data: { shop: {} } } })
+    return route.fulfill({ json: { data: { localization: { availableCountries: [{ isoCode: 'IT' }] } } } })
+  })
+  await page.goto(BASE + '?debug=x&tier=low&commerce=shopify', { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /^entra$/i }).click({ timeout: 30000 })
+  await page.waitForFunction(() => window.__cart?.getState().cart?.lines?.length === 2, null, { timeout: 20000 })
+  await page.evaluate(() => window.__stores.app.getState().openDialog('cart', 'cart'))
+  const btn = page.getByTestId('cart-checkout')
+  await btn.waitFor({ timeout: 10000 })
+  const msg = await page.getByTestId('cart-checkout-unavailable').isVisible().catch(() => false)
+  if (attivo) {
+    ok(`cassa (${caso}): bottone attivo, nessun avviso`, !(await btn.isDisabled()) && !msg)
+    // T8 e T5 col fornitore Shopify: capo sconosciuto come testo; totale di riga
+    // quello di Shopify (150, con uno sconto), non 2 × 80 calcolato dal sito.
+    const unknown = page.getByTestId('cart-line').nth(1)
+    ok('cassa: capo che il config non conosce, titolo come testo e non come bottone',
+      (await unknown.getByText('Capo sconosciuto').evaluate((n) => n.tagName)) === 'P' && (await unknown.getByRole('button', { name: 'Capo sconosciuto', exact: true }).count()) === 0)
+    ok('cassa: totale di riga preso da Shopify, non ricalcolato', (await unknown.getByTestId('cart-line-total').textContent()).trim() === price(150))
+    // Verso la cassa nessun avviso "vuoi lasciare il sito?".
+    const seen = []
+    page.on('dialog', (d) => { seen.push(d.type()); d.accept() })
+    await page.route(`https://${host}/cart/c/finto`, (route) => route.fulfill({ contentType: 'text/html', body: '<title>cassa</title>' }))
+    await btn.click()
+    const arrived = await page.waitForURL(`https://${host}/cart/c/finto`, { timeout: 10000 }).then(() => true).catch(() => false)
+    ok('cassa: si arriva al pagamento senza l\'avviso di uscita', arrived && seen.length === 0, seen.join(','))
+  } else {
+    ok(`cassa (${caso}): bottone spento e avviso visibile`, await btn.isDisabled() && msg &&
+      (await page.getByTestId('cart-checkout-unavailable').textContent()).trim() === T.checkoutUnavailable)
+  }
+  await ctx.close()
+}
+
 // Telefono: scheda legale senza scorrimento orizzontale.
 {
   const { ctx, page } = await open('legal-mobile', { mobile: true })
@@ -353,3 +483,7 @@ await browser.close()
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.filter((r) => r[0] === 'ok').length} superati, ${results.filter((r) => r[0] === 'FAIL').length} falliti`)
 console.log(consoleErrors.length ? 'ERRORI CONSOLE:\n' + consoleErrors.join('\n') : 'ERRORI CONSOLE: nessuno')
+
+// Senza questa riga la suite usciva con 0 anche con controlli falliti, e run-all
+// e la CI la davano per superata (trovato il 2026-11-03).
+process.exit(results.some((r) => r[0] === 'FAIL') || consoleErrors.length ? 1 : 0)

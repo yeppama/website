@@ -98,6 +98,10 @@ const dist3 = (a, b) => Math.hypot(a.x - b[0], a.y - b[1], a.z - b[2])
   ok('desktop: ESC → uscita, camera esattamente dove il player l\'aveva lasciata',
     exited && dist3(back, [pAfter.x, storeConfig.navigation.player.eyeHeight, pAfter.z]) < 0.005 && Math.abs(pAfter.yaw - before.yaw) < 0.001,
     `scarto ${dist3(back, [pAfter.x, storeConfig.navigation.player.eyeHeight, pAfter.z]).toFixed(4)} m`)
+  // Audit 2026-11-02, N2: uscendo dal Focus il focus non cade sul <body>.
+  const focusBack = await waitUntil(page, () => document.activeElement && document.activeElement !== document.body, null, 5000)
+  ok('desktop: uscita dal Focus, il focus torna a un elemento (non al body)', focusBack,
+    await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80)))
   ok('desktop: uscendo dal Focus il Pointer Lock NON si riattiva da solo', await page.evaluate(() => !document.pointerLockElement))
   ok('desktop: uscendo il pannello sparisce', !(await page.getByRole('heading', { name: 'Heavy Hoodie' }).isVisible()))
   await page.waitForTimeout(1200)
@@ -234,3 +238,7 @@ await browser.close()
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.filter((r) => r[0] === 'ok').length} superati, ${results.filter((r) => r[0] === 'FAIL').length} falliti`)
 console.log(consoleErrors.length ? 'ERRORI CONSOLE:\n' + consoleErrors.join('\n') : 'ERRORI CONSOLE: nessuno')
+
+// Senza questa riga la suite usciva con 0 anche con controlli falliti, e run-all
+// e la CI la davano per superata (trovato il 2026-11-03).
+process.exit(results.some((r) => r[0] === 'FAIL') || consoleErrors.length ? 1 : 0)

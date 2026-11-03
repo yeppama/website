@@ -13,7 +13,7 @@ scripts/media/     build.mjs + process.py (foto → WebP in più larghezze e tex
 src/lib/           staticShadows.js (ombre calcolate una volta: markShadowsDirty) · focusItems.js (posa del Focus per capo) · sharedTextures.js (immagini condivise, in gpuCaches; sostituisce useTexture) · geometry.js · collision.js · navigator.js · materials.js · garments.js · canvasText.js · noise.js · deviceProfile.js · format.js · gpuCaches.js · perf.js · bench.js
 src/commerce/      index.js (modo e contratto del fornitore) · mock.js (negozio di prova) · shopify.js (Storefront API)
 src/lib/sanitizeHtml.js   filtro dell'HTML esterno (pagine legali del venditore)
-src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js · useLegalStore.js
+src/state/         useAppStore.js · usePlayerStore.js · usePerfStore.js · useCartStore.js · useLegalStore.js · backButton.js · leaveGuard.js (avviso in uscita, `features.leaveWarning`)
 src/scene/         StoreCanvas.jsx · MergeByMaterial.jsx · environment/ (anche WallArt.jsx e Props.jsx, grafica e arredi del negozio A) · lighting/ (anche SelectiveBloom.jsx, Bloom del cantiere; AccentLights.jsx, punti luce arancioni da environment.accentLights) · displays/ · player/ · debug/
 src/ui/            onboarding/ · hud/ · menu/ · focus/ · dialog/ · product/ · lookbook/ · cart/ · legal/ · perf/ · bench/ · primitives/ · fx/ · fallback/
 scripts/           generate-theme.js · test-navigation.mjs · test-framing.mjs · test-catalog.mjs · export-shopify-csv.mjs · e2e/e2e-phase{1b,2,3,4,5,6,8a,8b}.mjs · e2e/e2e-landscape.mjs

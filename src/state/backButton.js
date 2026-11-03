@@ -12,6 +12,25 @@ import { useAppStore } from './useAppStore.js'
 const layersOf = (s) => s.dialogs.length + (s.menuOpen ? 1 : 0) +
   (s.focus.state === 'entering' || s.focus.state === 'focused' ? 1 : 0)
 
+/**
+ * Voci orfane: una ricarica (o un ritorno dalla cassa senza bfcache) con un livello
+ * aperto lascia la pagina su una voce `{ intoLayer: n }`, ma lo stato del sito
+ * riparte senza livelli. Il primo Indietro atterrava sulla voce della pagina e
+ * non faceva niente; ne servivano due per uscire (verificato il 2026-10-30).
+ * All'avvio si torna in silenzio alla voce della pagina: le voci orfane restano
+ * solo "avanti" e spariscono al primo pushState (audit 2026-11-02, N8).
+ *
+ * Si chiama una volta, all'avvio dell'app, prima che esista l'ascoltatore di
+ * popstate: il popstate che segue non trova nessuno che lo tratti come Indietro.
+ */
+let dropped = false   // una volta sola: StrictMode ripete gli effetti, e history.go è asincrono
+export function dropOrphanEntries() {
+  if (dropped) return
+  dropped = true
+  const n = history.state?.intoLayer
+  if (Number.isInteger(n) && n > 0) history.go(-n)
+}
+
 export function installBackButton() {
   let depth = 0     // voci nostre sopra quella della pagina
   let ignore = 0    // ritorni provocati da noi (history.go), da non trattare come Indietro

@@ -87,11 +87,17 @@ export default function PlaceholderImage({
       {/* Etichetta e categoria restano visibili: è così che si distingue
           un segnaposto voluto da un caricamento che non finisce mai. */}
       {!isLoading && (
-        <div className={`absolute inset-0 flex flex-col justify-between ${compact ? 'p-2' : 'p-3'}`}>
+        // aria-hidden: il nome è già nell'aria-label del role="img"; questo testo è per
+        // chi guarda, e dentro un bottone ne cambiava il nome (WCAG 2.5.3, axe).
+        <div className={`absolute inset-0 flex flex-col justify-between ${compact ? 'p-2' : 'p-3'}`} aria-hidden="true">
           <div className="flex items-start justify-between gap-2">
-            <span className="micro" style={{ color: spec.fg }}>
-              {isError ? t.error : ratio}
-            </span>
+            {/* Nella miniatura il rapporto non serve, e dentro un bottone "Immagini: Front"
+                il testo "1:1" faceva divergere nome e testo visibile (WCAG 2.5.3). */}
+            {(isError || !compact) && (
+              <span className="micro" style={{ color: spec.fg }}>
+                {isError ? t.error : ratio}
+              </span>
+            )}
             {spec.showCategory && category && (
               <span className="micro" style={{ color: spec.fg }}>{category}</span>
             )}

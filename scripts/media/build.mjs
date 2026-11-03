@@ -55,6 +55,10 @@ for (const l of content.lookbook) for (const img of l.images) if (img.src) photo
 if (list) {
   for (const line of readFileSync(list, 'utf8').split('\n').filter(Boolean)) {
     const [name, url] = line.split('\t')
+    // Il nome diventa un percorso: niente "../" né separatori, solo un nome di
+    // file semplice; l'indirizzo solo https (audit 2026-11-02, §4-bis punto 8).
+    if (!/^[a-z0-9][a-z0-9._-]*$/i.test(name ?? '') || name.includes('..')) { console.error(`nome non valido: ${JSON.stringify(name)}`); process.exit(1) }
+    if (!/^https:\/\//.test(url ?? '')) { console.error(`${name}: indirizzo non https: ${JSON.stringify(url)}`); process.exit(1) }
     const file = join(srcDir, `${name}.png`)
     if (existsSync(file)) continue
     const res = await fetch(url)

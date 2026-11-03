@@ -13,6 +13,8 @@ import demo from './demo.js'
 export const contents = { into, demo }
 
 const chosen = import.meta.env?.VITE_CONTENT ?? globalThis.process?.env?.VITE_CONTENT ?? 'into'
-if (!contents[chosen]) throw new Error(`VITE_CONTENT="${chosen}": contenuto inesistente (${Object.keys(contents).join(', ')})`)
+// Object.hasOwn e non contents[chosen]: VITE_CONTENT=constructor o toString
+// troverebbe una proprietà ereditata da Object (§4-bis punto 3).
+if (!Object.hasOwn(contents, chosen)) throw new Error(`VITE_CONTENT="${chosen}": contenuto inesistente (${Object.keys(contents).join(', ')})`)
 
 export default contents[chosen]

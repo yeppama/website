@@ -99,7 +99,7 @@ ok('il contenuto della demo ha foto per tutti i capi', storeConfig.products.ever
   await page.keyboard.press('Escape')
 
   await openMenu(page)
-  const menuImgs = await waitUntil(page, (n) => [...document.querySelectorAll('aside article img')].filter((i) => i.complete && i.naturalWidth > 0).length >= n, Math.min(4, storeConfig.products.length))
+  const menuImgs = await waitUntil(page, (n) => [...document.querySelectorAll('#menu-drawer article img')].filter((i) => i.complete && i.naturalWidth > 0).length >= n, Math.min(4, storeConfig.products.length))
   ok('menu: le foto dei capi si caricano (caricamento pigro)', menuImgs)
   ok('commercio attivo: niente nota "prezzi dimostrativi" nel menu', !(await page.getByText(C.legal.priceNotice).count()))
   const body = await page.evaluate(() => document.body.innerText)

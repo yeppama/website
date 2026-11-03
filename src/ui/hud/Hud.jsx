@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { brandMotif } from '../../config/designTokens.js'
 import { useAppStore } from '../../state/useAppStore.js'
@@ -13,6 +14,8 @@ import { commerceActive } from '../../commerce/index.js'
  * `auto` solo sugli elementi interattivi: il resto dello schermo resta libero
  * per il Pointer Lock (desktop) e per tap e trascinamento (mobile).
  */
+const diagnostics = typeof window !== 'undefined' && /[?&](debug|perf|bench)=/.test(window.location.search)
+
 function Crosshair() {
   const w = 18
   return (
@@ -85,12 +88,22 @@ export default function Hud({ device }) {
   const zone = storeConfig.environment.zones.find((z) => z.id === zoneId)
   const poi = storeConfig.pois.find((p) => p.id === activePoiId)
 
+  // All'ingresso l'onboarding sparisce col bottone "Entra" che aveva il focus: senza
+  // un punto d'arrivo il focus cadeva sul <body> e la vista non aveva nessun titolo.
+  // Un titolo per i lettori di schermo, che riceve il focus (audit 2026-11-02, N2).
+  const heading = useRef(null)
+  useEffect(() => {
+    if (!document.activeElement || document.activeElement === document.body) heading.current?.focus({ preventScroll: true })
+  }, [])
+
   return (
     <>
       {keyboard && locked && !inFocus && <Crosshair />}
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 sm:p-6" style={{ zIndex: 'var(--z-hud)' }}>
         <header className="flex items-start justify-between gap-4">
+          {/* Dentro l'intestazione: fuori da ogni punto di riferimento axe lo segnala ("region"). */}
+          <h1 ref={heading} tabIndex={-1} className="sr-only" data-testid="hud-heading">{copy.heading}</h1>
           <div>
             <p className="font-display font-black uppercase leading-none text-text-primary"
                style={{ fontSize: 'var(--text-lg)', letterSpacing: 'var(--tracking-brutal)' }}>
@@ -114,7 +127,9 @@ export default function Hud({ device }) {
           <div className="flex items-end justify-between gap-4">
             <Minimap />
             <div className="text-right">
-              <p className="micro">{device.isTouch ? copy.inputTouch : copy.inputPointer} · {copy.tier} {device.tier}</p>
+              {/* Tipo di input e tier sono dati di diagnosi: solo con ?debug o ?perf
+                  (audit 2026-11-02, N4). Le coordinate del marchio restano. */}
+              {diagnostics && <p className="micro">{device.isTouch ? copy.inputTouch : copy.inputPointer} · {copy.tier} {device.tier}</p>}
               <p className="micro mt-1">{brand.origin.coords}</p>
             </div>
           </div>

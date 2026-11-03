@@ -43,16 +43,21 @@ export const useCartStore = create((set, get) => ({
   restoreCart: async () => {
     const provider = getProvider()
     const id = readId()
-    if (!provider || !id) return
+    if (!provider || !id || get().pending) return
+    // Occupato finché il carrello salvato non è tornato: un'aggiunta in questa
+    // finestra creava un carrello nuovo e il ripristino lo scartava, o il
+    // contrario (audit 2026-11-02, §4-bis punto 2). Il bottone "Aggiungi" resta
+    // in attesa (aria-disabled) per il tempo di una risposta.
+    set({ pending: true })
     try {
       const cart = await provider.getCart(id)
-      // Nel frattempo l'utente può aver già aggiunto un capo (nuovo carrello):
-      // vale il suo, non quello ripristinato.
       if (get().cart || readId() !== id) return
       if (!cart) writeId(null)   // scaduto o già pagato: se ne crea uno nuovo al primo acquisto
       set({ cart })
     } catch (e) {
       console.warn('commerce: carrello non ripristinato', e)
+    } finally {
+      set({ pending: false })
     }
   },
 
@@ -105,15 +110,19 @@ export const useCartStore = create((set, get) => ({
   },
 
   add: (variantId, quantity = 1) => {
+    // Solo interi positivi: Math.min(NaN, room) è NaN e Math.min(-5, room) è -5, e
+    // arriverebbero al fornitore come quantità (audit 2026-11-02, T15).
+    if (!Number.isInteger(quantity) || quantity < 1) return Promise.resolve(false)
     // Il massimo per riga vale per ogni fornitore, non solo per quello finto.
     const line = get().cart?.lines.find((l) => l.variantId === variantId)
     const room = commerce.maxQuantity - (line?.quantity ?? 0)
     if (room <= 0) { set({ error: storeConfig.copy.cart.maxReached }); return Promise.resolve(false) }
     return get().run((p, id) => p.addLines(id, [{ variantId, quantity: Math.min(quantity, room) }]), { retryOnNewCart: true })
   },
-  setQuantity: (lineId, quantity) => get().run((p, id) => (quantity <= 0
+  // 0 rimuove la riga; un valore che non è un intero ≥ 0 non parte.
+  setQuantity: (lineId, quantity) => (!Number.isInteger(quantity) || quantity < 0 ? Promise.resolve(false) : get().run((p, id) => (quantity <= 0
     ? p.removeLines(id, [lineId])
-    : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }]))),
+    : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }])))),
   remove: (lineId) => get().run((p, id) => p.removeLines(id, [lineId])),
 }))
 

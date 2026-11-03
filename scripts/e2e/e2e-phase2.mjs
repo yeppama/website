@@ -69,3 +69,6 @@ await browser.close()
 console.log('STATISTICHE (tier high salvo indicazione):')
 for (const s of stats) console.log(`  ${s.shot.padEnd(22)} draw call ${String(s.calls).padStart(4)} | triangoli ${String(s.tris).padStart(7)}${s.tex !== undefined ? ` | texture ${s.tex} | geometrie ${s.geo}` : ''}`)
 console.log(problems.length ? 'PROBLEMI:\n' + problems.join('\n') : 'PROBLEMI: nessuno')
+
+// Senza questa riga la suite usciva con 0 anche con problemi trovati (2026-11-03).
+process.exit(problems.length ? 1 : 0)

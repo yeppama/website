@@ -272,15 +272,20 @@ export function importCatalog(wb, { vendor, photoFiles = null }) {
 }
 
 /** Resoconto leggibile (Markdown) da mandare anche al cliente. */
+// Il resoconto riporta testo scritto dal cliente nel foglio: senza escape, un
+// "<img onerror>" o un link Markdown lì dentro diventerebbe vivo aprendo il file
+// in un'anteprima Markdown (audit 2026-11-02, §4-bis punto 8).
+const md = (x) => String(x ?? '').replace(/\r?\n/g, ' / ').replace(/[\\`*_[\]<>#|!]/g, (c) => `\\${c}`)
+
 export function report(result, { source }) {
-  const out = [`# Resoconto del catalogo`, '', `File: \`${source}\``, '']
+  const out = [`# Resoconto del catalogo`, '', `File: ${md(source)}`, '']
   if (result.ok) {
     out.push(`**Esito: importabile.** ${result.products.length} capi, ${result.lookbook.length} lookbook, ` +
       `${result.csv.trim().split('\n').length - 1} varianti per Shopify.`, '')
   } else {
     out.push(`**Esito: da correggere.** ${result.errors.length} errori: nessun file di uscita prodotto.`, '')
   }
-  const section = (title, list) => { if (list?.length) out.push(`## ${title}`, '', ...list.map((x) => `- ${x}`), '') }
+  const section = (title, list) => { if (list?.length) out.push(`## ${title}`, '', ...list.map((x) => `- ${md(x)}`), '') }
   section('Errori (bloccano l\'importazione)', result.errors)
   section('Da decidere', result.decisions)
   section('Avvisi', result.warnings)
@@ -289,7 +294,7 @@ export function report(result, { source }) {
     const items = Object.values(group)
     if (!items.length) continue
     out.push(`## ${title}`, '')
-    for (const { q, a } of items) out.push(`- **${q}** ${a ? a.replace(/\n/g, ' / ') : '_senza risposta_'}`)
+    for (const { q, a } of items) out.push(`- **${md(q)}** ${a ? md(a) : '_senza risposta_'}`)
     out.push('')
   }
   return out.join('\n')

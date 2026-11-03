@@ -11,6 +11,8 @@
 import assert from 'node:assert/strict'
 import { storeConfig } from '../src/config/storeConfig.js'
 import { createShopifyProvider } from '../src/commerce/shopify.js'
+import { createMockProvider } from '../src/commerce/mock.js'
+import { formatPrice } from '../src/lib/format.js'
 
 const results = []
 async function test(name, fn) {
@@ -52,7 +54,11 @@ await test('richiesta: endpoint con versione, token pubblico nell\'header, paese
   assert.equal(c.headers['X-Shopify-Storefront-Access-Token'], 'public-token')
   assert.equal(c.variables.country, 'IT')
   assert.match(c.query, /@inContext\(country: \$country\)/)
-  assert.match(c.query, /p0: product\(handle: "heavy-hoodie"\)/)
+  // Gli handle viaggiano come variabili, mai nel testo della query (T18).
+  assert.match(c.query, /p0: product\(handle: \$h0\)/)
+  assert.match(c.query, /\$h0: String!/)
+  assert.equal(c.variables.h0, 'heavy-hoodie')
+  assert.ok(!c.query.includes('heavy-hoodie'), 'handle nel testo della query')
 })
 
 await test('catalogo: varianti Shopify tradotte negli id di taglia e colore di storeConfig', async () => {
@@ -88,7 +94,7 @@ await test('carrello: aggiunta tradotta in CartLineInput, risposta nel formato d
 await test('cassa: un checkoutUrl non https o di un altro dominio viene scartato', async () => {
   // L'URL finisce in window.location.assign. Oggi arriva dalla Storefront API
   // su HTTPS, quindi è attendibile; il controllo serve al giorno in cui non lo
-  // fosse. Senza URL valido il carrello resta senza cassa e il bottone sparisce.
+  // fosse. Senza URL valido il carrello resta senza cassa e il bottone si disabilita.
   const v = variant('gid://v/1', 'M', 'Black')
   const ostili = ['javascript:alert(1)', 'https://evil.example/cart/c/1', 'http://example.myshopify.com/cart/c/1', '']
   for (const url of ostili) {
@@ -99,6 +105,28 @@ await test('cassa: un checkoutUrl non https o di un altro dominio viene scartato
     assert.equal(cart.checkoutUrl, null, `doveva scartare ${url || '(vuoto)'}`)
   }
   return `${ostili.length} URL scartati, quello del negozio resta`
+})
+
+await test('cassa: un host elencato in checkoutHosts (dominio proprio del negozio) è accettato', async () => {
+  // Alla 8c Shopify manda il checkoutUrl sul dominio primario del negozio: senza
+  // la lista la cassa si chiuderebbe in silenzio (audit 2026-11-02, T1-bis).
+  const v = variant('gid://v/1', 'M', 'Black')
+  const conLista = { ...shopify, checkoutHosts: ['shop.cliente.example'] }
+  const casi = [
+    ['https://shop.cliente.example/cart/c/1', 'https://shop.cliente.example/cart/c/1'],
+    ['https://SHOP.cliente.example/cart/c/1', 'https://shop.cliente.example/cart/c/1'],
+    ['https://shop.cliente.example.evil.example/cart/c/1', null],
+    ['https://evil.example/cart/c/1', null],
+    ['http://shop.cliente.example/cart/c/1', null],
+  ]
+  for (const [url, atteso] of casi) {
+    const node = { ...cartNode([{ id: 'gid://line/1', quantity: 1, v }]), checkoutUrl: url }
+    const f = fakeFetch(() => ({ data: { cartLinesAdd: { cart: node, userErrors: [] } } }))
+    const p = createShopifyProvider({ products: storeConfig.products, shopify: conLista, country: 'IT', fetchImpl: f.fn })
+    const cart = await p.addLines('gid://shopify/Cart/c1', [{ variantId: 'gid://v/1', quantity: 1 }])
+    assert.equal(cart.checkoutUrl, atteso, url)
+  }
+  return `${casi.length} casi: dominio proprio accettato, sottodomini e altri host no`
 })
 
 await test('errori: userErrors, errori GraphQL e HTTP diventano eccezioni', async () => {
@@ -155,6 +183,48 @@ await test('pagine legali: campi di storeConfig, paese e lingua nel contesto, so
 await test('pagine legali: un errore del negozio diventa un\'eccezione (il menu dice "non raggiungibili")', async () => {
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: fakeFetch(() => ({ status: 503, json: {} })).fn })
   await assert.rejects(() => p.getPolicies(storeConfig.commerce.policies), /HTTP 503/)
+})
+
+await test('carrello: il totale di riga è quello di Shopify, non quantità × prezzo (T5)', async () => {
+  const node = cartNode([{ id: 'l1', quantity: 2, v: variant('v1', 'M', 'Black') }])
+  node.lines.nodes[0].cost = { totalAmount: { amount: '300.0', currencyCode: 'EUR' } }   // sconto: non 378
+  const f = fakeFetch((b) => (b.query.includes('query Cart') ? { data: { cart: node } } : { data: { localization: IT } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  const cart = await p.getCart('gid://shopify/Cart/c1')
+  assert.deepEqual(cart.lines[0].total, { amount: 300, currency: 'EUR' })
+  assert.match(f.calls[0].query, /cost \{ totalAmount \{ amount currencyCode \} \}/)
+})
+
+await test('fornitore finto: stesso contratto, totale di riga compreso (T5)', async () => {
+  const mem = {}
+  globalThis.localStorage = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v } }
+  const m = createMockProvider({ products: storeConfig.products, mock: { ...storeConfig.commerce.mock, latencyMs: 0 }, maxQuantity: storeConfig.commerce.maxQuantity })
+  const hoodie = storeConfig.products.find((x) => x.commerce?.handle)
+  const [prod] = await m.getProducts([hoodie.commerce.handle])
+  const v = prod.variants.find((x) => x.available)
+  const cart = await m.createCart()
+  const after = await m.addLines(cart.id, [{ variantId: v.id, quantity: 3 }])
+  assert.deepEqual(after.lines[0].total, { amount: Math.round(v.price.amount * 100) * 3 / 100, currency: v.price.currency })
+  delete globalThis.localStorage
+})
+
+await test('catalogo: una variante con taglia o colore che non corrisponde al config si segnala (T19)', async () => {
+  const f = fakeFetch(() => ({ data: { localization: IT, p0: { handle: 'heavy-hoodie', title: 'Heavy Hoodie', variants: { nodes: [variant('v1', 'M', 'Black'), variant('v2', 'Medium', 'Black')] } } } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  const warned = []
+  const orig = console.warn
+  console.warn = (...a) => warned.push(a.join(' '))
+  try {
+    const [prod] = await p.getProducts(['heavy-hoodie'])
+    assert.equal(prod.variants.length, 1)
+  } finally { console.warn = orig }
+  assert.ok(warned.some((w) => w.includes('1 varianti di heavy-hoodie') && w.includes('v2')), warned.join(' | '))
+})
+
+await test('prezzi: sempre due decimali, come la cassa di Shopify (T23)', async () => {
+  const locale = storeConfig.meta.brand.locale
+  assert.match(formatPrice({ amount: 189, currency: 'EUR' }, locale), /189,00/)
+  assert.match(formatPrice({ amount: 189.5, currency: 'EUR' }, locale), /189,50/)
 })
 
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)

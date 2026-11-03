@@ -1,0 +1,73 @@
+# Prova dal vivo del carrello sul negozio Shopify di sviluppo (e2e-phase8b).
+#
+# Perché un workflow a parte: la suite crea carrelli veri sul negozio di sviluppo
+# (innocui, nessun pagamento) e ha bisogno di rete verso Shopify, che l'ambiente
+# di lavoro dell'agente non ha. I runner di GitHub ce l'hanno. Non usa segreti:
+# il token della Storefront API è quello pubblico, già nel codice.
+#
+# Parte a mano (Actions → e2e-shopify → Run workflow), su ogni PR verso main
+# (prima di pubblicare) e sui push che toccano il carrello. Alla 8c si rilancia
+# identica sul negozio del cliente, dopo il commit di dominio, token e CSP.
+name: e2e-shopify
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['**']
+    paths:
+      - 'src/commerce/**'
+      - 'src/ui/cart/**'
+      - 'src/ui/product/**'
+      - 'src/state/useCartStore.js'
+      - 'src/state/leaveGuard.js'
+      - 'src/config/storeConfig.js'
+      - 'vercel.json'
+      - 'scripts/e2e/e2e-phase8b.mjs'
+      - 'scripts/e2e/run-all.mjs'
+      - '.github/workflows/e2e-shopify.yml'
+
+permissions:
+  contents: read
+
+# Una prova alla volta per branch: due giri insieme creerebbero carrelli in
+# parallelo sullo stesso negozio e i risultati si leggerebbero male.
+concurrency:
+  group: e2e-shopify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase8b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      # CI=1: Chromium senza sandbox, come nell'e2e normale. Il contenuto è
+      # `into`, quello della produzione.
+      - name: Carrello dal vivo sul negozio Shopify di sviluppo
+        env:
+          CI: '1'
+          # Password della VETRINA del negozio di sviluppo (la pagina "inserisci la
+          # password" che Shopify mette davanti ai negozi non pubblicati), non quella
+          # dell'amministrazione. Senza, la cassa resta non verificata e la suite lo
+          # dice in rosso. Va in Settings → Secrets and variables → Actions.
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: npm run e2e -- --only phase8b --content into --out e2e-out
+
+      - name: Screenshot se fallisce
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-shopify-screenshot
+          path: e2e-out/
+          retention-days: 7
