@@ -39,7 +39,7 @@ Legenda: 🔴 bloccante · 🟡 da correggere · 🟢 miglioramento. **[A+B]** v
 | D1 | **Il cliente rientra nell'esenzione per microimprese dell'European Accessibility Act?** L'esenzione vale con meno di 10 persone **e** al massimo 2 milioni di euro di fatturato o di bilancio annuo. Se non rientra, N1 diventa un obbligo di legge, e lo è dal 28/06/2025 (d.lgs. 82/2022). | cliente, con il suo consulente | priorità di N1 |
 | D2 | Funzione di recesso online, art. 54-bis del Codice del consumo (obbligatoria dal 19/06/2026). Opzione A: delegarla a Shopify (consigliata). Opzione B: un modulo proprio sul sito. **2026-11-03:** l'admin del negozio del cliente propone l'attività nativa «Prepara il negozio per il diritto di recesso dell'UE»: è lo strumento dell'opzione A, da attivare col cliente (scrive le regole di reso a suo nome). | utente e cliente | 8e (T10) |
 | D3 | Su Shopify, i prezzi sono «IVA inclusa»? C'è il ricalcolo dell'IVA per paese? **Verificato 2026-11-03 sul negozio del cliente:** «IVA inclusa» attivo, ma nessuna registrazione fiscale: Shopify presume aliquota 0% e la riga UE non riscuote. **Bloccato sul cliente:** serve la sua partita IVA (Impostazioni → Imposte e dazi → Unione europea → Italia) prima dei pagamenti veri. | cliente | 8c (T9, T22) |
-| D4 | I nuovi grigi e il nuovo rosso (N7) sono accettati come parte del marchio? | utente e cliente | N7 |
+| D4 | ✅ **Approvato dall'utente 2026-11-03.** I nuovi grigi e il nuovo rosso (N7) sono accettati come parte del marchio. Da far vedere al cliente. | — | — |
 | D5 | ✅ **Chiuso 2026-11-03.** Nel negozio del cliente erano attivi 10 scope su 16, compresi leggi/modifica clienti. Tolti 6 (clienti ×2, tag prodotto, ritiro in negozio, piani di vendita, metaobject); restano i 4 del sito. Sondato col token pubblico: clienti e metaobject negati, prodotti/contenuto/carrello rispondono. Ritiro e piani di vendita non sondabili a catalogo vuoto: rilanciare `npm run check:scopes` alla 8c. Nessun account cliente nel negozio. | — | — |
 | D6 | ✅ **Chiuso 2026-11-03.** Git Fork Protection attiva (le PR da fork aspettano autorizzazione), nessuna variabile d'ambiente nel progetto, Vercel Authentication spenta (anteprime pubbliche per scelta). `README.md` corretto. | — | — |
 
@@ -179,6 +179,8 @@ Non c'è una `progressbar` e non ci sono regioni live (verificato). Chi usa un l
 ```
 
 ### N7: contrasto insufficiente in tutto il sito  🟡 (WCAG 1.4.3), vedi D4
+
+> ✅ **Fatto 2026-11-03 (Fase 2).** `text.muted` → `#82827c`, `state.danger` → `#f04452`. axe `color-contrast` a 0 su onboarding, esplorazione, menu, Focus, scheda, carrello e fallback, su A e B, desktop/telefono/orizzontale (37 schermate). `scripts/generate-theme.js` ora ferma la build se un colore di testo scende sotto 4,5:1 su un fondo con testo. Restano, fuori da N7: `label-content-name-mismatch` (40), `region` (34), `heading-order` (12).
 
 axe segnala da 2 a 17 elementi per schermata. Ho calcolato io i contrasti dai token di `config/designTokens.js`:
 
