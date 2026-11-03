@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-11-02 · branch di lavoro **`sviluppo`** (oltre novanta commit davanti) · `main` = produzione, ferma al 2026-10-28.
+> Stato al 2026-11-03 · branch di lavoro **`sviluppo`** (oltre novanta commit davanti) · `main` = produzione, ferma al 2026-10-28.
 > Questo file si carica a ogni sessione: contiene solo lo stato vigente. Il resto si legge quando serve (tabella in fondo).
 
 ## 1. Cos'è
@@ -39,7 +39,7 @@ Il cliente sceglie fra due allestimenti dello stesso negozio. Navigazione, Focus
 - **Demo "negozio finito":** fatta (contenuti in `src/content/`, foto, capi 3D con la foto, prezzi dal fornitore). Non eseguito: benchmark su iPhone, Pixel e Honor con le foto, prova completa da telefono.
 - **Cantiere:** fasi 1–2 fatte; fase 3 in corso (protocollo in `docs/PERF.md`). Prime misure 2026-10-19: Pixel 10 nel cantiere fallita (1% low 30,9), Honor nel negozio A in regressione (25,2): corretti con ombre statiche e grafica caricata prima di entrare. Pixel nel cantiere: nel medium niente luci arancioni vere → **superata** (60,2 / 54,1, 2026-10-20). Pixel nel negozio A superata (59,9 / 54,6). Honor nel negozio A da rimisurare. Mancano iPhone, PC con scheda dedicata, giudizio su luminosità e neri.
 - **Passata di sicurezza (2026-10-28, fuori fase):** fatta su `main` (PR #1) e in produzione; poi l'audit dell'e-commerce su `sviluppo`, senza nulla di critico o alto. Il 2026-10-29 `main` è stato unito in `sviluppo`: i due rami hanno gli stessi header, le stesse guardie e gli stessi controlli. Dettaglio e motivazioni in `docs/SICUREZZA.md`.
-- **Audit del 2026-11-02 (UI/UX, legale, sicurezza): chiuso il 2026-11-03.** Fasi 1–9 sul branch `audit/correzioni-2026-11`, PR #2 verso `sviluppo`, **da unire**. e2e 11/11, axe 0 violazioni su A e B, `e2e-shopify` (GitHub Actions, prova dal vivo) 13/13. Non eseguito: prove su telefono vero e N11. Il **modulo cliente** (D1 EAA, D2 recesso, D3 partita IVA, conferma colori, 8c) è l'ultimo da inserire: `docs/audit/2026-11-02/AUDIT-TOTALE.md` §8.
+- **Audit del 2026-11-02 (UI/UX, legale, sicurezza): chiuso il 2026-11-03.** Fasi 1–9 dal branch `audit/correzioni-2026-11`, **unite in `sviluppo` il 2026-11-03** (PR #2, merge `e91ad35`; dopo il merge CI, e2e ed e2e-shopify verdi). e2e 11/11, axe 0 violazioni su A e B, `e2e-shopify` (GitHub Actions, prova dal vivo) 13/13. Non eseguito: prove su telefono vero e N11. Il **modulo cliente** (D1 EAA, D2 recesso, D3 partita IVA, conferma colori, 8c) è l'ultimo da inserire: `docs/audit/2026-11-02/AUDIT-TOTALE.md` §8.
 - **Correzioni richieste il 2026-10-19:** fasi A (manichino, zoom rack, catene), B (grafica del cantiere, punti luce arancioni) e C (negozio A 24 × 24 con grafica e arredi, più luce in entrambi) fatte. Non eseguito: prova sul telefono dell'utente.
 
 ## 5. Regole di processo (dall'utente)
