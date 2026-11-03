@@ -37,10 +37,10 @@ Legenda: 🔴 bloccante · 🟡 da correggere · 🟢 miglioramento. **[A+B]** v
 | # | Decisione | Chi | Blocca |
 |---|---|---|---|
 | D1 | **Il cliente rientra nell'esenzione per microimprese dell'European Accessibility Act?** L'esenzione vale con meno di 10 persone **e** al massimo 2 milioni di euro di fatturato o di bilancio annuo. Se non rientra, N1 diventa un obbligo di legge, e lo è dal 28/06/2025 (d.lgs. 82/2022). | cliente, con il suo consulente | priorità di N1 |
-| D2 | Funzione di recesso online, art. 54-bis del Codice del consumo (obbligatoria dal 19/06/2026). Opzione A: delegarla a Shopify (consigliata). Opzione B: un modulo proprio sul sito. | utente e cliente | 8e (T10) |
-| D3 | Su Shopify, i prezzi sono «IVA inclusa»? C'è il ricalcolo dell'IVA per paese? | chi gestisce Shopify | 8c (T9, T22) |
+| D2 | Funzione di recesso online, art. 54-bis del Codice del consumo (obbligatoria dal 19/06/2026). Opzione A: delegarla a Shopify (consigliata). Opzione B: un modulo proprio sul sito. **2026-11-03:** l'admin del negozio del cliente propone l'attività nativa «Prepara il negozio per il diritto di recesso dell'UE»: è lo strumento dell'opzione A, da attivare col cliente (scrive le regole di reso a suo nome). | utente e cliente | 8e (T10) |
+| D3 | Su Shopify, i prezzi sono «IVA inclusa»? C'è il ricalcolo dell'IVA per paese? **Verificato 2026-11-03 sul negozio del cliente:** «IVA inclusa» attivo, ma nessuna registrazione fiscale: Shopify presume aliquota 0% e la riga UE non riscuote. **Bloccato sul cliente:** serve la sua partita IVA (Impostazioni → Imposte e dazi → Unione europea → Italia) prima dei pagamenti veri. | cliente | 8c (T9, T22) |
 | D4 | I nuovi grigi e il nuovo rosso (N7) sono accettati come parte del marchio? | utente e cliente | N7 |
-| D5 | **Da fare adesso.** Nel negozio del cliente (`into-industries-ayehghmw`) gli scope Storefront del canale Headless sono solo i 4 usati dal sito? Il token di quel negozio è già pubblicato in `docs/PLAN-8.md` (S1). | chi gestisce Shopify | niente, ma l'esposizione è già in corso |
+| D5 | ✅ **Chiuso 2026-11-03.** Nel negozio del cliente erano attivi 10 scope su 16, compresi leggi/modifica clienti. Tolti 6 (clienti ×2, tag prodotto, ritiro in negozio, piani di vendita, metaobject); restano i 4 del sito. Sondato col token pubblico: clienti e metaobject negati, prodotti/contenuto/carrello rispondono. Ritiro e piani di vendita non sondabili a catalogo vuoto: rilanciare `npm run check:scopes` alla 8c. Nessun account cliente nel negozio. | — | — |
 | D6 | Su Vercel le PR da fork richiedono autorizzazione? Le variabili di Preview contengono solo valori pubblici? (S3) | utente | — |
 
 ---
@@ -287,7 +287,7 @@ Ci sono 3 punti **da verificare**. Dipendono da impostazioni di Shopify e Vercel
 
 | # | Cosa | Chi | Azione |
 |---|---|---|---|
-| S1 | Il token pubblico del negozio del cliente è in `docs/PLAN-8.md:129` (repo pubblico, dal 16/10), ma i suoi scope non sono ancora stati ridotti. Se gli scope *customers* sono rimasti attivi di default, chiunque può creare account e far partire email di recupero password da quel negozio. | proprietario Shopify (D5) | Spegnere gli scope inutili. Non serve ruotare il token: è pubblico per design. Toglierlo dal file non lo toglie dalla storia. |
+| S1 | ✅ **Chiuso 2026-11-03 (D5).** Il token pubblico del negozio del cliente è in `docs/PLAN-8.md:129` (repo pubblico, dal 16/10), ma i suoi scope non sono ancora stati ridotti. Se gli scope *customers* sono rimasti attivi di default, chiunque può creare account e far partire email di recupero password da quel negozio. | proprietario Shopify (D5) | Spegnere gli scope inutili. Non serve ruotare il token: è pubblico per design. Toglierlo dal file non lo toglie dalla storia. |
 | S2 | `scripts/check-scopes.mjs:23` legge solo `storeConfig` e ignora `VITE_SHOPIFY_*`. Quindi può dichiarare puliti gli scope di un token diverso da quello pubblicato. | **editor** | Leggere dominio, token e versione da env con fallback su `storeConfig`, come in `scripts/catalog/check.mjs:26-28`. Stampare la fonte usata, **non il token**. Aggiungere un test con `fetch` finto. |
 | S3 | Repo pubblico più integrazione Git di Vercel: una PR da fork potrebbe essere compilata con le variabili di Preview e pubblicata senza login. | utente (D6) | Correggere `README.md:52`, che dice che le anteprime sono protette; i documenti più recenti dicono il contrario. Il resto si sistema nelle impostazioni Vercel, non nel repo: `vercel.json` lo modifica anche l'autore della PR. |
 
