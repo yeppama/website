@@ -92,6 +92,22 @@ async function open(tag, { mode = null, viewport = { width: 1280, height: 720 },
   await ctx.close()
 }
 
+// ── 1b. Indietro dopo una ricarica con un livello aperto (audit 2026-11-02, N8) ──
+// Prima ne servivano due: il primo atterrava sulla voce della pagina e non faceva
+// niente. Vale anche per il ritorno dalla cassa senza bfcache (stessa voce orfana).
+{
+  const { ctx, page } = await open('indietro-ricarica')
+  await page.evaluate(() => window.__stores.app.getState().openDialog('product', 'prod-001'))
+  await waitUntil(page, () => history.state?.intoLayer === 1)
+  await page.reload({ waitUntil: 'networkidle' })
+  const cleaned = await waitUntil(page, () => !history.state?.intoLayer, null, 10000)
+  ok('ricarica con una scheda aperta: la voce orfana viene tolta', cleaned, JSON.stringify(await page.evaluate(() => history.state)))
+  await page.goBack({ waitUntil: 'commit' }).catch(() => {})
+  await page.waitForTimeout(500)
+  ok('dopo la ricarica un solo Indietro esce dal sito', !page.url().startsWith(BASE), page.url())
+  await ctx.close()
+}
+
 // ── 2. Solo mouse ──────────────────────────────────────────────────────────
 {
   const { ctx, page } = await open('solo-mouse', { mode: 'mouse' })

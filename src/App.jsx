@@ -5,7 +5,7 @@ import { getDeviceProfile } from './lib/deviceProfile.js'
 import { useAppStore, APP_PHASE } from './state/useAppStore.js'
 import { usePlayerStore } from './state/usePlayerStore.js'
 import { useCartStore } from './state/useCartStore.js'
-import { installBackButton } from './state/backButton.js'
+import { installBackButton, dropOrphanEntries } from './state/backButton.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
 // appare subito e la barra di progresso misura passaggi reali.
@@ -85,6 +85,10 @@ export default function App() {
     useCartStore.getState().init()
     if (params.get('debug')) window.__cart = useCartStore
   }, [])
+
+  // Voci di cronologia rimaste da una visita precedente della stessa pagina
+  // (ricarica, ritorno dalla cassa): via subito, prima dell'ingresso.
+  useEffect(() => { dropOrphanEntries() }, [])
 
   useEffect(() => {
     // Le invarianti del config sono controllate una volta all'avvio, in sviluppo.
