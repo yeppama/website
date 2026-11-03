@@ -312,6 +312,8 @@ Tutti i rafforzamenti sono elencati in `REPORT.md` §6.
 
 ---
 
+> **Prova dal vivo dopo tutte le fasi (2026-11-03):** `e2e-phase8b` su GitHub Actions (`.github/workflows/e2e-shopify.yml`), negozio di sviluppo, **13 su 13**: catalogo, varianti (nessuna scartata), EUR, carrello creato/aggiornato/ritrovato/svuotato, cassa aperta col capo, la taglia e il prezzo giusti, pagine legali.
+
 ## 5. Cosa funziona già, da non rompere
 
 Verificato dal vivo su A e B:
