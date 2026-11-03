@@ -358,3 +358,46 @@ Sullo stesso ambiente, B impiega 3–4 volte più di A per diventare utilizzabil
 8. T21: rigenerare `AUDIT-CARRELLO.md`.
 
 Dopo ogni passo: build, `test:nav`, `e2e-cantiere.mjs`, le suite del negozio e axe su A e B.
+
+---
+
+## 8. Chiusura (2026-11-03)
+
+**L'audit è chiuso** per decisione dell'utente: tutto ciò che dipende dal codice è fatto e verificato; ciò che dipende dal cliente è raccolto qui sotto come ultimo modulo, da inserire quando arriva il suo materiale.
+
+**Fatto e verificato** (branch `audit/correzioni-2026-11`, PR #2 verso `sviluppo`, da unire):
+
+| Fase | Contenuto | Commit |
+|---|---|---|
+| 1 | Sicurezza e cassa: T1-bis, T15, T18, S2 | `8b99e04` |
+| 2 | Contrasto N7 (D4 approvato), controllo in build | `886b615` |
+| 3 | Focus e ARIA: N2, T4, V5, N10 | `2e6a19e` |
+| 4 | Navigazione: N3, N4, N5, N6, N9 | `1b3c818` |
+| 5 | Indietro dopo una ricarica: N8 | `52f2703` |
+| 6 | Modalità testo senza 3D: N1 | `ed2b42c` |
+| 7 | Carrello: T2, T3, T5–T8, T17, T19, T23; avviso in uscita | `97529b1` |
+| 8 | Rafforzamenti 1–10; axe a zero violazioni (2.5.3, region, heading-order) | `4fe53c0`, `c6408c9` |
+| 9 | `AUDIT-CARRELLO.md` generato dal codice: T21 | `628984f` |
+| — | Exit code delle suite e2e (8 su 11 erano verdi anche fallendo) | `80e347b` |
+| — | Prova dal vivo su GitHub Actions: 13/13 sul negozio di sviluppo | `d599863`, `be10a13` |
+| — | D5 e D6 chiusi nelle impostazioni di Shopify e Vercel | `d4c1a2e`, `a13b067` |
+
+Ultimo giro: lint e build puliti; suite Node tutte verdi; e2e 11/11 su A e B; axe 0 violazioni su 37 schermate; `e2e-phase8b` 13/13 dal vivo.
+
+**Non eseguito, e dichiarato tale** (non dipende dal cliente, dipende da un telefono vero):
+- Indietro del browser su Chrome Android e Safari iOS (N8).
+- Avviso in uscita su telefono: su Safari iOS ci si aspetta che non compaia.
+- Modalità testo su un telefono lento (N1).
+- Lettore di schermo vero (VoiceOver o TalkBack) sul carrello e sulla scheda.
+- N11, inquadratura in verticale: va giudicata guardandola, non è stata toccata.
+
+**Modulo cliente** (ultimo da inserire; nessuna di queste voci si chiude senza di lui):
+
+| # | Cosa serve dal cliente | Cosa sblocca |
+|---|---|---|
+| D1 | Numero di persone e fatturato: sotto 10 e 2 M€ è esente dall'EAA | il livello d'obbligo dell'accessibilità (il sito è già a WCAG 2.2 AA per quanto misurato da axe) |
+| D2 → T10 | Ok ad attivare lo strumento Shopify «diritto di recesso dell'UE» (opzione A) | la funzione di recesso online, obbligatoria prima di vendere (8e) |
+| D3 → T22 | Partita IVA, inserita su Shopify in Imposte e dazi → UE → Italia | IVA corretta al pagamento (oggi Shopify presume 0%) |
+| D4 | Conferma dei due colori nuovi (`#82827c`, `#f04452`) come parte del marchio | niente: già applicati, approvati dall'utente |
+| 8c | Catalogo, dominio, token del suo negozio | un commit solo (dominio + token + CSP + `checkoutHosts`), poi `e2e-shopify` e `npm run check:scopes` rilanciati sul suo negozio; `validate-config` ferma la build se CSP e dominio non coincidono |
+| T11–T13 | — (facoltativi, nessuna decisione) | — |
