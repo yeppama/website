@@ -57,6 +57,11 @@ jobs:
       - name: Carrello dal vivo sul negozio Shopify di sviluppo
         env:
           CI: '1'
+          # Password della VETRINA del negozio di sviluppo (la pagina "inserisci la
+          # password" che Shopify mette davanti ai negozi non pubblicati), non quella
+          # dell'amministrazione. Senza, la cassa resta non verificata e la suite lo
+          # dice in rosso. Va in Settings → Secrets and variables → Actions.
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: npm run e2e -- --only phase8b --content into --out e2e-out
 
       - name: Screenshot se fallisce
