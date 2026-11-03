@@ -14,7 +14,7 @@ import Button from '../primitives/Button.jsx'
  * Il bottone d'ingresso resta disabilitato finché la scena non è pronta: è anche
  * il gesto esplicito che in Fase 3 servirà ad attivare il Pointer Lock.
  */
-export default function OnboardingScreen({ device, ready, progress, stageLabel, onEnter }) {
+export default function OnboardingScreen({ device, ready, progress, stageLabel, onEnter, onEnterText }) {
   const { brand } = storeConfig.meta
   const copy = storeConfig.copy.onboarding
   const variant = device.isTouch ? copy.mobile : copy.desktop
@@ -121,6 +121,11 @@ export default function OnboardingScreen({ device, ready, progress, stageLabel, 
           <Button variant="primary" disabled={!ready} onClick={onEnter}>
             {ready ? variant.cta : copy.loading}
           </Button>
+          {/* Sempre attivo, anche durante il caricamento: chi non vuole o non può
+              aspettare il 3D entra subito (audit 2026-11-02, N1). */}
+          {onEnterText && (
+            <Button onClick={onEnterText} data-testid="enter-text-mode">{storeConfig.copy.textMode.enter}</Button>
+          )}
           <div className="min-w-40 flex-1">
             {/* Barra con semantica: chi usa un lettore di schermo sente l'avanzamento
                 quando ci arriva, e "pronto" arriva da solo quando la scena c'è

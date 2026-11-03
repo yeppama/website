@@ -27,7 +27,7 @@ import { join } from 'node:path'
 // contenuto, e gira con quello di `into` (il contenuto della produzione).
 const SUITES = {
   into: ['e2e-phase1b', 'e2e-phase2', 'e2e-phase3', 'e2e-phase4', 'e2e-phase5',
-         'e2e-phase8a', 'e2e-navfix', 'e2e-landscape', 'e2e-cantiere'],
+         'e2e-phase8a', 'e2e-navfix', 'e2e-landscape', 'e2e-cantiere', 'e2e-textmode'],
   demo: ['e2e-demo'],
 }
 // Misura prestazioni: su una macchina condivisa il p50 oscilla e il risultato

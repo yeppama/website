@@ -721,7 +721,7 @@ export const storeConfig = {
       // assistiva può leggere del negozio, perché un canvas non ha contenuto.
       // Dice cos'è e indica la strada testuale, che esiste ed è completa: dal
       // menu si raggiungono capi, Lookbook e informazioni legali.
-      sceneLabel: 'Negozio 3D di INTO industries: si cammina con WASD o con le frecce e si esaminano i capi col tasto E. Lo stesso catalogo, con schede, foto e testi, è raggiungibile dal menu senza entrare nella scena.',
+      sceneLabel: 'Negozio 3D di INTO industries: si cammina con WASD o con le frecce e si esaminano i capi col tasto E. Lo stesso catalogo, con schede, foto, carrello e pagine legali, si apre anche senza 3D dal link "Entra senza 3D" della schermata iniziale.',
     },
     hints: {
       unreachable: 'Punto non raggiungibile',
@@ -831,7 +831,18 @@ export const storeConfig = {
         body: 'Questo dispositivo o browser non supporta il rendering 3D richiesto.',
         hint: 'Prova con Chrome, Edge, Firefox o Safari aggiornati, con accelerazione hardware attiva.',
         renderer: 'renderer rilevato',
+        // Prima era un vicolo cieco: niente catalogo, carrello né pagine legali.
+        browse: 'Sfoglia il catalogo senza 3D',
       },
+    },
+    // Modalità testo (audit 2026-11-02, N1): lo stesso negozio senza la scena, per
+    // chi non ha WebGL, ha un telefono lento o usa un lettore di schermo.
+    textMode: {
+      enter: 'Entra senza 3D',
+      title: 'Il negozio, senza 3D',
+      intro: 'La stessa collezione del negozio 3D: capi, schede, Lookbook e carrello, in una pagina che funziona su qualunque dispositivo.',
+      unsupported: 'Questo dispositivo non mostra il 3D: qui trovi tutto il resto.',
+      back3d: 'Entra nel negozio 3D',
     },
     legal: {
       priceNotice: 'Prezzi e disponibilità sono dati dimostrativi. Nessun acquisto è possibile.',

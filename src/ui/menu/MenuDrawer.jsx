@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { usePlayerStore } from '../../state/usePlayerStore.js'
 import { currentQuickTravelId } from '../../lib/navigator.js'
-import { useLegalStore } from '../../state/useLegalStore.js'
-import { useShownPrice } from '../../state/useCartStore.js'
 import { useFocusTrap } from '../primitives/useFocusTrap.js'
 import CartButton from '../cart/CartButton.jsx'
 import { commerceActive } from '../../commerce/index.js'
-import MediaImage from '../primitives/MediaImage.jsx'
+import ProductGrid from '../catalog/ProductGrid.jsx'
+import LegalLinks from '../legal/LegalLinks.jsx'
 import Button from '../primitives/Button.jsx'
 
 /**
@@ -25,10 +24,8 @@ export default function MenuDrawer() {
   const hereId = usePlayerStore((s) => currentQuickTravelId(storeConfig.navigation.quickTravel, storeConfig.navigation.waypoints, s.zoneId, s.pose))
   const openDialog = useAppStore((s) => s.openDialog)
   const panel = useRef(null)
-  const legal = useLegalStore()
 
   useFocusTrap(panel, open, close)
-  useEffect(() => { if (open && commerceActive()) legal.load() }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null
 
@@ -107,13 +104,7 @@ export default function MenuDrawer() {
           <h3 className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
             {menu.sections[1].label}
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {storeConfig.products.map((product) => (
-              <ProductCard key={product.id} product={product} disabled={!features.productModal.enabled}
-                           onOpen={() => openDialog('product', product.id)} />
-            ))}
-          </div>
-          {!commerceActive() && <p className="micro mt-4">{storeConfig.copy.legal.priceNotice}</p>}
+          <ProductGrid />
         </section>
 
         <section className="mt-10">
@@ -131,56 +122,9 @@ export default function MenuDrawer() {
           )}
         </section>
 
-        {commerceActive() && (
-          <section className="mt-10" aria-labelledby="menu-legal" data-testid="menu-legal">
-            <h3 id="menu-legal" className="micro mb-3" style={{ color: 'var(--color-accent-flame)' }}>
-              {menu.sections.find((s) => s.id === 'sec-legal').label}
-            </h3>
-            {(legal.status === 'idle' || legal.status === 'loading') && <p className="micro">{storeConfig.copy.legal.loading}</p>}
-            {legal.status === 'error' && (
-              <>
-                <p className="micro" role="alert" style={{ color: 'var(--color-state-danger)' }}>{storeConfig.copy.legal.unavailable}</p>
-                <Button className="mt-3" onClick={legal.load}>{storeConfig.copy.legal.retry}</Button>
-              </>
-            )}
-            {legal.status === 'ready' && !legal.policies.length && <p className="micro">{storeConfig.copy.legal.none}</p>}
-            {legal.status === 'ready' && legal.policies.length > 0 && (
-              <ul className="grid gap-px bg-line-subtle">
-                {legal.policies.map((p) => (
-                  <li key={p.id}>
-                    <button type="button" onClick={() => openDialog('legal', p.id)}
-                            className="flex w-full items-center justify-between gap-3 bg-bg-raised px-3 py-3 text-left text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary"
-                            style={{ minHeight: 'var(--touch-min)', fontSize: 'var(--text-sm)' }}>
-                      {storeConfig.copy.legal.policies[p.id]}
-                      <span aria-hidden="true">→</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+        <LegalLinks id="menu-legal" testId="menu-legal" />
       </div>
     </div>
   )
 }
 
-/** Capo nell'indice: prima foto, nome, codice e prezzo (dal fornitore se il commercio è attivo). */
-function ProductCard({ product, disabled, onOpen }) {
-  const { label } = useShownPrice(product)
-  return (
-    <article>
-      <button type="button" className="group block w-full text-left" disabled={disabled} onClick={onOpen}>
-        <MediaImage media={product.media[0]} ratio={storeConfig.media.productRatio} category={product.category}
-                    seed={product.id} sizes="(min-width: 640px) 12rem, 45vw" />
-        <span className="mt-2 block font-display font-bold uppercase text-text-primary group-hover:text-accent-flame"
-              style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)' }}>
-          {product.name}
-        </span>
-        <span className="micro mt-0.5 block" data-testid="menu-price">
-          {product.sku} · {label}
-        </span>
-      </button>
-    </article>
-  )
-}

@@ -13,6 +13,7 @@ export const APP_PHASE = {
   LOADING: 'loading',       // asset della scena in caricamento
   EXPLORING: 'exploring',   // esperienza attiva
   UNSUPPORTED: 'unsupported',
+  TEXT: 'text',             // modalità testo: catalogo e schede senza la scena
 }
 
 // Comandi da computer scelti all'ingresso: 'keyboard' (WASD + cursore catturato) o
@@ -98,6 +99,11 @@ export const useAppStore = create((set, get) => ({
   },
   backDialog: () => set((s) => ({ dialogs: s.dialogs.slice(0, -1) })),
   closeDialogs: () => set({ dialogs: [] }),
+
+  // Modalità testo: da onboarding o fallback. Il 3D non si monta.
+  enterTextMode: () => set({ phase: APP_PHASE.TEXT, menuOpen: false }),
+  // Ritorno al 3D, solo dalla modalità testo e solo con WebGL2 (lo controlla chi chiama).
+  leaveTextMode: () => { if (get().phase === APP_PHASE.TEXT) set({ phase: APP_PHASE.ONBOARDING, dialogs: [] }) },
 
   enterStore: () => {
     if (get().phase === APP_PHASE.ONBOARDING) set({ phase: APP_PHASE.EXPLORING })

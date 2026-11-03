@@ -20,6 +20,7 @@ import DialogHost from './ui/dialog/DialogHost.jsx'
 import GrainOverlay from './ui/fx/GrainOverlay.jsx'
 import FadeOverlay from './ui/fx/FadeOverlay.jsx'
 import WebGLFallback from './ui/fallback/WebGLFallback.jsx'
+import TextModeView from './ui/textmode/TextModeView.jsx'
 import ContextLostOverlay from './ui/fallback/ContextLostOverlay.jsx'
 import ErrorBoundary from './ui/fallback/ErrorBoundary.jsx'
 import PerfHud from './ui/perf/PerfHud.jsx'
@@ -111,10 +112,13 @@ export default function App() {
   }, [setLoadStage])
 
   const exploring = phase === APP_PHASE.EXPLORING
+  const textMode = phase === APP_PHASE.TEXT
+  const enterTextMode = useAppStore((s) => s.enterTextMode)
   const navigationOn = storeConfig.features.navigation.enabled
 
   // Indietro del browser: chiude scheda, menu o Focus invece di lasciare il sito.
-  useEffect(() => (exploring ? installBackButton() : undefined), [exploring])
+  // Anche in modalità testo: le schede si chiudono con Indietro allo stesso modo.
+  useEffect(() => (exploring || textMode ? installBackButton() : undefined), [exploring, textMode])
 
   // Finché la navigazione non esiste, un tentativo di muoversi riceve una
   // risposta invece del silenzio: il silenzio sembra un guasto.
@@ -126,7 +130,16 @@ export default function App() {
   }, [exploring, navigationOn, showNotice])
 
   if (!device) return null
-  if (phase === APP_PHASE.UNSUPPORTED) return <WebGLFallback renderer={device.renderer} />
+  if (phase === APP_PHASE.UNSUPPORTED) return <WebGLFallback renderer={device.renderer} onBrowse={enterTextMode} />
+  // Modalità testo (audit 2026-11-02, N1): niente scena, niente HUD, stesse schede.
+  if (textMode) {
+    return (
+      <>
+        <TextModeView device={device} />
+        <DialogHost device={device} />
+      </>
+    )
+  }
 
   const stage = storeConfig.loading.stages.find((s) => s.id === loadStage)
   const ready = loadStage === 'frame'
@@ -177,6 +190,7 @@ export default function App() {
           progress={stage?.progress ?? 0}
           stageLabel={stage?.label}
           onEnter={enterStore}
+          onEnterText={enterTextMode}
         />
       )}
     </div>

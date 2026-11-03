@@ -39,7 +39,7 @@ await session('desktop', { viewport: { width: 1440, height: 900 } }, async (page
   if (!/desktop/i.test(heading)) problems.push(`[desktop] istruzioni sbagliate: "${heading}"`)
   await shoot(page, '01-desktop-onboarding')
 
-  const cta = page.getByRole('button', { name: /entra|caricamento/i })
+  const cta = page.getByRole('button', { name: /^(entra|caricamento.*)$/i })
   await cta.waitFor({ state: 'visible' })
   for (let i = 0; i < 40 && await cta.isDisabled(); i++) await page.waitForTimeout(250)
   if (await cta.isDisabled()) problems.push('[desktop] il bottone Entra non si è mai abilitato')
@@ -79,7 +79,7 @@ await session('mobile', { viewport: { width: 390, height: 844 }, isMobile: true 
   if (!/mobile/i.test(heading)) problems.push(`[mobile] istruzioni sbagliate: "${heading}"`)
   await shoot(page, '04-mobile-onboarding')
 
-  const cta = page.getByRole('button', { name: /entra|caricamento/i })
+  const cta = page.getByRole('button', { name: /^(entra|caricamento.*)$/i })
   for (let i = 0; i < 40 && await cta.isDisabled(); i++) await page.waitForTimeout(250)
   await cta.click()
   await page.waitForTimeout(600)
