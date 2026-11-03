@@ -5,16 +5,24 @@ dei commit.
 
 ## Il quadro
 
-Il sito è statico e autosufficiente: nessun backend, nessuna richiesta di rete in uscita, nessun
-cookie, nessun `localStorage`, nessun analytics, nessun contenuto proveniente da utenti. Le classi
+> **Corretto il 2026-11-03** (audit 2026-11-02, §4-bis punto 10): questo quadro era stato scritto
+> prima della Fase 8 e tre affermazioni non erano più vere. Sotto, com'è oggi.
+
+Il sito è statico: nessun backend proprio, nessun cookie, nessun analytics. Dalla Fase 8 fa
+richieste di rete in uscita **solo** verso la Storefront API di Shopify (host fissato in
+`connect-src` della CSP), tiene in `localStorage` solo chiavi tecniche (id del carrello, modo di
+controllo scelto, carrelli del fornitore finto), e mostra un contenuto che arriva da fuori: le
+pagine legali scritte dal venditore su Shopify, filtrate da `sanitizeHtml`. Le classi
 di vulnerabilità che normalmente dominano un'applicazione web — iniezione, autenticazione,
 autorizzazione, CSRF, esposizione di segreti — qui non hanno superficie su cui esistere.
 
 Verificato e **non** trovato:
 
 - Nessun segreto, chiave o credenziale, né nei file né nella storia dei commit.
-- Nessun sink XSS: niente `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `new Function`,
-  `document.write`. I testi passano da React (escapato) o da `fillText` su canvas.
+- Un solo sink XSS, controllato: il `dangerouslySetInnerHTML` di `LegalSheet.jsx`, alimentato
+  solo da `sanitizeHtml` (test unitario `npm run test:sanitize` in CI e attacco in
+  `e2e-phase8a`). Niente `eval`, `new Function`, `document.write`. Gli altri testi passano da
+  React (escapato) o da `fillText` su canvas.
 - Nessuna risorsa di terze parti: font, immagini e script sono tutti locali (L6 del piano).
 - `npm audit`: 0 vulnerabilità note. Lockfile v3, tutte le voci con `integrity` e risolte da
   `registry.npmjs.org`. Nessuno script `install` o `postinstall` nel progetto.
@@ -113,8 +121,9 @@ soltanto lo stesso errore.
 separati: nessuna shell di mezzo. Il rischio era remoto — serve buildare un repository non fidato —
 e il costo del fix è nullo.
 
-Rimossa la dipendenza `@react-three/drei`: non era importata da nessun file. Trascinava un albero
-ampio di pacchetti transitivi, cioè superficie di supply chain per niente.
+Rimossa la dipendenza `@react-three/drei`: allora non era importata da nessun file. **Poi è
+tornata** col cantiere (`useGLTF` in `scene/displays/parts.jsx`, per i capi 3D): oggi è una
+dipendenza usata, con il suo albero di pacchetti transitivi.
 
 ### 5. Suite e2e (`scripts/e2e/launchOptions.mjs`)
 

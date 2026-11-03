@@ -36,7 +36,9 @@ fs.writeFileSync(path.join(outDir, 'resoconto.md'), report(result, { source: pat
 if (result.ok) {
   fs.writeFileSync(path.join(outDir, 'shopify-catalogo.csv'), result.csv)
   fs.writeFileSync(path.join(outDir, 'catalogo.bozza.js'),
-    `// Bozza generata da scripts/catalog/import.mjs da ${path.basename(file)}.\n` +
+    // Il nome del file viene dal disco del cliente: JSON.stringify impedisce che un
+    // a capo nel nome chiuda il commento e scriva codice nella bozza (§4-bis punto 8).
+    `// Bozza generata da scripts/catalog/import.mjs da ${JSON.stringify(path.basename(file))}.\n` +
     '// Da rivedere prima di entrare in storeConfig: displayId (posizione nel negozio 3D) è da\n' +
     '// assegnare, il rapporto delle foto (4:5) va confermato sui file, i colori senza HEX hanno swatch null.\n' +
     `export const products = ${JSON.stringify(result.products, null, 2)}\n\n` +

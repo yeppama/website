@@ -15,6 +15,7 @@
     "test:device": "node scripts/test-device.mjs",
     "test:commerce": "node scripts/test-commerce.mjs",
     "test:scopes": "node scripts/test-check-scopes.mjs",
+    "test:sanitize": "node scripts/test-sanitize.mjs",
     "test:catalog": "node scripts/test-catalog.mjs",
     "catalog:template": "node scripts/catalog/make-template.mjs",
     "catalog:import": "node scripts/catalog/import.mjs",
@@ -50,6 +51,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "exceljs": "^4.4.0",
     "globals": "^17.13.0",
+    "jsdom": "^26.1.0",
     "playwright-core": "^1.57.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.4"

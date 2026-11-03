@@ -57,9 +57,16 @@ function contentMode(mode) {
 // nell'ambiente, o il branch della demo unito per sbaglio, la farebbero passare ai
 // contenuti dimostrativi senza che nessuno se ne accorga. In produzione Vercel
 // (o da `main`) la build con il contenuto demo si ferma con un errore.
-// Build di produzione: Vercel in ambiente production, oppure il branch main.
-const isProduction = () =>
-  process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main'
+// Build di produzione: il branch main, oppure qualunque ambiente Vercel che non
+// sia esplicitamente un'anteprima o lo sviluppo. Fallisce chiusa: un valore nuovo
+// o inatteso di VERCEL_ENV conta come produzione, e spegne interruttori e demo
+// (audit 2026-11-02, §4-bis punto 4). Fuori da Vercel (in locale, in CI) resta
+// sviluppo: le suite e2e hanno bisogno degli interruttori.
+const isProduction = () => {
+  if (process.env.VERCEL_GIT_COMMIT_REF === 'main') return true
+  const env = process.env.VERCEL_ENV
+  return env !== undefined && env !== 'preview' && env !== 'development'
+}
 
 function guardProductionContent(content) {
   if (isProduction() && content === 'demo') {

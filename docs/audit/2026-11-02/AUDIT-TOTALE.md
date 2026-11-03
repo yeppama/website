@@ -290,10 +290,13 @@ Ci sono 3 punti **da verificare**. Dipendono da impostazioni di Shopify e Vercel
 | # | Cosa | Chi | Azione |
 |---|---|---|---|
 | S1 | ✅ **Chiuso 2026-11-03 (D5).** Il token pubblico del negozio del cliente è in `docs/PLAN-8.md:129` (repo pubblico, dal 16/10), ma i suoi scope non sono ancora stati ridotti. Se gli scope *customers* sono rimasti attivi di default, chiunque può creare account e far partire email di recupero password da quel negozio. | proprietario Shopify (D5) | Spegnere gli scope inutili. Non serve ruotare il token: è pubblico per design. Toglierlo dal file non lo toglie dalla storia. |
-| S2 | `scripts/check-scopes.mjs:23` legge solo `storeConfig` e ignora `VITE_SHOPIFY_*`. Quindi può dichiarare puliti gli scope di un token diverso da quello pubblicato. | **editor** | Leggere dominio, token e versione da env con fallback su `storeConfig`, come in `scripts/catalog/check.mjs:26-28`. Stampare la fonte usata, **non il token**. Aggiungere un test con `fetch` finto. |
+| S2 | ✅ **Fatto (Fase 1).** `scripts/check-scopes.mjs:23` legge solo `storeConfig` e ignora `VITE_SHOPIFY_*`. Quindi può dichiarare puliti gli scope di un token diverso da quello pubblicato. | **editor** | Leggere dominio, token e versione da env con fallback su `storeConfig`, come in `scripts/catalog/check.mjs:26-28`. Stampare la fonte usata, **non il token**. Aggiungere un test con `fetch` finto. |
 | S3 | ✅ **Chiuso 2026-11-03 (D6).** Repo pubblico più integrazione Git di Vercel: una PR da fork potrebbe essere compilata con le variabili di Preview e pubblicata senza login. | utente (D6) | Correggere `README.md:52`, che dice che le anteprime sono protette; i documenti più recenti dicono il contrario. Il resto si sistema nelle impostazioni Vercel, non nel repo: `vercel.json` lo modifica anche l'autore della PR. |
 
 **Rafforzamenti che l'editor può fare subito**, in ordine di valore:
+
+> ✅ **Fatti tutti e dieci il 2026-11-03 (Fase 8)**, più S2 (già nella Fase 1). Note: (1) `npm run test:sanitize` con jsdom, in CI; (6) Actions fissate a SHA con il tag accanto in commento, da aggiornare a mano o con Dependabot; (7) lo scan della storia trova solo il `.env` noto del 2026-10-17, messo in un elenco esplicito per commit e percorso. Nella stessa fase: axe a 0 violazioni su 37 schermate (A e B, tre formati), cioè anche `label-content-name-mismatch`, `region` e `heading-order`; tolta l'opacità 0,7 dagli avvisi «prezzi dimostrativi», che riportava il grigio sotto 4,5:1.
+
 1. Test unitario di `sanitizeHtml` in `ci.yml`. Oggi è coperto solo dall'e2e, che non gira sui push di sola documentazione.
 2. `restoreCart`: impostare `pending` durante il ripristino. Oggi un'aggiunta fatta in quel momento sovrascrive il carrello salvato.
 3. `src/content/index.js`: usare `Object.hasOwn`, come in `layouts/index.js`.

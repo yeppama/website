@@ -16,9 +16,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Storia completa: lo scan dei segreti legge anche i commit passati.
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
           cache: npm
@@ -35,7 +38,7 @@ jobs:
       # Credenziali nei file tracciati. Non cerca stringhe ad alta entropia: il
       # token Storefront di Shopify e' pubblico per costruzione e sta nel codice.
       - name: Credenziali nel repository
-        run: npm run scan:secrets
+        run: npm run scan:secrets -- --history
 
       - name: Build di produzione
         run: npm run build
@@ -54,6 +57,11 @@ jobs:
 
       - name: Controllo degli scope sul token della build (senza rete)
         run: npm run test:scopes
+
+      # Il filtro HTML delle pagine legali gira anche sui push di soli documenti:
+      # l'e2e che lo copriva prima li salta (audit 2026-11-02, §4-bis punto 1).
+      - name: Filtro HTML delle pagine legali
+        run: npm run test:sanitize
 
       - name: Import del catalogo
         run: npm run test:catalog
@@ -74,9 +82,9 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
 

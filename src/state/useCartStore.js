@@ -43,16 +43,21 @@ export const useCartStore = create((set, get) => ({
   restoreCart: async () => {
     const provider = getProvider()
     const id = readId()
-    if (!provider || !id) return
+    if (!provider || !id || get().pending) return
+    // Occupato finché il carrello salvato non è tornato: un'aggiunta in questa
+    // finestra creava un carrello nuovo e il ripristino lo scartava, o il
+    // contrario (audit 2026-11-02, §4-bis punto 2). Il bottone "Aggiungi" resta
+    // in attesa (aria-disabled) per il tempo di una risposta.
+    set({ pending: true })
     try {
       const cart = await provider.getCart(id)
-      // Nel frattempo l'utente può aver già aggiunto un capo (nuovo carrello):
-      // vale il suo, non quello ripristinato.
       if (get().cart || readId() !== id) return
       if (!cart) writeId(null)   // scaduto o già pagato: se ne crea uno nuovo al primo acquisto
       set({ cart })
     } catch (e) {
       console.warn('commerce: carrello non ripristinato', e)
+    } finally {
+      set({ pending: false })
     }
   },
 

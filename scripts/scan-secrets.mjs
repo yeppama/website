@@ -8,6 +8,7 @@
  *
  *   npm run scan:secrets            # tutti i file tracciati
  *   node scripts/scan-secrets.mjs <file…>   # solo questi (serve alle prove)
+ *   npm run scan:secrets -- --history       # anche ogni riga aggiunta nella storia git
  *
  * Cosa NON cerca, di proposito: stringhe a caso ad alta entropia. Il token della
  * Storefront API di Shopify è 32 caratteri esadecimali e sta nel codice **per
@@ -28,21 +29,30 @@ const SOSPETTI = [
   [/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/, 'chiave privata'],
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}/, 'token Slack'],
   [/\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}/, 'chiave SendGrid'],
+  // Aggiunti col l'audit del 2026-11-02 (§4-bis punto 7): i servizi che questo
+  // progetto usa davvero (npm, Vercel) e le chiavi Google.
+  [/\bnpm_[A-Za-z0-9]{36}\b/, 'token npm'],
+  [/\bvercel_[A-Za-z0-9_-]{20,}/, 'token Vercel'],
+  [/\bAIza[0-9A-Za-z_-]{35}\b/, 'chiave API Google'],
 ]
 
 // Un file di ambiente tracciato è un problema a prescindere da cosa contiene:
 // oggi è una variabile innocua, domani è una password aggiunta senza pensarci.
-const VIETATI = [/(^|\/)\.env(\.|$)/, /\.pem$/, /\.p12$/, /\.pfx$/, /(^|\/)id_(rsa|dsa|ecdsa|ed25519)$/]
+const VIETATI = [/(^|\/)\.env(\.|$)/, /(^|\/)\.envrc$/, /(^|\/)\.npmrc$/, /\.pem$/, /\.p12$/, /\.pfx$/, /(^|\/)id_(rsa|dsa|ecdsa|ed25519)$/]
 const AMMESSI = [/(^|\/)\.env\.example$/]
 
 const BINARI = /\.(png|jpe?g|webp|gif|glb|gltf|woff2?|ttf|otf|mp4|webm|ico|pdf|xlsx|zip)$/i
 const MAX_BYTE = 2 * 1024 * 1024
 
-const files = process.argv.length > 2
-  ? process.argv.slice(2)
-  : execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean)
+const args = process.argv.slice(2)
+const history = args.includes('--history')
+const files = args.filter((a) => a !== '--history')
+if (!files.length) files.push(...execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean))
 
 const problemi = []
+// Il file che stai leggendo contiene i pattern: cercherebbe se stesso. Percorso
+// esatto, non un suffisso: `altro/scripts/scan-secrets.mjs` va controllato.
+const SE_STESSO = 'scripts/scan-secrets.mjs'
 
 for (const file of files) {
   const normalizzato = file.replace(/\\/g, '/')
@@ -57,13 +67,37 @@ for (const file of files) {
     if (statSync(file).size > MAX_BYTE) continue
     testo = readFileSync(file, 'utf8')
   } catch { continue }
-  // Il file che stai leggendo contiene i pattern: cercherebbe se stesso.
-  if (normalizzato.endsWith('scripts/scan-secrets.mjs')) continue
+  if (normalizzato === SE_STESSO) continue
   testo.split('\n').forEach((riga, i) => {
     for (const [pattern, cosa] of SOSPETTI) {
       if (pattern.test(riga)) problemi.push(`${file}:${i + 1}: ${cosa}`)
     }
   })
+}
+
+// File vietati già noti nella storia, verificati e documentati: il `.env` del
+// 2026-10-17 conteneva solo VITE_CONTENT=demo (docs/SICUREZZA.md, audit
+// 2026-11-02 §4-bis). Commit e percorso esatti: un altro .env in un altro commit
+// fa fallire il controllo.
+const NOTI_NELLA_STORIA = new Set(['4dd3739 .env'])
+
+// Storia: un segreto tolto da un file resta nei commit di prima. Si leggono le
+// righe aggiunte da ogni commit di ogni branch, file vietati compresi.
+if (history) {
+  const log = execFileSync('git', ['log', '--all', '-p', '--no-color', '--no-ext-diff', '--format=commit %H'], { encoding: 'utf8', maxBuffer: 1 << 30 })
+  let commit = '', file = ''
+  for (const riga of log.split('\n')) {
+    if (riga.startsWith('commit ')) { commit = riga.slice(7, 14); continue }
+    if (riga.startsWith('+++ b/')) {
+      file = riga.slice(6)
+      if (VIETATI.some((r) => r.test(file)) && !AMMESSI.some((r) => r.test(file)) && !NOTI_NELLA_STORIA.has(`${commit} ${file}`)) problemi.push(`${commit} ${file}: file di credenziali nella storia`)
+      continue
+    }
+    if (!riga.startsWith('+') || riga.startsWith('+++') || file === SE_STESSO) continue
+    for (const [pattern, cosa] of SOSPETTI) {
+      if (pattern.test(riga)) problemi.push(`${commit} ${file}: ${cosa}`)
+    }
+  }
 }
 
 if (problemi.length) {
@@ -72,4 +106,4 @@ if (problemi.length) {
   console.error('\nUn segreto gia\' committato resta nella storia: toglierlo dal file non basta, va ruotato.')
   process.exit(1)
 }
-console.log(`segreti: nessuno nei ${files.length} file tracciati`)
+console.log(`segreti: nessuno nei ${files.length} file tracciati${history ? ' né nella storia git' : ''}`)
