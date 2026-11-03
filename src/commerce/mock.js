@@ -46,6 +46,8 @@ export function createMockProvider({ products, mock, maxQuantity, policyTitles =
         id: l.id,
         variantId: l.variantId,
         quantity: l.quantity,
+        // Stesso contratto di Shopify: il totale di riga lo dà il fornitore.
+        total: { amount: (cents(v.variant.price.amount) * l.quantity) / 100, currency: v.variant.price.currency },
         merchandise: { productHandle: v.handle, title: v.title, size: v.variant.size, color: v.variant.color, price: v.variant.price },
       }
     })

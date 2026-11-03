@@ -30,6 +30,7 @@ const CART_FIELDS = `
     nodes {
       id
       quantity
+      cost { totalAmount { amount currencyCode } }
       merchandise {
         ... on ProductVariant {
           id
@@ -121,6 +122,8 @@ export function createShopifyProvider({ products, shopify, country, language = n
         id: l.id,
         variantId: l.merchandise.id,
         quantity: l.quantity,
+        // Totale di riga calcolato da Shopify (sconti compresi), non dal sito (T5).
+        total: l.cost?.totalAmount ? money(l.cost.totalAmount) : null,
         merchandise: { productHandle: handle, title: l.merchandise.product.title, size, color, price: money(l.merchandise.price) },
       }
     }),
@@ -159,16 +162,20 @@ export function createShopifyProvider({ products, shopify, country, language = n
       if (!countries.includes(country)) {
         throw new Error(`shopify: il negozio non vende in ${country} (mercati attivi: ${countries.join(', ')})`)
       }
-      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => ({
-        handle: p.handle,
-        title: p.title,
-        variants: p.variants.nodes.map((v) => ({
+      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => {
+        const mapped = p.variants.nodes.map((v) => ({
           id: v.id,
           ...optionsOf(p.handle, v.selectedOptions),
           price: money(v.price),
           available: v.availableForSale,
-        })).filter((v) => v.size && v.color),
-      }))
+        }))
+        // Una variante la cui taglia o colore su Shopify non coincide con le
+        // etichette del config ("Medium" invece di "M") sparisce dal sito: lo si
+        // dice, altrimenti il capo sembra solo esaurito (audit 2026-11-02, T19).
+        const dropped = mapped.filter((v) => !v.size || !v.color)
+        if (dropped.length) console.warn(`shopify: ${dropped.length} varianti di ${p.handle} senza taglia/colore corrispondenti`, dropped.map((v) => v.id))
+        return { handle: p.handle, title: p.title, variants: mapped.filter((v) => v.size && v.color) }
+      })
     },
 
     createCart: () => mutate('cartCreate', `

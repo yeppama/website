@@ -5,13 +5,14 @@
 const cache = new Map()
 
 export function formatPrice({ amount, currency }, locale) {
-  const key = `${locale}|${currency}|${Number.isInteger(amount)}`
+  const key = `${locale}|${currency}`
   if (!cache.has(key)) {
     cache.set(key, new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      // 189 € e non 189,00 €: i decimali compaiono solo quando esistono.
-      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+      // Sempre due decimali (189,00 €), come la cassa di Shopify: con 189 € in
+      // vetrina e 189,00 € al pagamento sembrano due prezzi (audit 2026-11-02, T23).
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }))
   }

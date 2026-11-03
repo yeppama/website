@@ -6,6 +6,7 @@ import { useAppStore, APP_PHASE } from './state/useAppStore.js'
 import { usePlayerStore } from './state/usePlayerStore.js'
 import { useCartStore } from './state/useCartStore.js'
 import { installBackButton, dropOrphanEntries } from './state/backButton.js'
+import { installLeaveGuard } from './state/leaveGuard.js'
 
 // three.js è il pezzo pesante del bundle: caricandolo a parte, l'onboarding
 // appare subito e la barra di progresso misura passaggi reali.
@@ -74,7 +75,11 @@ export default function App() {
     setSceneKey((k) => k + 1)
   }, [])
   const onContextLost = useCallback((canvas) => {
-    if (!retired.current.has(canvas)) useAppStore.setState({ gpuLost: true })
+    if (retired.current.has(canvas)) return
+    // Senza contesto il controller non consuma i comandi: si accumulerebbero e
+    // alla ripresa partirebbero tutti insieme, vecchi (T17).
+    usePlayerStore.setState({ commands: [] })
+    useAppStore.setState({ gpuLost: true })
   }, [])
 
   useEffect(() => {
@@ -90,6 +95,10 @@ export default function App() {
   // Voci di cronologia rimaste da una visita precedente della stessa pagina
   // (ricarica, ritorno dalla cassa): via subito, prima dell'ingresso.
   useEffect(() => { dropOrphanEntries() }, [])
+
+  // Avviso del browser prima di lasciare il sito, in tutte le fasi (anche
+  // modalità testo e fallback): chi ha un carrello lo può perdere da ovunque.
+  useEffect(() => installLeaveGuard(), [])
 
   useEffect(() => {
     // Le invarianti del config sono controllate una volta all'avvio, in sviluppo.

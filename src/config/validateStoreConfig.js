@@ -262,6 +262,10 @@ export function validateStoreConfig(config) {
   }
   if (!config.copy.menu.sections.some((sec) => sec.id === 'sec-legal')) fail('I25', 'copy.menu.sections: manca la sezione "sec-legal"')
 
+  // I26 — avviso in uscita: un valore di `when` sconosciuto non deve accenderlo né spegnerlo a caso.
+  const lw = config.features?.leaveWarning
+  if (lw && !['cart', 'always'].includes(lw.when)) fail('I26', `features.leaveWarning.when "${lw.when}" non previsto (cart | always)`)
+
   // I15 — ogni istruzione dell'onboarding richiede una funzione che esiste nei
   // feature flag: altrimenti la riga non saprebbe se mostrarsi attiva o "in arrivo".
   const featureIds = new Set(Object.keys(config.features ?? {}))

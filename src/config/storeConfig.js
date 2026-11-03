@@ -123,6 +123,9 @@ export const storeConfig = {
     lookbook:     { enabled: true,  availableInPhase: 5 },
     // Nessun acquisto in questo prototipo: il bottone c'è, spento, e lo dichiara.
     checkout:     { enabled: false, availableInPhase: 8 },
+    // Avviso del browser prima di lasciare il sito (state/leaveGuard.js).
+    // when: 'cart' = solo con capi nel carrello · 'always' = a ogni uscita.
+    leaveWarning: { enabled: true, when: 'cart' },
   },
 
   // Percorso di benchmark (?bench=1, PLAN §5.3): sempre la stessa traiettoria,
@@ -810,6 +813,10 @@ export const storeConfig = {
       mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',
       error: 'Il carrello non ha risposto. Riprova.',
       maxReached: 'Quantità massima raggiunta',
+      // Prezzo unitario sotto il totale di riga, quando la quantità è più di 1.
+      each: 'cad.',
+      // Annunci per i lettori di schermo dopo un cambio riuscito: "<capo>: quantità 3", "<capo> rimosso dal carrello".
+      removed: 'rimosso dal carrello',
       stockWarning: 'Quantità non disponibile: il carrello mostra quella che è stato possibile aggiungere.',
     },
     errors: {

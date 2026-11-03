@@ -20,6 +20,9 @@ export const APP_PHASE = {
 // 'mouse' (trascina per guardare, click per andare, come su telefono). Ricordati dal
 // browser per la visita dopo; senza memoria disponibile si riparte da 'keyboard'.
 const CONTROL_KEY = 'into-control-mode'
+// Contatore e non Date.now(): due messaggi nello stesso millisecondo avrebbero lo
+// stesso id e il timer del primo cancellerebbe il secondo (T17).
+let noticeSeq = 0
 const readControl = () => { try { return localStorage.getItem(CONTROL_KEY) === 'mouse' ? 'mouse' : 'keyboard' } catch { return 'keyboard' } }
 
 export const useAppStore = create((set, get) => ({
@@ -67,7 +70,7 @@ export const useAppStore = create((set, get) => ({
   // Un solo messaggio alla volta, che si nasconde da solo. `id` evita che un
   // timer vecchio cancelli un messaggio più recente.
   showNotice: (text, ms = 2600) => {
-    const id = Date.now()
+    const id = ++noticeSeq
     set({ notice: { id, text } })
     setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, ms)
   },
@@ -86,9 +89,11 @@ export const useAppStore = create((set, get) => ({
   setFocusState: (state) => set((s) => ({ focus: { ...s.focus, state } })),
   setFocusPanelRect: (focusPanelRect) => set({ focusPanelRect }),
   finishFocusExit: () => set({ focus: { state: 'idle', displayId: null, productIndex: 0, returnPose: null } }),
-  cycleProduct: (delta, count) => set((s) => ({
-    focus: { ...s.focus, productIndex: (s.focus.productIndex + delta + count) % count },
-  })),
+  // Con zero capi il modulo darebbe NaN e l'indice resterebbe rotto (T17).
+  cycleProduct: (delta, count) => {
+    if (!count) return
+    set((s) => ({ focus: { ...s.focus, productIndex: (s.focus.productIndex + delta + count) % count } }))
+  },
 
   openDialog: (kind, id) => {
     const stack = get().dialogs

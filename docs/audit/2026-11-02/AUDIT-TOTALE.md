@@ -245,23 +245,23 @@ Sul telefono in verticale la metà superiore dello schermo è soffitto nero, per
 
 | # | Cosa | Livello | Stato |
 |---|---|---|---|
-| T2 | Invariante di build: ogni id di `commerce.policies` ha un'etichetta in `copy.legal.policies`. Come difesa aggiuntiva, filtro con `Object.hasOwn` in `CartSheet` e `MenuDrawer` | 🟢 | da fare |
-| T3 | Quantità nel carrello: togli `aria-label` dallo `<span>`. Metti `<span className="sr-only">{t.quantity}:</span>` **fuori** dallo span con `data-testid`. Aggiungi una regione `role="status"` che annuncia «Felpa X: quantità 3» o «Felpa X rimossa» | 🟡 | da fare |
+| T2 | Invariante di build: ogni id di `commerce.policies` ha un'etichetta in `copy.legal.policies`. Come difesa aggiuntiva, filtro con `Object.hasOwn` in `CartSheet` e `MenuDrawer` | 🟢 | ✅ fatto (Fase 7): filtro `Object.hasOwn` in CartSheet e LegalLinks; l'invariante c'era già (I25) |
+| T3 | Quantità nel carrello: togli `aria-label` dallo `<span>`. Metti `<span className="sr-only">{t.quantity}:</span>` **fuori** dallo span con `data-testid`. Aggiungi una regione `role="status"` che annuncia «Felpa X: quantità 3» o «Felpa X rimossa» | 🟡 | ✅ fatto (Fase 7) |
 | T4 | Focus nel carrello: `aria-disabled` per `+`, `−` e «Rimuovi» durante l'attesa. Dopo una rimozione, focus sul titolo della scheda, oppure su «Continua» se il carrello resta vuoto. `−` con quantità 1 è una rimozione (V4) | 🟡 | **confermato dal vivo** |
-| T5 | Mostra il totale di riga di Shopify e sotto il prezzo unitario. Aggiungi `cost { totalAmount { amount currencyCode } }` a `CART_FIELDS`, poi `total: money(l.cost.totalAmount)` in `view()` e nel fornitore mock | 🟡 | da fare |
-| T6 | «Quantità massima» in un testo visibile collegato con `aria-describedby`, al posto di `title` | 🟡 | da fare |
-| T7 | Messaggio d'errore subito sopra «Vai al pagamento» | 🟡 | da fare |
-| T8 | Titolo della riga come `<p>` quando il capo non è nel config | 🟡 | da fare |
+| T5 | Mostra il totale di riga di Shopify e sotto il prezzo unitario. Aggiungi `cost { totalAmount { amount currencyCode } }` a `CART_FIELDS`, poi `total: money(l.cost.totalAmount)` in `view()` e nel fornitore mock | 🟡 | ✅ fatto (Fase 7) |
+| T6 | «Quantità massima» in un testo visibile collegato con `aria-describedby`, al posto di `title` | 🟡 | ✅ fatto (Fase 7) |
+| T7 | Messaggio d'errore subito sopra «Vai al pagamento» | 🟡 | ✅ fatto (Fase 7) |
+| T8 | Titolo della riga come `<p>` quando il capo non è nel config | 🟡 | ✅ fatto (Fase 7) |
 | T9 | Testo «IVA inclusa…» | — | ✅ **chiuso**, resta solo D3 |
 | T10 | Funzione di recesso: l'editor **non** la implementa. Apre un issue «Recesso art. 54-bis: decidere A/B prima della 8e» | 🔴 dalla 8e | D2 |
 | T15 | `add` e `setQuantity`: rifiutare le quantità che non sono interi ≥ 0 (`Number.isInteger`) | 🟡 | da fare |
-| T17 | `showNotice` con un contatore al posto di `Date.now()`. `cycleProduct` esce subito se `count` è 0. La coda `commands` si svuota quando `gpuLost` diventa vero | 🟢 | da fare |
+| T17 | `showNotice` con un contatore al posto di `Date.now()`. `cycleProduct` esce subito se `count` è 0. La coda `commands` si svuota quando `gpuLost` diventa vero | 🟢 | ✅ fatto (Fase 7) |
 | T18 | `getProducts`: handle passati come variabili GraphQL (`$h0…`), non concatenati. Oggi la mappa §4 dice il contrario di ciò che fa il codice | 🟡 | da fare |
-| T19 | `console.warn` per le varianti scartate perché taglia o colore non corrispondono. In `e2e-phase8b`: «nessuna variante scartata» | 🟡 | da fare |
-| T20 | Invariante: ogni `commerce.policies[].field` è un nome di campo GraphQL valido (`/^[a-zA-Z]+$/`) **ed è dichiarato nel config**. Non usare una lista scritta a mano: quella che avevo dato io non conteneva `contactInformation` | 🟢 | corretto |
+| T19 | `console.warn` per le varianti scartate perché taglia o colore non corrispondono. In `e2e-phase8b`: «nessuna variante scartata» | 🟡 | ✅ fatto (Fase 7), controllo in `e2e-phase8b` |
+| T20 | Invariante: ogni `commerce.policies[].field` è un nome di campo GraphQL valido (`/^[a-zA-Z]+$/`) **ed è dichiarato nel config**. Non usare una lista scritta a mano: quella che avevo dato io non conteneva `contactInformation` | 🟢 | ✅ già coperto da I25 (elenco chiuso con `contactInformation`) |
 | T21 | Rigenera `AUDIT-CARRELLO.md` **dopo** T1-bis. Oggi dice due volte che il bottone «non compare» | 🟡 | dopo T1-bis |
 | T22 | Paese fisso `IT`: prezzo mostrato e prezzo pagato possono non coincidere per chi spedisce fuori dall'Italia | 🟡 | D3, ordine di prova alla 8c |
-| T23 | `formatPrice`: sempre 2 decimali | 🟢 | da fare |
+| T23 | `formatPrice`: sempre 2 decimali | 🟢 | ✅ fatto (Fase 7) |
 | T11–T13 | `testBanner()` chiamato una volta sola · stili inline in classi · «Rimosso · Annulla» per 5 secondi | 🟢 | facoltativo |
 
 Il codice completo di T3–T8 e T15–T19 è nel brief precedente (`brief_cartsheet_audit.md`). Vale ancora, **tranne T16**: per quello usa N8 di questo documento.

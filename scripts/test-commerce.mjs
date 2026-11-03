@@ -11,6 +11,8 @@
 import assert from 'node:assert/strict'
 import { storeConfig } from '../src/config/storeConfig.js'
 import { createShopifyProvider } from '../src/commerce/shopify.js'
+import { createMockProvider } from '../src/commerce/mock.js'
+import { formatPrice } from '../src/lib/format.js'
 
 const results = []
 async function test(name, fn) {
@@ -181,6 +183,48 @@ await test('pagine legali: campi di storeConfig, paese e lingua nel contesto, so
 await test('pagine legali: un errore del negozio diventa un\'eccezione (il menu dice "non raggiungibili")', async () => {
   const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: fakeFetch(() => ({ status: 503, json: {} })).fn })
   await assert.rejects(() => p.getPolicies(storeConfig.commerce.policies), /HTTP 503/)
+})
+
+await test('carrello: il totale di riga è quello di Shopify, non quantità × prezzo (T5)', async () => {
+  const node = cartNode([{ id: 'l1', quantity: 2, v: variant('v1', 'M', 'Black') }])
+  node.lines.nodes[0].cost = { totalAmount: { amount: '300.0', currencyCode: 'EUR' } }   // sconto: non 378
+  const f = fakeFetch((b) => (b.query.includes('query Cart') ? { data: { cart: node } } : { data: { localization: IT } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  const cart = await p.getCart('gid://shopify/Cart/c1')
+  assert.deepEqual(cart.lines[0].total, { amount: 300, currency: 'EUR' })
+  assert.match(f.calls[0].query, /cost \{ totalAmount \{ amount currencyCode \} \}/)
+})
+
+await test('fornitore finto: stesso contratto, totale di riga compreso (T5)', async () => {
+  const mem = {}
+  globalThis.localStorage = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v } }
+  const m = createMockProvider({ products: storeConfig.products, mock: { ...storeConfig.commerce.mock, latencyMs: 0 }, maxQuantity: storeConfig.commerce.maxQuantity })
+  const hoodie = storeConfig.products.find((x) => x.commerce?.handle)
+  const [prod] = await m.getProducts([hoodie.commerce.handle])
+  const v = prod.variants.find((x) => x.available)
+  const cart = await m.createCart()
+  const after = await m.addLines(cart.id, [{ variantId: v.id, quantity: 3 }])
+  assert.deepEqual(after.lines[0].total, { amount: Math.round(v.price.amount * 100) * 3 / 100, currency: v.price.currency })
+  delete globalThis.localStorage
+})
+
+await test('catalogo: una variante con taglia o colore che non corrisponde al config si segnala (T19)', async () => {
+  const f = fakeFetch(() => ({ data: { localization: IT, p0: { handle: 'heavy-hoodie', title: 'Heavy Hoodie', variants: { nodes: [variant('v1', 'M', 'Black'), variant('v2', 'Medium', 'Black')] } } } }))
+  const p = createShopifyProvider({ products: storeConfig.products, shopify, country: 'IT', fetchImpl: f.fn })
+  const warned = []
+  const orig = console.warn
+  console.warn = (...a) => warned.push(a.join(' '))
+  try {
+    const [prod] = await p.getProducts(['heavy-hoodie'])
+    assert.equal(prod.variants.length, 1)
+  } finally { console.warn = orig }
+  assert.ok(warned.some((w) => w.includes('1 varianti di heavy-hoodie') && w.includes('v2')), warned.join(' | '))
+})
+
+await test('prezzi: sempre due decimali, come la cassa di Shopify (T23)', async () => {
+  const locale = storeConfig.meta.brand.locale
+  assert.match(formatPrice({ amount: 189, currency: 'EUR' }, locale), /189,00/)
+  assert.match(formatPrice({ amount: 189.5, currency: 'EUR' }, locale), /189,50/)
 })
 
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)

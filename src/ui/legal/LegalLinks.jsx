@@ -19,6 +19,8 @@ export default function LegalLinks({ id, testId, as: Heading = 'h3' }) {
   if (!active) return null
 
   const copy = storeConfig.copy.legal
+  // Solo le pagine con un'etichetta: un id senza testo darebbe un bottone muto (T2).
+  const policies = legal.policies.filter((p) => Object.hasOwn(copy.policies, p.id))
   const heading = storeConfig.copy.menu.sections.find((s) => s.id === 'sec-legal').label
   return (
     <section className="mt-10" aria-labelledby={id} data-testid={testId}>
@@ -30,10 +32,10 @@ export default function LegalLinks({ id, testId, as: Heading = 'h3' }) {
           <Button className="mt-3" onClick={legal.load}>{copy.retry}</Button>
         </>
       )}
-      {legal.status === 'ready' && !legal.policies.length && <p className="micro">{copy.none}</p>}
-      {legal.status === 'ready' && legal.policies.length > 0 && (
+      {legal.status === 'ready' && !policies.length && <p className="micro">{copy.none}</p>}
+      {legal.status === 'ready' && policies.length > 0 && (
         <ul className="grid gap-px bg-line-subtle">
-          {legal.policies.map((p) => (
+          {policies.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => openDialog('legal', p.id)}
                       className="flex w-full items-center justify-between gap-3 bg-bg-raised px-3 py-3 text-left text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary"
