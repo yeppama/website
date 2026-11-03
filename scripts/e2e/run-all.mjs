@@ -33,6 +33,10 @@ const SUITES = {
 // Misura prestazioni: su una macchina condivisa il p50 oscilla e il risultato
 // dice più della macchina che del codice. Si esegue a mano, non qui.
 const FUORI_DA_CI = new Set(['e2e-phase6'])
+// Prove dal vivo: parlano con il negozio Shopify vero, quindi servono rete verso
+// Shopify e non girano nel giro normale. Si lanciano solo chiedendole per nome
+// (`--only phase8b`), come fa .github/workflows/e2e-shopify.yml.
+const DAL_VIVO = { into: ['e2e-phase8b'] }
 
 // I codici colore di vite, costruiti senza scrivere il carattere ESC dentro una
 // regex: una regex con un carattere di controllo dentro è quasi sempre un errore,
@@ -129,7 +133,7 @@ async function giro(contenuto, suites) {
 const contenuti = soloContenuto ? [soloContenuto] : ['into', 'demo']
 for (const contenuto of contenuti) {
   let suites = (SUITES[contenuto] ?? []).filter((s) => !FUORI_DA_CI.has(s))
-  if (soloSuite) suites = suites.filter((s) => s.includes(soloSuite))
+  if (soloSuite) suites = [...suites, ...(DAL_VIVO[contenuto] ?? [])].filter((s) => s.includes(soloSuite))
   await giro(contenuto, suites)
 }
 
