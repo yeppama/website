@@ -71,5 +71,5 @@ Una fase alla volta; si avanza solo col comando esplicito `Approvato, procedi al
 | contenuti da ricevere dal cliente | `docs/CONTENUTI.md` |
 | chiedere il materiale al cliente | `docs/MESSAGGIO-AL-CLIENTE.md` (pronto da mandare, due cose da sostituire prima) |
 | spiegare il sito all'utente | `docs/MANUALE.md` |
-| far leggere il carrello a un revisore esterno | `docs/AUDIT-CARRELLO.md` (fotografia del 2026-10-30, dichiarata tale) |
+| far leggere il carrello a un revisore esterno | `docs/AUDIT-CARRELLO.md` (fotografia generata da `npm run docs:carrello`, dichiara il suo commit; si rigenera, non si corregge a mano) |
 | schema dati completo e roadmap originale | `PLAN.md` |

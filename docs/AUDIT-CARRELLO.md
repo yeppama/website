@@ -1,34 +1,36 @@
 # Il carrello di INTO industries — codice per audit esterno
 
 Negozio streetwear navigabile in 3D, con carrello Shopify headless.
-Estratto il 2026-10-30 dal commit `f9f0ff6`, branch `sviluppo`.
-Codice copiato testualmente dai file, non riscritto.
+Generato il 2026-11-03 dal commit `c6408c9`, branch `audit/correzioni-2026-11`, con `npm run docs:carrello`.
+Il codice è letto dai file in quel momento, non riscritto.
 
-> **E' una fotografia, come `docs/codice/`.** Il codice qui dentro e' copiato, non
-> incluso: appena qualcuno tocca uno di quei file, questo documento invecchia senza
-> dare nessun segnale. Si legge per spiegare il carrello a qualcuno da fuori, mai per
-> sapere com'e' il codice oggi — per quello si aprono i file. Se serve mandarlo di
-> nuovo a un revisore, si rigenera invece di aggiornarlo a mano.
+> **È una fotografia.** Appena qualcuno tocca uno di quei file, questo documento
+> invecchia. Si legge per spiegare il carrello a qualcuno da fuori, mai per sapere
+> com'è il codice oggi. Per mandarlo di nuovo a un revisore si rigenera
+> (`npm run docs:carrello`), non si aggiorna a mano.
+>
+> Sostituisce la versione del 2026-10-30 (`f9f0ff6`), scritta a mano, che dopo le
+> correzioni dell'audit del 2026-11-02 diceva cose non più vere.
 
 ## Cosa fa, in due righe
 
-Chi naviga il negozio 3D apre un capo, sceglie taglia e colore e lo aggiunge al
-carrello. Il carrello vive su Shopify: il sito non ha database, non conserva dati di
-chi compra e non vede mai i dati di pagamento — il pagamento avviene sulla cassa di
-Shopify, sul dominio di Shopify.
+Chi naviga il negozio 3D (o la versione senza 3D) apre un capo, sceglie taglia e colore
+e lo aggiunge al carrello. Il carrello vive su Shopify: il sito non ha database, non
+conserva dati di chi compra e non vede mai i dati di pagamento. Il pagamento avviene
+sulla cassa di Shopify, sul dominio di Shopify.
 
-## I quattro strati, e cosa c'e' in ciascuno
+## I quattro strati, e cosa c'è in ciascuno
 
-| Strato | File | Responsabilita' |
+| Strato | File | Responsabilità |
 |---|---|---|
-| Interfaccia | `ui/cart/CartSheet.jsx` | mostra righe, quantita', subtotale, manda alla cassa |
-| Stato | `state/useCartStore.js`, `state/useLegalStore.js` | quando chiamare, riprova, limiti, errori |
+| Interfaccia | `ui/cart/CartSheet.jsx` | mostra righe, totali di riga, subtotale; annuncia i cambi; manda alla cassa |
+| Stato | `state/useCartStore.js`, `state/useLegalStore.js`, `state/leaveGuard.js` | quando chiamare, riprova, limiti, errori; avviso in uscita |
 | Contratto | `commerce/index.js` | cosa deve offrire un fornitore, e quale usare |
 | Adapter | `commerce/shopify.js` | le chiamate vere alla Storefront API |
 
-Dove guardare per primi, se il tempo e' poco: `safeCheckoutUrl` in `commerce/shopify.js`
-(sezione 4), la funzione `run` in `useCartStore.js` (sezione 2) e il metodo `checkout`
-in `CartSheet.jsx` (sezione 1).
+Dove guardare per primi, se il tempo è poco: `safeCheckoutUrl` in `commerce/shopify.js`
+(sezione 4), la funzione `run` in `useCartStore.js` (sezione 2) e `checkout` /
+`canCheckout` in `CartSheet.jsx` (sezione 1).
 
 ---
 
@@ -36,20 +38,22 @@ in `CartSheet.jsx` (sezione 1).
 
 ### `src/ui/cart/CartSheet.jsx`
 
-> L'ultima schermata del sito prima che l'acquirente passi al dominio di Shopify. Non calcola niente: righe, quantita' e totale arrivano dallo stato; da `storeConfig` prende solo i nomi leggibili di taglia e colore, l'immagine e i testi.
+> L'ultima schermata del sito prima della cassa di Shopify. Non calcola niente: righe, quantità, totali di riga e subtotale arrivano dallo stato; da `storeConfig` prende solo i nomi leggibili di taglia e colore, l'immagine e i testi. Senza un `checkoutUrl` valido il bottone del pagamento è spento e lo dice.
 
 ```jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { storeConfig } from '../../config/storeConfig.js'
 import { formatPrice } from '../../lib/format.js'
 import { commerceMode, testBanner } from '../../commerce/index.js'
 import { useAppStore } from '../../state/useAppStore.js'
 import { useCartStore } from '../../state/useCartStore.js'
 import { useLegalStore } from '../../state/useLegalStore.js'
+import { allowLeave } from '../../state/leaveGuard.js'
 import PlaceholderImage from '../primitives/PlaceholderImage.jsx'
 import MediaImage from '../primitives/MediaImage.jsx'
 import Button from '../primitives/Button.jsx'
 
+const variantLabel = (size, color, line) => [size?.label ?? line.merchandise.size, color?.label ?? line.merchandise.color].filter(Boolean).join(' · ')
 const productByHandle = new Map(storeConfig.products.filter((p) => p.commerce).map((p) => [p.commerce.handle, p]))
 
 /**
@@ -71,43 +75,76 @@ export default function CartSheet({ headingId }) {
   const openDialog = useAppStore((s) => s.openDialog)
   const closeDialogs = useAppStore((s) => s.closeDialogs)
   const [checkoutNote, setCheckoutNote] = useState(null)
+  // Un solo annuncio per i lettori di schermo dopo ogni cambio riuscito: il
+  // numero cambia sullo schermo, ma chi non lo vede deve sentirlo (T3, WCAG 4.1.3).
+  const [announcement, setAnnouncement] = useState('')
+  const continueRef = useRef(null)
+  // Dopo una rimozione il bottone che aveva il focus sparisce con la riga: il focus
+  // va sul titolo della scheda, o su "Continua" se il carrello è rimasto vuoto,
+  // invece di cadere sul <body> fuori dalla finestra (audit 2026-11-02, T4).
+  const afterRemoval = () => requestAnimationFrame(() => {
+    const empty = (useCartStore.getState().cart?.lines?.length ?? 0) === 0
+    ;(empty ? continueRef.current : document.getElementById(headingId))?.focus({ preventScroll: true })
+  })
+  const announceRemoved = (line) => setAnnouncement(`${line.merchandise.title} ${t.removed}`)
+  const removeLine = async (line) => { if (await remove(line.id)) { announceRemoved(line); afterRemoval() } }
+  const changeQuantity = async (line, quantity) => {
+    const ok = await setQuantity(line.id, quantity)
+    if (!ok) return
+    if (quantity <= 0) { announceRemoved(line); afterRemoval(); return }
+    // La quantità vera è quella del fornitore, che può averla limitata.
+    const now = useCartStore.getState().cart?.lines.find((l) => l.id === line.id)?.quantity ?? quantity
+    setAnnouncement(`${line.merchandise.title}: ${t.quantity} ${now}`)
+  }
   const lines = cart?.lines ?? []
   const mock = commerceMode() === 'mock'
   // Fase 8d: le pagine legali si raggiungono dal menu e dalla cassa. Qui è
   // l'ultima schermata nostra prima di Shopify, quindi è l'ultimo punto in cui
   // chi compra può leggere condizioni, recesso e spedizioni senza perdere il
   // carrello: la scheda legale si apre sopra questa e Indietro riporta qui.
-  const policies = useLegalStore((s) => s.policies)
+  // Solo le pagine con un'etichetta: un id senza testo darebbe un bottone muto (T2).
+  const policies = useLegalStore((s) => s.policies).filter((p) => Object.hasOwn(storeConfig.copy.legal.policies, p.id))
   const loadPolicies = useLegalStore((s) => s.load)
   useEffect(() => { loadPolicies() }, [loadPolicies])
 
+  // Senza un checkoutUrl valido (scartato da safeCheckoutUrl, o assente) il bottone
+  // non deve restare attivo e muto: si disabilita e lo dice (audit 2026-11-02, T1-bis).
+  const canCheckout = mock || Boolean(cart?.checkoutUrl)
   const checkout = () => {
-    if (!cart?.checkoutUrl) return
     // Nel negozio di prova non esiste una cassa: si dice cosa succederebbe.
+    // Prima del controllo sull'URL, così la nota compare anche se il carrello
+    // finto non ne ha uno.
     if (mock) { setCheckoutNote(t.mockCheckout); return }
+    if (!cart?.checkoutUrl) return
+    // Si va a pagare: l'avviso "vuoi lasciare il sito?" qui sarebbe un ostacolo.
+    allowLeave()
     window.location.assign(cart.checkoutUrl)
   }
 
+  const errorText = error && <p className="micro mt-3" role="alert" data-testid="cart-error" style={{ color: 'var(--color-state-danger)' }}>{error}</p>
+
   return (
     <div className="mx-auto grid max-w-2xl gap-6" aria-busy={pending}>
-      <header>
+      {/* div e non header: dentro la finestra un <header> diventa un secondo
+          punto di riferimento "banner" della pagina (axe, audit 2026-11-02 N10). */}
+      <div>
         {testBanner() && <p className="micro mb-2" style={{ color: 'var(--color-accent-flame)' }}>{testBanner()}</p>}
         <h2 id={headingId} tabIndex={-1}
             className="font-display font-black uppercase leading-none text-text-primary outline-none"
             style={{ fontSize: 'var(--text-xl)', letterSpacing: 'var(--tracking-tight)' }}>
           {t.title}
         </h2>
-      </header>
+      </div>
 
       {lines.length === 0 ? (
         <div className="grid justify-items-start gap-4">
           <p className="text-text-secondary" style={{ fontSize: 'var(--text-sm)' }}>{t.empty}</p>
-          <Button onClick={closeDialogs}>{t.continue}</Button>
+          <Button ref={continueRef} onClick={closeDialogs}>{t.continue}</Button>
         </div>
       ) : (
         <>
           <ul className="grid gap-px bg-line-subtle" data-testid="cart-lines">
-            {lines.map((line) => {
+            {lines.map((line, i) => {
               const product = productByHandle.get(line.merchandise.productHandle)
               const size = product?.sizes.find((s) => s.id === line.merchandise.size)
               const color = product?.colorways.find((c) => c.id === line.merchandise.color)
@@ -118,24 +155,50 @@ export default function CartSheet({ headingId }) {
                                 ratio="1:1" sizes="5rem" seed={`${product.id}-${line.merchandise.color}`} compact />
                   ) : <PlaceholderImage ratio="1:1" compact />}
                   <div className="min-w-0">
-                    <button type="button" onClick={() => product && openDialog('product', product.id)}
-                            className="flex items-center text-left font-display font-bold uppercase text-text-primary hover:text-accent-flame"
-                            style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)', minHeight: 'var(--touch-min)' }}>
-                      {line.merchandise.title}
-                    </button>
-                    <p className="micro mt-1">{size?.label ?? line.merchandise.size} · {color?.label ?? line.merchandise.color}</p>
-                    <p className="micro mt-1 text-text-primary">{formatPrice(line.merchandise.price, locale)}</p>
+                    {/* Un capo che il config non conosce non ha una scheda da aprire:
+                        titolo come testo, non come bottone che non fa niente (T8). */}
+                    {product ? (
+                      <button type="button" onClick={() => openDialog('product', product.id)}
+                              className="flex items-center text-left font-display font-bold uppercase text-text-primary hover:text-accent-flame"
+                              style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)', minHeight: 'var(--touch-min)' }}>
+                        {line.merchandise.title}
+                      </button>
+                    ) : (
+                      <p className="flex items-center font-display font-bold uppercase text-text-primary"
+                         style={{ fontSize: 'var(--text-sm)', letterSpacing: 'var(--tracking-tight)', minHeight: 'var(--touch-min)' }}>
+                        {line.merchandise.title}
+                      </p>
+                    )}
+                    {/* Senza taglia o colore riconosciuti non resta un " · " orfano. */}
+                    {variantLabel(size, color, line) && <p className="micro mt-1">{variantLabel(size, color, line)}</p>}
+                    {/* Totale di riga dal fornitore, non calcolato qui; sotto, il prezzo
+                        unitario quando i pezzi sono più di uno (T5). */}
+                    <p className="micro mt-1 text-text-primary" data-testid="cart-line-total">
+                      {formatPrice(line.total ?? line.merchandise.price, locale)}
+                    </p>
+                    {line.quantity > 1 && (
+                      <p className="micro mt-0.5" data-testid="cart-line-unit">{formatPrice(line.merchandise.price, locale)} {t.each}</p>
+                    )}
                   </div>
                   <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
-                    <Button aria-label={`${t.decrease}: ${line.merchandise.title}`} disabled={pending}
-                            onClick={() => setQuantity(line.id, line.quantity - 1)}>−</Button>
-                    <span className="min-w-[2ch] text-center font-mono text-text-primary" aria-label={t.quantity} data-testid="cart-qty">{line.quantity}</span>
-                    <Button aria-label={`${t.increase}: ${line.merchandise.title}`} disabled={pending || line.quantity >= maxQuantity}
-                            title={line.quantity >= maxQuantity ? t.maxReached : undefined}
-                            onClick={() => setQuantity(line.id, line.quantity + 1)}>+</Button>
-                    <Button className="ml-auto sm:ml-2" disabled={pending} onClick={() => remove(line.id)}
+                    {/* aria-disabled e non disabled: il bottone premuto resta col focus
+                        mentre il fornitore risponde (Button.jsx). */}
+                    <Button aria-label={`${t.decrease}: ${line.merchandise.title}`} aria-disabled={pending || undefined}
+                            onClick={() => changeQuantity(line, line.quantity - 1)}>−</Button>
+                    {/* aria-label su uno span senza ruolo non si legge: testo nascosto
+                        fuori dallo span col numero, che i test leggono (T3). */}
+                    <span className="sr-only">{t.quantity}:</span>
+                    <span className="min-w-[2ch] text-center font-mono text-text-primary" data-testid="cart-qty">{line.quantity}</span>
+                    <Button aria-label={`${t.increase}: ${line.merchandise.title}`} aria-disabled={pending || line.quantity >= maxQuantity || undefined}
+                            aria-describedby={line.quantity >= maxQuantity ? `cart-max-${i}` : undefined}
+                            onClick={() => changeQuantity(line, line.quantity + 1)}>+</Button>
+                    <Button className="ml-auto sm:ml-2" aria-disabled={pending || undefined} onClick={() => removeLine(line)}
                             aria-label={`${t.remove}: ${line.merchandise.title}`}>{t.remove}</Button>
                   </div>
+                  {/* Visibile e non in un title: su telefono e da tastiera il title non compare (T6). */}
+                  {line.quantity >= maxQuantity && (
+                    <p id={`cart-max-${i}`} className="micro col-span-2 sm:col-span-3" data-testid="cart-max">{t.maxReached}</p>
+                  )}
                 </li>
               )
             })}
@@ -149,7 +212,15 @@ export default function CartSheet({ headingId }) {
               </p>
             </div>
             <p className="micro mt-2">{t.taxNote}</p>
-            <Button variant="primary" className="mt-4 w-full" disabled={pending} onClick={checkout}>{t.checkout}</Button>
+            {/* Errore subito sopra l'azione, non in fondo dopo i link legali: su
+                telefono lì non si vede (T7). */}
+            {errorText}
+            <Button variant="primary" className="mt-4 w-full" disabled={pending || !canCheckout} onClick={checkout}
+                    aria-describedby={!canCheckout && !pending ? 'cart-checkout-unavailable' : undefined}
+                    data-testid="cart-checkout">{t.checkout}</Button>
+            {!canCheckout && !pending && (
+              <p id="cart-checkout-unavailable" className="micro mt-2" role="status" data-testid="cart-checkout-unavailable">{t.checkoutUnavailable}</p>
+            )}
             {checkoutNote && <p className="micro mt-3" role="status" style={{ color: 'var(--color-accent-flame)' }}>{checkoutNote}</p>}
             {policies.length > 0 && (
               <nav className="mt-4" aria-labelledby="cart-legal" data-testid="cart-legal">
@@ -174,7 +245,8 @@ export default function CartSheet({ headingId }) {
         </>
       )}
 
-      {error && <p className="micro" role="alert" style={{ color: 'var(--color-state-danger)' }}>{error}</p>}
+      {lines.length === 0 && errorText}
+      <p className="sr-only" role="status" data-testid="cart-announce">{announcement}</p>
     </div>
   )
 }
@@ -187,7 +259,7 @@ export default function CartSheet({ headingId }) {
 
 ### `src/state/useCartStore.js`
 
-> Decide *quando* chiamare il fornitore: crea il carrello se manca, riprova una volta su un carrello nuovo se quello salvato e' scaduto, limita le quantita', distingue errori e avvisi. Contiene anche `useShownPrice`, la regola per cui un prezzo di configurazione non puo' mai sostituire quello del fornitore.
+> Decide *quando* chiamare il fornitore: crea il carrello se manca, riprova una volta su un carrello nuovo se quello salvato è scaduto, accetta solo quantità intere, limita al massimo del config, distingue errori e avvisi, resta occupato mentre ripristina il carrello salvato. Contiene anche `useShownPrice`, la regola per cui un prezzo di configurazione non può mai sostituire quello del fornitore.
 
 ```js
 import { create } from 'zustand'
@@ -235,16 +307,21 @@ export const useCartStore = create((set, get) => ({
   restoreCart: async () => {
     const provider = getProvider()
     const id = readId()
-    if (!provider || !id) return
+    if (!provider || !id || get().pending) return
+    // Occupato finché il carrello salvato non è tornato: un'aggiunta in questa
+    // finestra creava un carrello nuovo e il ripristino lo scartava, o il
+    // contrario (audit 2026-11-02, §4-bis punto 2). Il bottone "Aggiungi" resta
+    // in attesa (aria-disabled) per il tempo di una risposta.
+    set({ pending: true })
     try {
       const cart = await provider.getCart(id)
-      // Nel frattempo l'utente può aver già aggiunto un capo (nuovo carrello):
-      // vale il suo, non quello ripristinato.
       if (get().cart || readId() !== id) return
       if (!cart) writeId(null)   // scaduto o già pagato: se ne crea uno nuovo al primo acquisto
       set({ cart })
     } catch (e) {
       console.warn('commerce: carrello non ripristinato', e)
+    } finally {
+      set({ pending: false })
     }
   },
 
@@ -297,15 +374,19 @@ export const useCartStore = create((set, get) => ({
   },
 
   add: (variantId, quantity = 1) => {
+    // Solo interi positivi: Math.min(NaN, room) è NaN e Math.min(-5, room) è -5, e
+    // arriverebbero al fornitore come quantità (audit 2026-11-02, T15).
+    if (!Number.isInteger(quantity) || quantity < 1) return Promise.resolve(false)
     // Il massimo per riga vale per ogni fornitore, non solo per quello finto.
     const line = get().cart?.lines.find((l) => l.variantId === variantId)
     const room = commerce.maxQuantity - (line?.quantity ?? 0)
     if (room <= 0) { set({ error: storeConfig.copy.cart.maxReached }); return Promise.resolve(false) }
     return get().run((p, id) => p.addLines(id, [{ variantId, quantity: Math.min(quantity, room) }]), { retryOnNewCart: true })
   },
-  setQuantity: (lineId, quantity) => get().run((p, id) => (quantity <= 0
+  // 0 rimuove la riga; un valore che non è un intero ≥ 0 non parte.
+  setQuantity: (lineId, quantity) => (!Number.isInteger(quantity) || quantity < 0 ? Promise.resolve(false) : get().run((p, id) => (quantity <= 0
     ? p.removeLines(id, [lineId])
-    : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }]))),
+    : p.updateLines(id, [{ lineId, quantity: Math.min(quantity, commerce.maxQuantity) }])))),
   remove: (lineId) => get().run((p, id) => p.removeLines(id, [lineId])),
 }))
 
@@ -360,9 +441,64 @@ export const useLegalStore = create((set, get) => ({
 }))
 ```
 
-### `src/state/useAppStore.js (righe 92-100)`
+### `src/state/leaveGuard.js`
 
-> La pila delle schede. `CartSheet` usa solo `openDialog` e `closeDialogs`; il resto dello store (fase dell'app, Focus, camera) non lo tocca.
+> Avviso del browser prima di lasciare il sito con capi nel carrello. Si spegne prima della navigazione verso la cassa (`allowLeave` in `CartSheet`).
+
+```js
+import { storeConfig } from '../config/storeConfig.js'
+import { useCartStore } from './useCartStore.js'
+
+/**
+ * Avviso prima di lasciare il sito (richiesta dell'utente, 2026-11-03).
+ *
+ * È la finestra del browser (`beforeunload`), non una nostra: il testo lo
+ * sceglie il browser e non si può cambiare, Chrome la mostra solo dopo che la
+ * persona ha toccato o cliccato la pagina, e Safari su iPhone in pratica la
+ * ignora. Per questo non è l'unica protezione: il carrello è già salvato da
+ * Shopify e si ritrova alla visita dopo.
+ *
+ * Quando scatta lo decide `features.leaveWarning.when`:
+ *   'cart'   → solo con almeno un capo nel carrello (default: chi non ha
+ *              comprato niente non perde niente, e un avviso a ogni chiusura
+ *              di scheda insegna a ignorarlo);
+ *   'always' → a ogni uscita.
+ * Mai verso la cassa di Shopify: lì si sta andando a pagare (`allowLeave`).
+ */
+let allowed = false
+
+/** Una sola navigazione voluta (la cassa) passa senza avviso. */
+export function allowLeave() { allowed = true }
+
+export function shouldWarn() {
+  const f = storeConfig.features.leaveWarning
+  if (!f?.enabled || allowed) return false
+  if (f.when === 'always') return true
+  return (useCartStore.getState().cart?.totalQuantity ?? 0) > 0
+}
+
+export function installLeaveGuard() {
+  const onBeforeUnload = (e) => {
+    if (!shouldWarn()) return
+    e.preventDefault()
+    // Chrome e Edge prima della 119 vogliono anche returnValue impostato.
+    e.returnValue = ''
+  }
+  // Tornando con Indietro dalla cassa la pagina può riprendere dalla cache del
+  // browser: il permesso dato per la cassa non deve restare acceso.
+  const onPageShow = () => { allowed = false }
+  window.addEventListener('beforeunload', onBeforeUnload)
+  window.addEventListener('pageshow', onPageShow)
+  return () => {
+    window.removeEventListener('beforeunload', onBeforeUnload)
+    window.removeEventListener('pageshow', onPageShow)
+  }
+}
+```
+
+### `src/state/useAppStore.js` (righe 98-106)
+
+> La pila delle schede. `CartSheet` usa solo `openDialog` e `closeDialogs`; il resto dello store non lo tocca.
 
 ```js
   openDialog: (kind, id) => {
@@ -383,7 +519,7 @@ export const useLegalStore = create((set, get) => ({
 
 ### `src/commerce/index.js`
 
-> Definisce cosa deve offrire un fornitore e sceglie quale usare: finto, Shopify, o nessuno. Gli interruttori da query string valgono solo nelle build di prova — in produzione un link con `?commerce=shopify` accenderebbe il carrello su un sito dove gli acquisti non sono aperti.
+> Definisce cosa deve offrire un fornitore e sceglie quale usare: finto, Shopify, o nessuno. Gli interruttori da query string valgono solo nelle build di prova; la build decide che cosa è produzione e fallisce chiusa (`vite.config.js`, `isProduction`).
 
 ```js
 import { storeConfig } from '../config/storeConfig.js'
@@ -474,7 +610,7 @@ export function testBanner() {
 
 ### `src/commerce/shopify.js`
 
-> L'unico file che parla con la Storefront API. Query del catalogo e delle pagine legali, cinque operazioni sul carrello, traduzione delle varianti Shopify negli id di taglia e colore del progetto, e `safeCheckoutUrl`.
+> L'unico file che parla con la Storefront API. Query del catalogo (handle come variabili GraphQL) e delle pagine legali, cinque operazioni sul carrello, traduzione delle varianti Shopify negli id di taglia e colore del progetto (con avviso per quelle scartate), totale di riga da Shopify, e `safeCheckoutUrl`.
 
 ```js
 /**
@@ -509,6 +645,7 @@ const CART_FIELDS = `
     nodes {
       id
       quantity
+      cost { totalAmount { amount currencyCode } }
       merchandise {
         ... on ProductVariant {
           id
@@ -568,14 +705,21 @@ export function createShopifyProvider({ products, shopify, country, language = n
    * fonte è la Storefront API su HTTPS, quindi è attendibile; questo controllo
    * serve al giorno in cui non lo fosse — un negozio compromesso, un cambio
    * dell'API — perché un "javascript:" lì dentro verrebbe eseguito nel contesto
-   * del sito. Se l'URL non convince, il carrello resta senza cassa e il bottone
-   * non compare, invece di portare l'utente chissà dove.
+   * del sito. Se l'URL non convince, il carrello resta senza cassa: il bottone
+   * "Vai al pagamento" si disabilita e dice perché (CartSheet), invece di
+   * portare l'utente chissà dove.
    */
+  // Host ammessi per la cassa: il negozio da cui arriva il carrello e, se il
+  // config li elenca, i domini propri del negozio. Con un dominio personalizzato
+  // Shopify restituisce il checkoutUrl sul dominio primario: senza la lista, alla
+  // 8c la cassa si chiuderebbe in silenzio (audit 2026-11-02, T1-bis).
+  const checkoutHosts = new Set([shopify.domain, ...(shopify.checkoutHosts ?? [])].map((h) => String(h).toLowerCase()))
   const safeCheckoutUrl = (raw) => {
     try {
       const url = new URL(String(raw))
-      // Stesso negozio da cui arriva il carrello: niente domini di terzi.
-      return url.protocol === 'https:' && url.hostname === shopify.domain ? url.href : null
+      if (url.protocol === 'https:' && checkoutHosts.has(url.hostname)) return url.href
+      console.warn('shopify: checkoutUrl scartato', url.protocol, url.hostname)
+      return null
     } catch {
       return null
     }
@@ -593,6 +737,8 @@ export function createShopifyProvider({ products, shopify, country, language = n
         id: l.id,
         variantId: l.merchandise.id,
         quantity: l.quantity,
+        // Totale di riga calcolato da Shopify (sconti compresi), non dal sito (T5).
+        total: l.cost?.totalAmount ? money(l.cost.totalAmount) : null,
         merchandise: { productHandle: handle, title: l.merchandise.product.title, size, color, price: money(l.merchandise.price) },
       }
     }),
@@ -614,12 +760,16 @@ export function createShopifyProvider({ products, shopify, country, language = n
 
     async getProducts(handles) {
       if (!handles.length) return []
-      // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca.
-      const fields = handles.map((h, i) => `p${i}: product(handle: ${JSON.stringify(h)}) { ${PRODUCT_FIELDS} }`).join('\n')
-      const data = await request(`query Products($country: CountryCode) @inContext(country: $country) {
+      // Un alias per handle: una sola richiesta, nessuna sintassi di ricerca. Gli
+      // handle viaggiano come variabili, mai dentro il testo della query
+      // (mappa_dati_sicurezza §4; audit 2026-11-02, T18).
+      const decl = handles.map((_, i) => `$h${i}: String!`).join(', ')
+      const fields = handles.map((_, i) => `p${i}: product(handle: $h${i}) { ${PRODUCT_FIELDS} }`).join('\n')
+      const vars = Object.fromEntries(handles.map((h, i) => [`h${i}`, h]))
+      const data = await request(`query Products($country: CountryCode, ${decl}) @inContext(country: $country) {
         localization { availableCountries { isoCode } }
         ${fields}
-      }`, { country })
+      }`, { country, ...vars })
       // Un negozio che non vende nel paese configurato risponde col contesto del
       // suo mercato principale (prezzi in un'altra valuta) e poi dichiara la merce
       // esaurita al carrello. Meglio dirlo subito: il capo risulta non disponibile.
@@ -627,16 +777,20 @@ export function createShopifyProvider({ products, shopify, country, language = n
       if (!countries.includes(country)) {
         throw new Error(`shopify: il negozio non vende in ${country} (mercati attivi: ${countries.join(', ')})`)
       }
-      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => ({
-        handle: p.handle,
-        title: p.title,
-        variants: p.variants.nodes.map((v) => ({
+      return handles.map((_, i) => data[`p${i}`]).filter(Boolean).map((p) => {
+        const mapped = p.variants.nodes.map((v) => ({
           id: v.id,
           ...optionsOf(p.handle, v.selectedOptions),
           price: money(v.price),
           available: v.availableForSale,
-        })).filter((v) => v.size && v.color),
-      }))
+        }))
+        // Una variante la cui taglia o colore su Shopify non coincide con le
+        // etichette del config ("Medium" invece di "M") sparisce dal sito: lo si
+        // dice, altrimenti il capo sembra solo esaurito (audit 2026-11-02, T19).
+        const dropped = mapped.filter((v) => !v.size || !v.color)
+        if (dropped.length) console.warn(`shopify: ${dropped.length} varianti di ${p.handle} senza taglia/colore corrispondenti`, dropped.map((v) => v.id))
+        return { handle: p.handle, title: p.title, variants: mapped.filter((v) => v.size && v.color) }
+      })
     },
 
     createCart: () => mutate('cartCreate', `
@@ -688,7 +842,7 @@ export function createShopifyProvider({ products, shopify, country, language = n
 
 ### `src/lib/format.js`
 
-> `formatPrice` formatta importo e valuta che arrivano dal fornitore. Nessun componente decide come si scrive un prezzo.
+> `formatPrice` formatta importo e valuta che arrivano dal fornitore, sempre con due decimali come la cassa. Nessun componente decide come si scrive un prezzo.
 
 ```js
 /**
@@ -698,13 +852,14 @@ export function createShopifyProvider({ products, shopify, country, language = n
 const cache = new Map()
 
 export function formatPrice({ amount, currency }, locale) {
-  const key = `${locale}|${currency}|${Number.isInteger(amount)}`
+  const key = `${locale}|${currency}`
   if (!cache.has(key)) {
     cache.set(key, new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      // 189 € e non 189,00 €: i decimali compaiono solo quando esistono.
-      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+      // Sempre due decimali (189,00 €), come la cassa di Shopify: con 189 € in
+      // vetrina e 189,00 € al pagamento sembrano due prezzi (audit 2026-11-02, T23).
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }))
   }
@@ -715,11 +870,13 @@ export function formatPrice({ amount, currency }, locale) {
 export const pad2 = (n) => String(n).padStart(2, '0')
 ```
 
-### `src/config/storeConfig.js (righe 155-196)`
+### `src/config/storeConfig.js` (righe 156-198)
 
-> Estratto: il blocco `commerce`. Il `storefrontToken` qui sotto e' il token **pubblico** del canale Headless, fatto per stare nel codice del sito: non e' una credenziale trapelata, e il repository e' pubblico per scelta. Il token privato dell'amministrazione non entra mai nel sorgente.
+> Estratto: il blocco `commerce`. Lo `storefrontToken` è il token **pubblico** del canale Headless, fatto per stare nel codice del sito: non è una credenziale trapelata, e il repository è pubblico per scelta. I suoi permessi sono ridotti ai quattro che il sito usa (verificato sul negozio di sviluppo il 2026-10-30, su quello del cliente il 2026-11-03). Il token privato dell'amministrazione non entra mai nel sorgente.
 
 ```js
+  commerce: {
+    provider: content.commerce?.provider ?? 'off',
     country: 'IT',
     maxQuantity: 10,
     cartStorageKey: 'into-cart-id',
@@ -754,19 +911,18 @@ export const pad2 = (n) => String(n).padStart(2, '0')
       testMode: true,
       // Nomi delle opzioni Shopify che corrispondono a taglia e colore.
       optionNames: { size: ['Taglia', 'Size'], color: ['Colore', 'Color'] },
+      // Host della cassa oltre a `domain`. Con un dominio personalizzato Shopify
+      // manda il checkoutUrl sul dominio primario (es. 'shop.cliente.it'): alla 8c
+      // va aggiunto qui, nello stesso commit di dominio, token e CSP. Vuoto = solo
+      // `domain`. Solo nomi host, senza protocollo né percorso.
+      checkoutHosts: [],
     },
   },
-
-  // Stadi reali del caricamento. Il peso è la quota della barra assegnata allo
-  // stadio: non misura byte, misura passaggi che avvengono davvero.
-  loading: {
-    stages: [
-      { id: 'boot',    progress: 0.15, label: 'Avvio' },
 ```
 
-### `src/config/storeConfig.js (righe 778-804)`
+### `src/config/storeConfig.js` (righe 790-821)
 
-> Estratto: tutte le stringhe che il carrello mostra. Nessun testo e' scritto nei componenti.
+> Estratto: tutte le stringhe che il carrello mostra. Nessun testo è scritto nei componenti.
 
 ```js
     cart: {
@@ -789,11 +945,16 @@ export const pad2 = (n) => String(n).padStart(2, '0')
       subtotal: 'Subtotale',
       taxNote: 'IVA inclusa. Spedizione calcolata al pagamento.',
       checkout: 'Vai al pagamento',
+      checkoutUnavailable: 'Il pagamento non è disponibile in questo momento. Riprova tra poco.',
       mockBanner: 'Negozio di prova: nessun pagamento reale',
       devStoreBanner: 'Negozio Shopify di sviluppo: solo pagamenti di prova',
       mockCheckout: 'Negozio di prova: qui si aprirebbe la cassa di Shopify. Nessun ordine è stato creato.',
       error: 'Il carrello non ha risposto. Riprova.',
       maxReached: 'Quantità massima raggiunta',
+      // Prezzo unitario sotto il totale di riga, quando la quantità è più di 1.
+      each: 'cad.',
+      // Annunci per i lettori di schermo dopo un cambio riuscito: "<capo>: quantità 3", "<capo> rimosso dal carrello".
+      removed: 'rimosso dal carrello',
       stockWarning: 'Quantità non disponibile: il carrello mostra quella che è stato possibile aggiungere.',
     },
 ```
@@ -801,49 +962,62 @@ export const pad2 = (n) => String(n).padStart(2, '0')
 
 ---
 
-## 6. Sottocomponenti usati esclusivamente dal carrello
+## 6. Sottocomponenti usati dal carrello
 
-**Nessuno.** `CartSheet` compone tre primitive condivise con il resto
+**Nessuno esclusivo.** `CartSheet` compone tre primitive condivise con il resto
 dell'interfaccia, che per questo non sono riportate:
 
-| File | Righe | Quanti file lo usano |
+| File | Righe | File che lo usano |
 |---|---|---|
-| `src/ui/primitives/Button.jsx` | 34 | 15 |
-| `src/ui/primitives/MediaImage.jsx` | 56 | 6 |
-| `src/ui/primitives/PlaceholderImage.jsx` | 112 | 3 |
+| `src/ui/primitives/Button.jsx` | 43 | 14 |
+| `src/ui/primitives/MediaImage.jsx` | 56 | 5 |
+| `src/ui/primitives/PlaceholderImage.jsx` | 118 | 2 |
 
-Sono presentazionali e nessuna tocca prezzi, quantita' o l'URL di pagamento.
+Sono presentazionali: nessuna tocca prezzi, quantità o l'URL di pagamento.
 
 ---
 
 ## 7. Note per chi legge
 
-**L'URL della cassa.** E' l'unico valore che arriva dalla rete e diventa una
-navigazione (`window.location.assign`). `safeCheckoutUrl` lo accetta solo se e'
-`https:` **e** l'host e' esattamente il dominio del negozio; altrimenti il carrello
-resta senza cassa e il bottone non compare. Fallisce chiuso.
+**L'URL della cassa.** È l'unico valore che arriva dalla rete e diventa una
+navigazione (`window.location.assign`). `safeCheckoutUrl` lo accetta solo se è
+`https:` **e** l'host è esattamente il dominio del negozio o uno di
+`commerce.shopify.checkoutHosts` (i domini propri del negozio, in minuscolo,
+controllati all'avvio). Altrimenti il carrello resta senza cassa: il bottone «Vai al
+pagamento» è **spento e spiega perché** (`checkoutUnavailable`), e in console resta
+il motivo dello scarto. Fallisce chiuso, ma non in silenzio.
 
-**I prezzi non vengono dalla configurazione.** Col commercio attivo importo, valuta e
-subtotale arrivano solo dal fornitore; `useShownPrice` mostra `—` se non risponde, mai
-il prezzo di `storeConfig`. Il totale lo calcola Shopify.
+**I prezzi non vengono dalla configurazione.** Col commercio attivo importo, valuta,
+totale di riga e subtotale arrivano solo dal fornitore; `useShownPrice` mostra `—`
+se non risponde, mai il prezzo di `storeConfig`. Il totale di riga lo calcola Shopify
+(sconti compresi), non il sito.
 
-**La quantita' e' limitata due volte**, nell'interfaccia (il `+` si disabilita a
-`maxQuantity`) e nello store, che taglia a `maxQuantity` prima di chiamare il fornitore.
+**La quantità è limitata due volte**, nell'interfaccia (il `+` è spento a
+`maxQuantity`, con «Quantità massima raggiunta» visibile) e nello store, che accetta
+solo interi e taglia a `maxQuantity` prima di chiamare il fornitore.
 
 **Gli avvisi non vengono ingoiati.** Le mutazioni distinguono `userErrors` (operazione
 rifiutata, diventa un'eccezione) da `warnings` (eseguita solo in parte, es. merce
-esaurita: il carrello torna com'e' davvero, con l'avviso). Chi chiama non conferma mai
-un'aggiunta che non c'e' stata.
+esaurita: il carrello torna com'è davvero, con l'avviso). Chi chiama non conferma mai
+un'aggiunta che non c'è stata.
 
 **Ogni richiesta ha un timeout** di 10 secondi, e un controllo sui mercati fa fallire
-subito il caricamento se il negozio non vende nel paese configurato, invece di lasciare
-che il problema emerga alla cassa con i prezzi in un'altra valuta.
+subito il caricamento se il negozio non vende nel paese configurato.
+
+**Accessibilità.** I bottoni restano col focus mentre il fornitore risponde
+(`aria-disabled`, non `disabled`); dopo una rimozione il focus va al titolo o a
+«Continua»; ogni cambio riuscito si annuncia in una regione `role="status"`; l'errore
+compare sopra il bottone del pagamento.
+
+**La rete.** La CSP (`vercel.json`) permette chiamate solo al dominio del negozio;
+la build si ferma se `connect-src` e il dominio configurato non coincidono.
 
 **Cosa il carrello non fa:** non conserva dati di chi compra (in `localStorage` solo
 l'id del carrello, chiave `into-cart-id`), non tocca dati di pagamento, non chiama
-direttamente nessuna API — passa sempre dal fornitore.
+direttamente nessuna API: passa sempre dal fornitore.
 
-**Stato della verifica al 2026-10-30:** la suite `e2e-phase8b` interroga il negozio
-Shopify di sviluppo dal vivo e passa 12 controlli su 12, cassa compresa: catalogo,
-varianti, prezzi in EUR, carrello creato, aggiornato, ritrovato dopo un ricaricamento e
-svuotato, pagine legali, e l'apertura della cassa con capo, taglia e prezzo giusti.
+**Stato della verifica.** `e2e-phase8a` (fornitore finto e Shopify simulato) e
+`test:commerce` (contratto, senza rete) girano a ogni modifica. La prova dal vivo sul
+negozio Shopify di sviluppo è `e2e-phase8b`: 12 su 12 il 2026-10-30, cassa compresa.
+Non è stata rilanciata dopo le correzioni del 2026-11-03, perché l'ambiente di lavoro
+non raggiungeva Shopify: va rifatta prima di unire.

@@ -22,6 +22,7 @@
     "check:catalog": "node scripts/catalog/check.mjs",
     "test:framing": "node scripts/test-framing.mjs",
     "media:build": "node scripts/media/build.mjs",
+    "docs:carrello": "node scripts/make-audit-carrello.mjs",
     "test:content": "node scripts/test-content.mjs",
     "validate:config": "node scripts/validate-config.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs",

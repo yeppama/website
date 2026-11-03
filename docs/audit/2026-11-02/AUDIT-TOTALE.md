@@ -261,7 +261,7 @@ Sul telefono in verticale la metà superiore dello schermo è soffitto nero, per
 | T18 | `getProducts`: handle passati come variabili GraphQL (`$h0…`), non concatenati. Oggi la mappa §4 dice il contrario di ciò che fa il codice | 🟡 | da fare |
 | T19 | `console.warn` per le varianti scartate perché taglia o colore non corrispondono. In `e2e-phase8b`: «nessuna variante scartata» | 🟡 | ✅ fatto (Fase 7), controllo in `e2e-phase8b` |
 | T20 | Invariante: ogni `commerce.policies[].field` è un nome di campo GraphQL valido (`/^[a-zA-Z]+$/`) **ed è dichiarato nel config**. Non usare una lista scritta a mano: quella che avevo dato io non conteneva `contactInformation` | 🟢 | ✅ già coperto da I25 (elenco chiuso con `contactInformation`) |
-| T21 | Rigenera `AUDIT-CARRELLO.md` **dopo** T1-bis. Oggi dice due volte che il bottone «non compare» | 🟡 | dopo T1-bis |
+| T21 | Rigenera `AUDIT-CARRELLO.md` **dopo** T1-bis. Oggi dice due volte che il bottone «non compare» | 🟡 | ✅ fatto 2026-11-03 (Fase 9): ora lo genera `npm run docs:carrello` dal codice |
 | T22 | Paese fisso `IT`: prezzo mostrato e prezzo pagato possono non coincidere per chi spedisce fuori dall'Italia | 🟡 | D3, ordine di prova alla 8c |
 | T23 | `formatPrice`: sempre 2 decimali | 🟢 | ✅ fatto (Fase 7) |
 | T11–T13 | `testBanner()` chiamato una volta sola · stili inline in classi · «Rimosso · Annulla» per 5 secondi | 🟢 | facoltativo |
