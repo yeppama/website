@@ -49,8 +49,11 @@ Contenuti: `src/content/` (`into` = INTO, `demo` = demo), scelti con `VITE_CONTE
 la build risolve `demo` dal nome del branch. La produzione rifiuta il contenuto `demo`
 (`vite.config.js`).
 
-Deploy: integrazione Git di Vercel. Ogni push su un branch crea un'anteprima (protetta da login
-Vercel); `main` è la produzione. Header e cache in `vercel.json`.
+Deploy: integrazione Git di Vercel. Ogni push su un branch crea un'anteprima **pubblica** (Vercel
+Authentication è spenta, per aprirla dal telefono senza login); `main` è la produzione. Le PR da
+fork non si compilano senza autorizzazione (Git Fork Protection attiva) e il progetto non ha
+variabili d'ambiente: nessun segreto finisce in un'anteprima. Verificato il 2026-11-03.
+Header e cache in `vercel.json`.
 
 Ogni push fa girare lint, invarianti, build e le suite Node su GitHub Actions
 (`.github/workflows/ci.yml`), più `npm audit` sulle dipendenze. Le suite col browser
