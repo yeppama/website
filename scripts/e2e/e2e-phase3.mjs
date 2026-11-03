@@ -254,3 +254,7 @@ await browser.close()
 for (const [s, n, note] of results) console.log(`${s === 'ok' ? '  ✓' : s === 'skip' ? '  –' : '  ✗'} ${n}${note ? ` — ${note}` : ''}`)
 console.log(`\n${results.filter((r) => r[0] === 'ok').length} superati, ${results.filter((r) => r[0] === 'FAIL').length} falliti, ${results.filter((r) => r[0] === 'skip').length} non verificabili qui`)
 console.log(consoleErrors.length ? 'ERRORI CONSOLE:\n' + consoleErrors.join('\n') : 'ERRORI CONSOLE: nessuno')
+
+// Senza questa riga la suite usciva con 0 anche con controlli falliti, e run-all
+// e la CI la davano per superata (trovato il 2026-11-03).
+process.exit(results.some((r) => r[0] === 'FAIL') || consoleErrors.length ? 1 : 0)
