@@ -19,9 +19,9 @@ terzo workflow, `e2e-shopify.yml`: la prova dal vivo del carrello, che ha bisogn
 rete verso Shopify. Parte a mano, su ogni PR verso `main` e sui push che toccano il
 carrello.
 
-Su GitHub c'è ancora `audit/correzioni-2026-11`, il branch della PR #2. Verificato il
-2026-11-05: non ha nessun commit fuori da `sviluppo`, quindi è un residuo e si può
-cancellare (`git push origin --delete audit/correzioni-2026-11`). Non ci si lavora.
+`audit/correzioni-2026-11`, il branch della PR #2, è stato cancellato da GitHub il
+2026-11-05: non aveva nessun commit fuori da `sviluppo` e la sua punta `acb63b3` resta
+raggiungibile. I branch remoti sono di nuovo solo `main` e `sviluppo`.
 
 ## 2. Le regole che non si deducono dal codice
 
