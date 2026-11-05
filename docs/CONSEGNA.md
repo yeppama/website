@@ -1,4 +1,4 @@
-# CONSEGNA — stato e cosa resta, al 2026-11-02
+# CONSEGNA — stato e cosa resta, al 2026-11-05
 
 Scritto per una sessione nuova che riprende il lavoro da zero. Si legge dopo
 `CONTEXT.md`, che resta la fonte dello stato corrente; qui c'è cosa è successo, cosa è
@@ -8,13 +8,19 @@ rimasto aperto e in che ordine conviene affrontarlo.
 
 | | |
 |---|---|
-| `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ferma a `7f87699` del 2026-10-28. **Non ha niente del lavoro del 29 e del 30.** |
-| `sviluppo` | **Branch di lavoro**, tutto su GitHub. **Oltre novanta commit davanti a `main`** — il numero esatto è `git rev-list --count main..sviluppo`, e invecchia a ogni push. Ogni push crea un'anteprima Vercel e fa girare la CI. |
+| `main` | Produzione su Vercel, pubblica, `noindex`. Contenuto `into` (segnaposto dichiarati), acquisti spenti. Ferma a `7f87699` del 2026-10-28. **Non ha niente del lavoro del 29 e del 30, né dell'audit del 3 novembre.** |
+| `sviluppo` | **Branch di lavoro**, tutto su GitHub. **Oltre cento commit davanti a `main`** (115 il 2026-11-05) — il numero esatto è `git rev-list --count main..sviluppo`, e invecchia a ogni push. Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | tag `archivio-docs-ristrutturati` | Due commit di riordino documenti del 2026-10-16, mai uniti. Il branch è stato cancellato, il tag li tiene raggiungibili. |
 
 GitHub Pages è spento dal 2026-10-28. La CI gira su GitHub Actions a ogni push:
 lint, invarianti, build, suite Node e `npm audit` (`ci.yml`), e **le suite e2e** in un
-workflow a parte (`e2e.yml`) che salta i push di soli documenti.
+workflow a parte (`e2e.yml`) che salta i push di soli documenti. Dal 2026-11-03 c'è un
+terzo workflow, `e2e-shopify.yml`: la prova dal vivo del carrello, che ha bisogno della
+rete verso Shopify. Parte a mano, su ogni PR verso `main` e sui push che toccano il
+carrello.
+
+Il branch `audit/correzioni-2026-11` è stato cancellato da GitHub il 2026-11-05, dopo
+aver verificato che è interamente contenuto in `sviluppo`.
 
 ## 2. Le regole che non si deducono dal codice
 
@@ -31,6 +37,44 @@ Tre, e tutte e tre sono state imparate pagando:
    senza parametri, cantiere con `?allestimento=cantiere`. Ogni verifica si fa su tutti
    e due — è il motivo per cui il giro completo delle suite dura sedici minuti.
 
+## 3-quater. Il 2026-11-03 — l'audit del 2 novembre, chiuso
+
+Nove fasi di correzioni al codice, nate dall'audit di UI/UX, legale e sicurezza del 2
+novembre: lavorate sul branch `audit/correzioni-2026-11` e unite in `sviluppo` con la
+PR #2 (merge `e91ad35`). **Questo paragrafo supera il "da dove ripartire" di §3-ter,**
+scritto il giorno prima, che diceva che il prossimo passo non era tecnico.
+
+- **Fasi 1–9:** sicurezza e cassa (`8b99e04`), contrasto dei testi (`886b615`), focus e
+  ARIA (`2e6a19e`), navigazione (`1b3c818`), indietro dopo una ricarica (`52f2703`),
+  modalità testo senza 3D (`ed2b42c`), carrello e avviso in uscita col carrello pieno
+  (`97529b1`), rafforzamenti di sicurezza e axe a zero violazioni (`4fe53c0`,
+  `c6408c9`), `AUDIT-CARRELLO.md` generato dal codice (`628984f`).
+- **`80e347b` — gli exit code delle suite e2e.** Otto su undici restavano verdi anche
+  fallendo: è il difetto più grave trovato dall'audit, perché rendeva bugiardo ogni
+  esito letto prima di quella data.
+- **`d599863`, `be10a13` — `e2e-shopify.yml`**: la prova dal vivo del carrello su un
+  runner GitHub, che ha la rete verso Shopify. **13 su 13** sul negozio di sviluppo,
+  cassa compresa, con la password della vetrina da segreto.
+- **Ultimo giro:** lint e build puliti, suite Node tutte verdi, e2e **11/11** su A e su
+  B, axe **0 violazioni** su 37 schermate, `e2e-shopify` 13/13 dal vivo. Dopo il merge
+  in `sviluppo`, `CI`, `e2e` ed `e2e-shopify` di nuovo verdi.
+- **Non eseguito, e dichiarato tale:** tutto quello che ha bisogno di un telefono vero —
+  indietro del browser su Chrome Android e Safari iOS, avviso in uscita su telefono,
+  modalità testo su un telefono lento, un lettore di schermo vero (VoiceOver o
+  TalkBack), e N11, l'inquadratura in verticale, che va giudicata guardandola.
+- **Il modulo cliente è l'ultimo da inserire,** e nessuna di quelle voci si chiude senza
+  di lui: EAA (D1), recesso UE su Shopify (D2), **partita IVA (D3) — oggi Shopify
+  presume IVA 0%**, conferma dei colori (D4, già applicati), e la 8c. Tabella in
+  `docs/audit/2026-11-02/AUDIT-TOTALE.md` §8.
+
+**Da dove ripartire (al 2026-11-05):** niente è a metà, l'albero è pulito, tutto è su
+`origin/sviluppo`. Il lavoro tecnico possibile da soli è quasi esaurito (§5), e le due
+voci più grosse — peso del bundle e fase 3 del cantiere — aspettano proprio le misure su
+telefoni veri, con l'Android di fascia media che non è **mai** stato misurato. Le due
+cose che sbloccano tutto il resto non sono codice: mandare `MESSAGGIO-AL-CLIENTE.md`
+(manca solo allegare il modello Excel), e una sessione col telefono in mano, che chiude
+insieme la fase 3 del cantiere e le cinque prove dichiarate non eseguite qui sopra.
+
 ## 3-ter. Il 2026-11-02
 
 Nessuna modifica al codice. Tre cose:
@@ -46,9 +90,10 @@ Nessuna modifica al codice. Tre cose:
 - **`docs/AUDIT-CARRELLO.md`** del 30 ottobre e' il carrello per intero per un revisore
   esterno. Fotografia dichiarata, si rigenera invece di aggiornarla.
 
-**Da dove ripartire:** niente e' a meta'. L'albero e' pulito, tutto e' su
-`origin/sviluppo`, l'ultimo giro completo delle dieci suite col browser e' verde
-(15m53s). Il prossimo passo non e' tecnico: e' la risposta del cliente.
+**Da dove ripartire, come si leggeva allora:** niente e' a meta', l'albero e' pulito,
+tutto e' su `origin/sviluppo`, l'ultimo giro completo delle dieci suite col browser e'
+verde (15m53s), e il prossimo passo non e' tecnico. **Superato il giorno dopo** (§3-quater):
+l'audit ha prodotto nove fasi di correzioni al codice, e le suite sono diventate undici.
 
 ## 3-bis. Il pomeriggio del 2026-10-30 (17 commit)
 
@@ -134,6 +179,12 @@ La lista è corta, ed è corta perché è stata consumata.
   verificato il 2026-10-30 (vedi §3-bis): niente più da controllare qui.
 - **ESLint 10**: bloccato dai plugin, non da noi (jsx-a11y arriva a `^9`, plugin-react a
   `^9.7`). Si rivaluta quando pubblicano il peer su `^10`.
+- ~~**Audit di UI/UX, legale e sicurezza.**~~ Fatto: nove fasi unite il 2026-11-03
+  (§3-quater). Quel che resta di quell'audit o vuole un telefono vero (§7) o vuole il
+  cliente (`AUDIT-TOTALE.md` §8).
+- **Vercel Analytics**, deciso in §6 e non installato. Vuole il suo contorno: CSP,
+  informativa, DPA. È l'unica voce di questa lista che si può chiudere da soli senza
+  prima misurare niente.
 
 ## 6. Deciso, e da non rimettere in discussione
 
@@ -155,7 +206,9 @@ La lista è corta, ed è corta perché è stata consumata.
 | Logo vettoriale (P1) | cliente | Insegna 3D, favicon, immagine di anteprima |
 | Testi e immagini del Lookbook, conferma tagline (P3) | cliente | Contenuto reale |
 | **Scelta fra allestimento A e B** | cliente | Dimezza la superficie da verificare. In sospeso dal 2026-10-19 |
+| **Modulo cliente dell'audit:** EAA (D1), recesso UE (D2), partita IVA (D3) | cliente | Il livello d'obbligo dell'accessibilità, il recesso online e l'IVA corretta al pagamento — tutti e tre prima di vendere (8e). Tabella in `docs/audit/2026-11-02/AUDIT-TOTALE.md` §8 |
 | Misure su iPhone, Honor, PC con GPU dedicata, **Android di fascia media** | utente | Fase 3 del cantiere. L'Android non è **mai** stato misurato ed è il tier che decide se il sito è usabile sui telefoni più diffusi |
+| **Le cinque prove dell'audit che vogliono un telefono vero** | utente | Indietro del browser su Chrome Android e Safari iOS, avviso in uscita, modalità testo su un telefono lento, lettore di schermo vero, N11 in verticale. Si fanno nello stesso giro delle misure |
 | ~~Scope del canale Headless su `into-industries-dev`~~ | — | **Fatto il 2026-10-30**: i sei non usati tolti dall'amministrazione, `npm run check:scopes` verde, `e2e-phase8b` 11/12 come prima |
 | Testi legali e indirizzo del venditore | venditore | Il lancio (8e), **non la 8d** |
 | — | — | **La Parte 1 di `PER-L-UTENTE.md` è chiusa.** `gh` CLI, allowlist dei permessi e `STORE_PASSWORD` fatti il 2026-10-30; il token Vercel non si fa (§6) |
@@ -201,16 +254,24 @@ npm run e2e                   # tutte le suite col browser, dall'inizio alla fin
 `npm run e2e` fa tutto da sé. Varianti: `-- --only cantiere`, `-- --content into`,
 `-- --out e2e-out` per tenere gli screenshot.
 
-Ultimo esito noto, 2026-10-30: **CI #14 verde**, job e2e compreso — tutte e dieci le
-suite col browser su un runner GitHub, 16 minuti e 16 secondi. In locale, stesso
-risultato: 10 suite su 10.
+Le suite col browser sono **undici** da quando l'audit ha aggiunto `e2e-textmode`: dieci
+girano col contenuto `into` (negozio A e cantiere), una con `demo`.
+
+Ultimo esito noto, 2026-11-03: dopo il merge della PR #2 in `sviluppo`, **`CI`, `e2e` ed
+`e2e-shopify` tutti verdi** — e2e 11/11 su A e su B, axe 0 violazioni su 37 schermate,
+`e2e-shopify` 13/13 dal vivo. Da allora su `sviluppo` ci sono solo documenti.
+
+Attenzione a un dettaglio imparato il 2026-11-03: fino a `80e347b` **otto suite su undici
+restavano verdi anche fallendo**. Un esito e2e letto prima di quella data non vale.
 
 Fuori da quel giro, da eseguire a mano:
 
 - `e2e-phase6` (prestazioni): `node scripts/e2e/e2e-phase6.mjs <indirizzo> <cartella>`
-- `e2e-phase8b` (dal vivo su Shopify): **12 su 12 il 2026-10-30**, cassa compresa, con
-  `STORE_PASSWORD` nell'ambiente. Senza quella variabile sono 11 su 12 e la suite
-  dichiara la cassa non verificata invece di fingere.
+- `e2e-phase8b` (dal vivo su Shopify): **13 su 13 il 2026-11-03**, cassa compresa. Non
+  si lancia più da qui a mano: gira sul runner GitHub (`e2e-shopify.yml`, Actions → Run
+  workflow), che ha la rete verso Shopify e legge la password della vetrina dal segreto
+  `STORE_PASSWORD`. Senza quella password la suite dichiara la cassa non verificata
+  invece di fingere.
 - `npm run check:scopes` (dal vivo su Shopify): cosa può fare il token pubblico. Rosso
   il 2026-10-30 con cinque permessi attivi e non usati, `read_customers` compreso. Si
   rilancia dopo aver tolto le caselle, e di nuovo alla 8c sul negozio del cliente.

@@ -14,6 +14,11 @@ e2e-out/
 catalogo-importato/
 media-sorgenti/
 
+# Impostazioni locali dell'agente: permessi approvati su questa macchina e
+# percorsi del dev server. Non sono del progetto e cambiano da macchina a
+# macchina (dopo lo spostamento della cartella del 2026-11-04, per esempio).
+.claude/
+
 # Credenziali e configurazione locale: mai nel repository. Un .env è rimasto
 # tracciato dal 2026-10-17 al 2026-10-28 in un repository pubblico: quello che
 # conteneva è da considerare pubblico anche ora che il file non c'è più, perché

@@ -1,6 +1,6 @@
 # CONTEXT — INTO industries · negozio streetwear immersivo 3D
 
-> Stato al 2026-11-03 · branch di lavoro **`sviluppo`** (oltre novanta commit davanti) · `main` = produzione, ferma al 2026-10-28.
+> Stato al 2026-11-05 · branch di lavoro **`sviluppo`** (115 commit davanti) · `main` = produzione, ferma al 2026-10-28.
 > Questo file si carica a ogni sessione: contiene solo lo stato vigente. Il resto si legge quando serve (tabella in fondo).
 
 ## 1. Cos'è
@@ -12,11 +12,11 @@ Prototipo web 3D navigabile in prima persona del negozio streetwear INTO industr
 | Branch | Ruolo |
 |---|---|
 | `main` | Produzione su Vercel. Fase 7, contenuto `into` (segnaposto dichiarati), `noindex`. Non si tocca senza comando dell'utente. |
-| `sviluppo` | **Branch di lavoro.** Tutto il lavoro dal 2026-10-17 in poi: Fase 8a/8b, demo con foto, cantiere, passata di sicurezza. Il contenuto `demo` si accende dal nome del branch (non c'è più un `.env`). Ogni push crea un'anteprima Vercel e fa girare la CI. |
+| `sviluppo` | **Branch di lavoro.** Tutto il lavoro dal 2026-10-17 in poi: Fase 8a/8b, demo con foto, cantiere, passata di sicurezza, audit del 2026-11-02. Il contenuto `demo` si accende dal nome del branch (non c'è più un `.env`). Ogni push crea un'anteprima Vercel e fa girare la CI. |
 | `archivio/docs-ristrutturati` | Archivio: riordino dei documenti del 2026-10-16 mai unito. Non ci si lavora. |
 
 - Il contenuto `demo` non può finire in produzione: con `VERCEL_ENV=production` o da `main` la build si ferma (`vite.config.js`, `guardProductionContent`).
-- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Cancellati da GitHub: il 2026-10-30 i branch remoti sono solo `main` e `sviluppo`, e il tag `archivio-docs-ristrutturati` tiene raggiungibili i due commit di `adoring-brown`.
+- Branch vecchi (`claude/*`, `demo/vetrina`, `ccr-91a33afa-mmw7de`, compreso il suo ultimo commit `13eddb1` sul cantiere, unito il 2026-10-19) verificati il 2026-10-19: tutti i loro commit sono in `sviluppo` (tranne `adoring-brown`, copiato in `archivio/docs-ristrutturati`). Cancellati da GitHub: il 2026-10-30 i branch remoti sono solo `main` e `sviluppo`, e il tag `archivio-docs-ristrutturati` tiene raggiungibili i due commit di `adoring-brown`. Stessa cosa per `audit/correzioni-2026-11`, nato il 2026-11-03 e unito con la PR #2: cancellato da GitHub il 2026-11-05, dopo aver verificato con `git branch -r --merged sviluppo` che è interamente contenuto in `sviluppo`.
 
 ## 3. Le due proposte per il cliente
 
